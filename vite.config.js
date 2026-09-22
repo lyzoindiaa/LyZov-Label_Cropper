@@ -5,6 +5,6 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
    preview: {
-    allowedHosts: ['lyzov-label-cropper.onrender.com']
+    allowedHosts: ['lyzov-label-cropper.onrender.com','tools.lyzov.com']
   }
 })
