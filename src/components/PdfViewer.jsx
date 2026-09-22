@@ -19,8 +19,6 @@ import {
 import {
   ZoomIn,
   ZoomOut,
-  ChevronLeft,
-  ChevronRight,
   Trash2,
   RotateCw,
   RotateCcw,
@@ -34,9 +32,17 @@ import {
   Maximize2,
 } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
+import { detectLabelBoundingBox } from '../utils/pdfUtils';
 
-// Local worker from public directory
-pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+
+const PDF_OPTIONS = {
+  cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
+  cMapPacked: true,
+  standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
+  wasmUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/wasm/`,
+};
+
 
 export default function PdfViewer() {
   const {
@@ -466,24 +472,35 @@ export default function PdfViewer() {
           </ButtonGroup>
 
           {numPages > 1 && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <IconButton
-                size="small"
-                disabled={currentPage <= 1}
-                onClick={() => setCurrentPage((p) => p - 1)}
-              >
-                <ChevronLeft size={16} />
-              </IconButton>
-              <Typography variant="caption" sx={{ minWidth: 36, textAlign: 'center' }}>
-                {currentPage}/{numPages}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, bgcolor: 'rgba(0, 201, 255, 0.08)', px: 1, py: 0.3, borderRadius: 2, border: '1px solid rgba(0, 201, 255, 0.25)' }}>
+              <Typography variant="caption" sx={{ color: '#00c9ff', fontWeight: 700, mr: 0.5 }}>
+                Page:
               </Typography>
-              <IconButton
-                size="small"
-                disabled={currentPage >= numPages}
-                onClick={() => setCurrentPage((p) => p + 1)}
-              >
-                <ChevronRight size={16} />
-              </IconButton>
+              {Array.from({ length: Math.min(6, numPages) }, (_, i) => i + 1).map((pg) => (
+                <Button
+                  key={pg}
+                  size="small"
+                  variant={currentPage === pg ? 'contained' : 'outlined'}
+                  onClick={() => setCurrentPage(pg)}
+                  sx={{
+                    minWidth: 26,
+                    height: 24,
+                    px: 0.8,
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    ...(currentPage === pg
+                      ? { bgcolor: '#00c9ff', color: '#081420', '&:hover': { bgcolor: '#00b4e6' } }
+                      : { color: '#00c9ff', borderColor: 'rgba(0, 201, 255, 0.3)' }),
+                  }}
+                >
+                  {pg}
+                </Button>
+              ))}
+              {numPages > 6 && (
+                <Typography variant="caption" sx={{ color: 'text.secondary', ml: 0.5 }}>
+                  /{numPages}
+                </Typography>
+              )}
             </Box>
           )}
 
@@ -598,6 +615,9 @@ export default function PdfViewer() {
         )}
       </Box>
 
+
+
+
       {/* Interactive Full-Width PDF Canvas Container */}
       <Box
         ref={containerRef}
@@ -630,12 +650,23 @@ export default function PdfViewer() {
         >
           <Document
             file={activePdf.url}
+            options={PDF_OPTIONS}
             onLoadSuccess={onDocumentLoadSuccess}
+            onLoadError={(err) => {
+              console.error('PDF Document Load Error:', err);
+            }}
             loading={
               <Box sx={{ p: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                 <CircularProgress size={36} color="secondary" />
                 <Typography variant="body2" color="text.secondary">
                   Rendering PDF...
+                </Typography>
+              </Box>
+            }
+            error={
+              <Box sx={{ p: 6, textAlign: 'center' }}>
+                <Typography variant="body2" color="error">
+                  Failed to load PDF. Please check if file is valid.
                 </Typography>
               </Box>
             }
@@ -645,6 +676,7 @@ export default function PdfViewer() {
               scale={zoom}
               rotate={rotation}
               onLoadSuccess={onPageLoadSuccess}
+              onRenderError={(err) => console.error('Page Render Error:', err)}
               renderAnnotationLayer={false}
               renderTextLayer={false}
             />

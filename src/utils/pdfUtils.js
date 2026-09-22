@@ -23,51 +23,71 @@ export function detectLabelBoundingBox(canvas) {
   }
 
   const data = imgData.data;
-  let minX = width;
-  let maxX = 0;
-  let minY = height;
-  let maxY = 0;
-  let darkPixelCount = 0;
+  const step = 2; // pixel sampling step
 
-  // Scan pixels in steps of 3 for speed
-  const step = 3;
-  for (let y = 0; y < height; y += step) {
-    for (let x = 0; x < width; x += step) {
+  // Ignore outer 1.5% margin to exclude PDF crop marks and outer border lines
+  const marginX = Math.floor(width * 0.015);
+  const marginY = Math.floor(height * 0.015);
+
+  const rowCounts = new Int32Array(height);
+  const colCounts = new Int32Array(width);
+  let totalDarkPixels = 0;
+
+  for (let y = marginY; y < height - marginY; y += step) {
+    for (let x = marginX; x < width - marginX; x += step) {
       const idx = (y * width + x) * 4;
       const r = data[idx];
       const g = data[idx + 1];
       const b = data[idx + 2];
       const a = data[idx + 3];
 
-      // Detect non-white / dark content (brightness < 225 and not transparent)
       const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-      if (a > 30 && brightness < 225) {
-        darkPixelCount++;
-        if (x < minX) minX = x;
-        if (x > maxX) maxX = x;
-        if (y < minY) minY = y;
-        if (y > maxY) maxY = y;
+      if (a > 30 && brightness < 200) {
+        rowCounts[y]++;
+        colCounts[x]++;
+        totalDarkPixels++;
       }
     }
   }
 
-  // If no substantial content found
-  if (darkPixelCount < 100 || minX >= maxX || minY >= maxY) {
+  // Minimum pixel threshold per row/col to be considered actual content (not noise)
+  const minRowContent = Math.max(3, Math.floor((width / step) * 0.008));
+  const minColContent = Math.max(3, Math.floor((height / step) * 0.008));
+
+  let minY = -1;
+  let maxY = -1;
+  for (let y = marginY; y < height - marginY; y++) {
+    if (rowCounts[y] >= minRowContent) {
+      if (minY === -1) minY = y;
+      maxY = y;
+    }
+  }
+
+  let minX = -1;
+  let maxX = -1;
+  for (let x = marginX; x < width - marginX; x++) {
+    if (colCounts[x] >= minColContent) {
+      if (minX === -1) minX = x;
+      maxX = x;
+    }
+  }
+
+  if (totalDarkPixels < 80 || minY === -1 || maxY === -1 || minX === -1 || maxX === -1 || minX >= maxX || minY >= maxY) {
     return null;
   }
 
-  // Add 12px safe padding
-  const pad = 12;
+  // Add 10px safe padding
+  const pad = 10;
   minX = Math.max(0, minX - pad);
   minY = Math.max(0, minY - pad);
   maxX = Math.min(width, maxX + pad);
   maxY = Math.min(height, maxY + pad);
 
   return {
-    xRatio: minX / width,
-    yRatio: minY / height,
-    widthRatio: (maxX - minX) / width,
-    heightRatio: (maxY - minY) / height,
+    xRatio: Number((minX / width).toFixed(4)),
+    yRatio: Number((minY / height).toFixed(4)),
+    widthRatio: Number(((maxX - minX) / width).toFixed(4)),
+    heightRatio: Number(((maxY - minY) / height).toFixed(4)),
   };
 }
 
@@ -85,9 +105,19 @@ export async function cropPdfBlob(pdfBlob, selectionRatio, options = { pagesToCr
   const srcDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
 
   const totalPages = srcDoc.getPageCount();
-  const pageIndicesToProcess = options.pagesToCrop === 'first'
-    ? [0]
-    : Array.from({ length: totalPages }, (_, i) => i);
+  let pageIndicesToProcess = [];
+  if (options.pagesToCrop === 'first') {
+    pageIndicesToProcess = [0];
+  } else if (options.pagesToCrop === 'second' || options.pagesToCrop === 'page2') {
+    pageIndicesToProcess = [totalPages >= 2 ? 1 : 0];
+  } else if (options.pagesToCrop === 'last') {
+    pageIndicesToProcess = [totalPages - 1];
+  } else if (typeof options.pagesToCrop === 'number') {
+    const targetIdx = Math.max(0, Math.min(totalPages - 1, options.pagesToCrop - 1));
+    pageIndicesToProcess = [targetIdx];
+  } else {
+    pageIndicesToProcess = Array.from({ length: totalPages }, (_, i) => i);
+  }
 
   // Determine slice zones per page
   let sliceRegions = [];
