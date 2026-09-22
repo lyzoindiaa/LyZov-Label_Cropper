@@ -145,6 +145,22 @@ export const AppProvider = ({ children }) => {
     setSelectionMode('select');
     setSplitMode('none');
     switch (presetType) {
+      case 'amazon':
+        setSelection({
+          xRatio: 0.04,
+          yRatio: 0.02,
+          widthRatio: 0.92,
+          heightRatio: 0.52,
+        });
+        break;
+      case 'flipkart':
+        setSelection({
+          xRatio: 0.05,
+          yRatio: 0.04,
+          widthRatio: 0.9,
+          heightRatio: 0.46,
+        });
+        break;
       case '4x6-top':
         setSelection({
           xRatio: 0.08,

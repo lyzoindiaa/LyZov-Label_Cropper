@@ -211,24 +211,30 @@ export default function CropProcessor() {
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)' }} />
 
       {/* Pages to crop */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Typography variant="caption" color="text.secondary">
-          Pages per document:
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+        <Typography variant="caption" color="text.secondary" fontWeight={600}>
+          PAGES TO CROP PER DOCUMENT:
         </Typography>
         <RadioGroup
           row
           value={cropOptions.pagesToCrop}
           onChange={(e) => setCropOptions({ ...cropOptions, pagesToCrop: e.target.value })}
+          sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}
         >
           <FormControlLabel
             value="all"
             control={<Radio size="small" sx={{ color: '#00c9ff', '&.Mui-checked': { color: '#00c9ff' } }} />}
-            label={<Typography variant="caption">All</Typography>}
+            label={<Typography variant="caption">All Pages</Typography>}
           />
           <FormControlLabel
             value="first"
             control={<Radio size="small" sx={{ color: '#00c9ff', '&.Mui-checked': { color: '#00c9ff' } }} />}
-            label={<Typography variant="caption">First Only</Typography>}
+            label={<Typography variant="caption">Page 1</Typography>}
+          />
+          <FormControlLabel
+            value="page2"
+            control={<Radio size="small" sx={{ color: '#00c9ff', '&.Mui-checked': { color: '#00c9ff' } }} />}
+            label={<Typography variant="caption" sx={{ fontWeight: 700, color: '#00c9ff' }}>Page 2 (Amazon Label)</Typography>}
           />
         </RadioGroup>
       </Box>
