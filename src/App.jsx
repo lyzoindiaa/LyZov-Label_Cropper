@@ -1,4 +1,5 @@
 import React, { useContext, useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import {
   CssBaseline,
   ThemeProvider,
@@ -24,6 +25,16 @@ import PdfUploader from './components/PdfUploader';
 import PdfViewer from './components/PdfViewer';
 import CropProcessor from './components/CropProcessor';
 import DownloadPanel from './components/DownloadPanel';
+import Footer from './components/Footer';
+
+// Informational pages
+import AboutPage from './pages/AboutPage';
+import ContactPage from './pages/ContactPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsPage from './pages/TermsPage';
+import DisclaimerPage from './pages/DisclaimerPage';
+import HowToUsePage from './pages/HowToUsePage';
+import FaqPage from './pages/FaqPage';
 
 const darkTheme = createTheme({
   palette: {
@@ -52,9 +63,10 @@ function MainContent() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
-    <Box sx={{ minHeight: '100vh', pb: 6, display: 'flex', flexDirection: 'column', width: '100%' }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', width: '100%' }}>
       {/* Top Navbar */}
       <Box
+        component="header"
         sx={{
           py: 2,
           px: { xs: 2, sm: 3, md: 4 },
@@ -90,7 +102,7 @@ function MainContent() {
               LyZov <span style={{ color: '#00c9ff' }}>Cropper</span> Studio
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Batch PDF Label Cropper & Thermal Printer
+              Batch PDF Label Cropper &amp; Thermal Printer
             </Typography>
           </Box>
         </Box>
@@ -112,7 +124,7 @@ function MainContent() {
       </Box>
 
       {/* Main Full-Width App Workspace */}
-      <Box sx={{ width: '100%', px: { xs: 1.5, sm: 2.5, md: 3.5 }, mt: 2, flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3.5 }, mt: 2, flex: 1, display: 'flex', flexDirection: 'column' }}>
         {/* Navigation Tabs Bar */}
         <Box
           sx={{
@@ -122,6 +134,7 @@ function MainContent() {
             justifyContent: 'space-between',
             alignItems: 'center',
             width: '100%',
+            overflowX: 'auto',
           }}
         >
           <Tabs
@@ -151,7 +164,7 @@ function MainContent() {
                   color="primary"
                   sx={{ '& .MuiBadge-badge': { fontWeight: 700 } }}
                 >
-                  2. Download & Print
+                  2. Download &amp; Print
                 </Badge>
               }
               icon={<Download size={18} />}
@@ -249,6 +262,9 @@ function MainContent() {
           </Box>
         )}
       </Box>
+
+      {/* Footer – present on all pages for AdSense/navigation compliance */}
+      <Footer />
     </Box>
   );
 }
@@ -258,7 +274,16 @@ export default function App() {
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
       <AppProvider>
-        <MainContent />
+        <Routes>
+          <Route path="/" element={<MainContent />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/disclaimer" element={<DisclaimerPage />} />
+          <Route path="/how-to-use" element={<HowToUsePage />} />
+          <Route path="/faq" element={<FaqPage />} />
+        </Routes>
       </AppProvider>
     </ThemeProvider>
   );
