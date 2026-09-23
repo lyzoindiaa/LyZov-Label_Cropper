@@ -117,6 +117,8 @@ export default function PdfViewer() {
   };
 
   const handleWrapperMouseDown = (e) => {
+    // Prevent default scroll on touch so drawing doesn't scroll the page
+    if (e.touches) e.preventDefault();
     if (e.target.dataset.handle || e.target.dataset.role === 'selection-box') {
       return;
     }
@@ -153,6 +155,8 @@ export default function PdfViewer() {
 
   const handleMouseMove = useCallback((e) => {
     if (!interactionMode || !dragStart) return;
+    // Prevent page scroll while dragging a crop region on touch devices
+    if (e.touches) e.preventDefault();
     const current = getRelativeCoords(e);
 
     if (interactionMode === 'draw') {
@@ -244,10 +248,14 @@ export default function PdfViewer() {
   useEffect(() => {
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchmove', handleMouseMove, { passive: false });
+    window.addEventListener('touchend', handleMouseUp);
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchmove', handleMouseMove);
+      window.removeEventListener('touchend', handleMouseUp);
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [handleMouseMove, handleMouseUp, handleKeyDown]);
@@ -299,7 +307,7 @@ export default function PdfViewer() {
       {/* Top Toolbar: Mode, Presets, Rotation & Zoom */}
       <Box
         sx={{
-          p: 1.5,
+          p: { xs: 1, sm: 1.5 },
           bgcolor: 'rgba(255, 255, 255, 0.04)',
           backdropFilter: 'blur(10px)',
           borderRadius: 3,
@@ -308,12 +316,12 @@ export default function PdfViewer() {
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 1.5,
+          gap: { xs: 1, sm: 1.5 },
           width: '100%',
         }}
       >
         {/* Mode Selector & Auto-Detect */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
           <ButtonGroup size="small">
             <Button
               variant={selectionMode === 'inspect' ? 'contained' : 'outlined'}
@@ -367,7 +375,7 @@ export default function PdfViewer() {
 
           {/* Thermal Presets */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, ml: 0.5, flexWrap: 'wrap' }}>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: { xs: 'none', sm: 'block' } }}>
               PRESETS:
             </Typography>
             <Button
@@ -580,7 +588,7 @@ export default function PdfViewer() {
 
       {/* Helpful Status Bar */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1 }}>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
           {splitMode !== 'none' ? (
             <>
               ✂️ <b>Grid Split Mode Active:</b> Slicing each sheet into multiple labels ({splitMode.replace('-', ' ')}).
@@ -591,11 +599,11 @@ export default function PdfViewer() {
             </>
           ) : selectionMode === 'select' ? (
             <>
-              🎯 <b>Selection Mode Active:</b> Click and drag on the PDF, or click <b>"Auto-Detect Label"</b> to locate it automatically.
+              🎯 <b>Selection Mode Active:</b> Tap &amp; drag on the PDF below, or tap <b>&quot;Auto-Detect&quot;</b>.
             </>
           ) : (
             <>
-              🔍 <b>Inspect Mode:</b> Clean PDF view. Click <b>"Auto-Detect Label"</b> or <b>"Select Crop Area"</b> when ready to crop.
+              🔍 <b>Inspect Mode:</b> Tap <b>&quot;Auto-Detect Label&quot;</b> or <b>&quot;Select Crop Area&quot;</b> when ready.
             </>
           )}
         </Typography>
@@ -628,13 +636,14 @@ export default function PdfViewer() {
           alignItems: 'flex-start',
           width: '100%',
           flex: 1,
-          minHeight: '75vh',
-          p: 3,
+          minHeight: { xs: '50vh', md: '75vh' },
+          p: { xs: 1.5, sm: 3 },
           bgcolor: '#090d16',
           borderRadius: 3,
           border: '1px solid rgba(255, 255, 255, 0.08)',
           overflow: 'auto',
           userSelect: 'none',
+          touchAction: 'none',
         }}
       >
         <Box
@@ -646,6 +655,7 @@ export default function PdfViewer() {
             boxShadow: '0 16px 40px rgba(0,0,0,0.6)',
             cursor: selectionMode === 'select' ? 'crosshair' : 'default',
             lineHeight: 0,
+            touchAction: 'none',
           }}
         >
           <Document
@@ -745,6 +755,7 @@ export default function PdfViewer() {
             <Box
               data-role="selection-box"
               onMouseDown={handleBoxMouseDown}
+              onTouchStart={handleBoxMouseDown}
               sx={{
                 position: 'absolute',
                 left: `${selection.xRatio * 100}%`,
@@ -779,24 +790,26 @@ export default function PdfViewer() {
                 {inchWidth}" × {inchHeight}"
               </Box>
 
-              {/* 4 Corner Handles */}
+              {/* 4 Corner Handles – larger hit target on touch */}
               {['nw', 'ne', 'se', 'sw'].map((h) => (
                 <Box
                   key={h}
                   data-handle={h}
                   onMouseDown={(e) => handleResizeStart(e, h)}
+                  onTouchStart={(e) => handleResizeStart(e, h)}
                   sx={{
                     position: 'absolute',
-                    width: 12,
-                    height: 12,
+                    width: { xs: 20, sm: 12 },
+                    height: { xs: 20, sm: 12 },
                     bgcolor: '#ffffff',
                     border: '2px solid #00c9ff',
                     borderRadius: '50%',
-                    top: h.includes('n') ? -6 : 'calc(100% - 6px)',
-                    left: h.includes('w') ? -6 : 'calc(100% - 6px)',
+                    top: h.includes('n') ? { xs: -10, sm: -6 } : { xs: 'calc(100% - 10px)', sm: 'calc(100% - 6px)' },
+                    left: h.includes('w') ? { xs: -10, sm: -6 } : { xs: 'calc(100% - 10px)', sm: 'calc(100% - 6px)' },
                     cursor: `${h}-resize`,
                     zIndex: 20,
                     boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+                    touchAction: 'none',
                     '&:hover': {
                       transform: 'scale(1.25)',
                       bgcolor: '#ff6ec7',
