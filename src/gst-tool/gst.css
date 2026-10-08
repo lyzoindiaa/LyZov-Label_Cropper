@@ -1,0 +1,310 @@
+/* ============================================================
+   GST Tool — Shared CSS Design System
+   Palette: Deep Ink (#0a0f1e) · Emerald (#00d68f) · Gold (#f5a623)
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* ── CSS Variables ── */
+:root {
+  --gst-bg:         #080c18;
+  --gst-surface:    #0e1628;
+  --gst-surface2:   #131d35;
+  --gst-border:     rgba(255,255,255,0.08);
+  --gst-border2:    rgba(255,255,255,0.12);
+
+  --gst-emerald:    #00d68f;
+  --gst-emerald-dim:#00a86b;
+  --gst-gold:       #f5a623;
+  --gst-gold-dim:   #c8861a;
+  --gst-blue:       #4a9eff;
+  --gst-red:        #ff4757;
+  --gst-warn:       #ffa502;
+
+  --gst-text:       #f0f4ff;
+  --gst-text-sec:   #8896b3;
+  --gst-text-mute:  #4a5672;
+
+  --gst-radius:     14px;
+  --gst-radius-sm:  8px;
+  --gst-radius-lg:  20px;
+
+  --gst-shadow:     0 4px 24px rgba(0,0,0,0.5);
+  --gst-shadow-lg:  0 8px 48px rgba(0,0,0,0.6);
+  --gst-glow-em:    0 0 24px rgba(0,214,143,0.25);
+  --gst-glow-gold:  0 0 24px rgba(245,166,35,0.25);
+}
+
+/* ── Reset for the GST tool container ── */
+.gst-root * {
+  box-sizing: border-box;
+}
+.gst-root {
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
+  background: var(--gst-bg);
+  color: var(--gst-text);
+  min-height: 100vh;
+}
+
+/* ── Utility: Glass Card ── */
+.gst-card {
+  background: var(--gst-surface);
+  border: 1px solid var(--gst-border);
+  border-radius: var(--gst-radius);
+  padding: 24px;
+  box-shadow: var(--gst-shadow);
+}
+.gst-card-glass {
+  background: rgba(14,22,40,0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--gst-border2);
+  border-radius: var(--gst-radius);
+  padding: 24px;
+  box-shadow: var(--gst-shadow);
+}
+
+/* ── Buttons ── */
+.gst-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: var(--gst-radius-sm);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.gst-btn-primary {
+  background: linear-gradient(135deg, var(--gst-emerald) 0%, #00b37a 100%);
+  color: #0a0f1e;
+  box-shadow: 0 4px 16px rgba(0,214,143,0.35);
+}
+.gst-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0,214,143,0.45);
+}
+.gst-btn-gold {
+  background: linear-gradient(135deg, var(--gst-gold) 0%, var(--gst-gold-dim) 100%);
+  color: #0a0f1e;
+  box-shadow: 0 4px 16px rgba(245,166,35,0.35);
+}
+.gst-btn-gold:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(245,166,35,0.45);
+}
+.gst-btn-outline {
+  background: transparent;
+  border: 1px solid var(--gst-border2);
+  color: var(--gst-text-sec);
+}
+.gst-btn-outline:hover {
+  border-color: var(--gst-emerald);
+  color: var(--gst-emerald);
+  background: rgba(0,214,143,0.06);
+}
+.gst-btn-ghost {
+  background: transparent;
+  color: var(--gst-text-sec);
+  padding: 8px 16px;
+}
+.gst-btn-ghost:hover {
+  color: var(--gst-text);
+  background: rgba(255,255,255,0.05);
+}
+.gst-btn-sm {
+  padding: 8px 16px;
+  font-size: 0.82rem;
+}
+.gst-btn-lg {
+  padding: 16px 36px;
+  font-size: 1rem;
+  border-radius: 12px;
+}
+
+/* ── Badges ── */
+.gst-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.gst-badge-green  { background: rgba(0,214,143,0.12); color: var(--gst-emerald); border: 1px solid rgba(0,214,143,0.25); }
+.gst-badge-gold   { background: rgba(245,166,35,0.12); color: var(--gst-gold); border: 1px solid rgba(245,166,35,0.25); }
+.gst-badge-blue   { background: rgba(74,158,255,0.12); color: var(--gst-blue); border: 1px solid rgba(74,158,255,0.25); }
+.gst-badge-red    { background: rgba(255,71,87,0.12); color: var(--gst-red); border: 1px solid rgba(255,71,87,0.25); }
+
+/* ── Form elements ── */
+.gst-input {
+  width: 100%;
+  background: var(--gst-surface2);
+  border: 1px solid var(--gst-border);
+  border-radius: var(--gst-radius-sm);
+  color: var(--gst-text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 12px 16px;
+  transition: border 0.2s;
+  outline: none;
+}
+.gst-input:focus {
+  border-color: var(--gst-emerald);
+  box-shadow: 0 0 0 3px rgba(0,214,143,0.12);
+}
+.gst-input::placeholder { color: var(--gst-text-mute); }
+.gst-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--gst-text-sec);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.gst-form-group { margin-bottom: 20px; }
+.gst-select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238896b3' fill='none' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 40px;
+}
+
+/* ── Dividers & separators ── */
+.gst-divider {
+  border: none;
+  border-top: 1px solid var(--gst-border);
+  margin: 24px 0;
+}
+
+/* ── Stat card ── */
+.gst-stat-card {
+  background: var(--gst-surface);
+  border: 1px solid var(--gst-border);
+  border-radius: var(--gst-radius);
+  padding: 20px 24px;
+  transition: border 0.2s, transform 0.2s;
+}
+.gst-stat-card:hover {
+  border-color: var(--gst-border2);
+  transform: translateY(-2px);
+}
+.gst-stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gst-text-sec);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+.gst-stat-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+/* ── Table ── */
+.gst-table-wrap { overflow-x: auto; border-radius: var(--gst-radius); border: 1px solid var(--gst-border); }
+.gst-table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+.gst-table th {
+  background: var(--gst-surface2);
+  color: var(--gst-text-sec);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--gst-border);
+}
+.gst-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  color: var(--gst-text);
+  vertical-align: middle;
+}
+.gst-table tr:last-child td { border-bottom: none; }
+.gst-table tbody tr:hover { background: rgba(255,255,255,0.025); }
+
+/* ── Timeline / stepper ── */
+.gst-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 0;
+  position: relative;
+}
+.gst-step + .gst-step::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 19px;
+  width: 2px; height: 16px;
+  background: var(--gst-border);
+}
+.gst-step-dot {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 0.85rem;
+}
+.gst-step-dot-active  { background: var(--gst-emerald); color: #0a0f1e; }
+.gst-step-dot-done    { background: rgba(0,214,143,0.15); color: var(--gst-emerald); border: 2px solid var(--gst-emerald); }
+.gst-step-dot-pending { background: var(--gst-surface2); color: var(--gst-text-mute); border: 2px solid var(--gst-border); }
+
+/* ── Drag-drop zone ── */
+.gst-dropzone {
+  border: 2px dashed var(--gst-border2);
+  border-radius: var(--gst-radius);
+  padding: 40px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.gst-dropzone:hover, .gst-dropzone.drag-over {
+  border-color: var(--gst-emerald);
+  background: rgba(0,214,143,0.04);
+}
+
+/* ── Progress bar ── */
+.gst-progress-wrap { background: var(--gst-surface2); border-radius: 99px; height: 6px; overflow: hidden; }
+.gst-progress-bar { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--gst-emerald), #00b37a); transition: width 0.4s; }
+
+/* ── Animations ── */
+@keyframes gst-fade-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@keyframes gst-pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+@keyframes gst-spin { to { transform:rotate(360deg); } }
+@keyframes gst-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.gst-animate-in { animation: gst-fade-in 0.4s ease both; }
+.gst-shimmer {
+  background: linear-gradient(90deg, var(--gst-surface) 25%, var(--gst-surface2) 50%, var(--gst-surface) 75%);
+  background-size: 200% 100%;
+  animation: gst-shimmer 1.6s infinite;
+}
+
+/* ── Gradient text ── */
+.gst-gradient-text {
+  background: linear-gradient(135deg, var(--gst-emerald) 0%, #4aefc0 50%, var(--gst-gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Scrollbar ── */
+.gst-root ::-webkit-scrollbar { width: 6px; height: 6px; }
+.gst-root ::-webkit-scrollbar-track { background: var(--gst-bg); }
+.gst-root ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+.gst-root ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }

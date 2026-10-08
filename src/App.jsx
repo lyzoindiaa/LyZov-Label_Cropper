@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Link } from 'react-router-dom';
 import {
   CssBaseline,
   ThemeProvider,
@@ -21,6 +21,7 @@ import {
   PanelLeftOpen,
 } from 'lucide-react';
 import { AppProvider, AppContext } from './context/AppContext';
+import GstApp from './gst-tool/GstApp';
 import PdfUploader from './components/PdfUploader';
 import PdfViewer from './components/PdfViewer';
 import CropProcessor from './components/CropProcessor';
@@ -35,6 +36,7 @@ import TermsPage from './pages/TermsPage';
 import DisclaimerPage from './pages/DisclaimerPage';
 import HowToUsePage from './pages/HowToUsePage';
 import FaqPage from './pages/FaqPage';
+import HubPage from './pages/HubPage';
 
 const darkTheme = createTheme({
   palette: {
@@ -110,16 +112,58 @@ function MainContent() {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Chip
             icon={<ShieldCheck size={14} color="#00c9ff" />}
-            label="100% Client-Side • No Uploads to Server"
+            label="100% Client-Side"
             size="small"
             sx={{
               bgcolor: 'rgba(0, 201, 255, 0.1)',
               color: '#00c9ff',
               border: '1px solid rgba(0, 201, 255, 0.25)',
               fontWeight: 600,
-              display: { xs: 'none', sm: 'inline-flex' },
+              display: { xs: 'none', md: 'inline-flex' },
             }}
           />
+          <Button
+            component={Link}
+            to="/"
+            variant="outlined"
+            size="small"
+            sx={{
+              color: '#94a3b8',
+              borderColor: 'rgba(255,255,255,0.15)',
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              borderRadius: '10px',
+              textTransform: 'none',
+              px: 2, py: 0.75,
+              '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
+              display: { xs: 'none', sm: 'inline-flex' },
+            }}
+          >
+            ← All Tools
+          </Button>
+          <Button
+            component={Link}
+            to="/gst-tool"
+            variant="contained"
+            size="small"
+            sx={{
+              background: 'linear-gradient(135deg, #00d68f 0%, #f5a623 100%)',
+              color: '#0a0f1e',
+              fontWeight: 800,
+              fontSize: '0.82rem',
+              borderRadius: '10px',
+              textTransform: 'none',
+              px: 2,
+              py: 0.75,
+              boxShadow: '0 4px 14px rgba(0, 214, 143, 0.4)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #00b377 0%, #d9911e 100%)',
+                boxShadow: '0 6px 18px rgba(0, 214, 143, 0.6)',
+              },
+            }}
+          >
+            ✦ GST Tool
+          </Button>
         </Box>
       </Box>
 
@@ -275,7 +319,13 @@ export default function App() {
       <CssBaseline />
       <AppProvider>
         <Routes>
-          <Route path="/" element={<MainContent />} />
+          {/* Hub — shown when visiting the root URL */}
+          <Route path="/" element={<HubPage />} />
+          {/* Label Cropper — full tool, moved to /cropper */}
+          <Route path="/cropper" element={<MainContent />} />
+          {/* GST Tool — lives at /gst-tool/* */}
+          <Route path="/gst-tool/*" element={<GstApp />} />
+          {/* Informational pages */}
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />

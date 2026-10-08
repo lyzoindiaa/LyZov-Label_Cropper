@@ -1,0 +1,164 @@
+{
+  "gstin": "29AABCU9603R1ZX",
+  "fp": "092026",
+  "cur_gt": 0,
+  "version": "GST3.1.2",
+  "hash": "hash",
+  "b2b": [
+    {
+      "ctin": "27AABCU9603R1ZX",
+      "inv": [
+        {
+          "inum": "AZ-2026-101",
+          "idt": "02-09-2026",
+          "val": 17700,
+          "pos": "27",
+          "rchrg": "N",
+          "inv_typ": "R",
+          "itms": [
+            {
+              "num": 1,
+              "itm_det": {
+                "rt": 18,
+                "txval": 15000,
+                "iamt": 2700,
+                "camt": 0,
+                "samt": 0,
+                "csamt": 0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "b2cs": [
+    {
+      "sply_ty": "INTRA",
+      "pos": "29",
+      "rt": 18,
+      "txval": 10500,
+      "iamt": 0,
+      "camt": 945,
+      "samt": 945,
+      "csamt": 0
+    },
+    {
+      "sply_ty": "INTER",
+      "pos": "07",
+      "rt": 12,
+      "txval": 4100,
+      "iamt": 492,
+      "camt": 0,
+      "samt": 0,
+      "csamt": 0
+    },
+    {
+      "sply_ty": "INTRA",
+      "pos": "29",
+      "rt": 5,
+      "txval": 2200,
+      "iamt": 0,
+      "camt": 55,
+      "samt": 55,
+      "csamt": 0
+    }
+  ],
+  "cdnr": [],
+  "hsn": {
+    "data": [
+      {
+        "num": 1,
+        "hsn_sc": "8517",
+        "desc": "Wireless Noise Cancelling Headphones",
+        "uqc": "OTH",
+        "qty": 1,
+        "val": 17700,
+        "txval": 15000,
+        "iamt": 2700,
+        "camt": 0,
+        "samt": 0,
+        "csamt": 0,
+        "rt": 18
+      },
+      {
+        "num": 2,
+        "hsn_sc": "8518",
+        "desc": "Bluetooth Portable Speaker",
+        "uqc": "OTH",
+        "qty": 1,
+        "val": 5310,
+        "txval": 4500,
+        "iamt": 0,
+        "camt": 405,
+        "samt": 405,
+        "csamt": 0,
+        "rt": 18
+      },
+      {
+        "num": 3,
+        "hsn_sc": "6203",
+        "desc": "Men Casual Denim Trousers",
+        "uqc": "OTH",
+        "qty": 1,
+        "val": 4592,
+        "txval": 4100,
+        "iamt": 492,
+        "camt": 0,
+        "samt": 0,
+        "csamt": 0,
+        "rt": 12
+      },
+      {
+        "num": 4,
+        "hsn_sc": "6402",
+        "desc": "Orthopedic Lightweight Slippers",
+        "uqc": "OTH",
+        "qty": 1,
+        "val": 2310,
+        "txval": 2200,
+        "iamt": 0,
+        "camt": 55,
+        "samt": 55,
+        "csamt": 0,
+        "rt": 5
+      },
+      {
+        "num": 5,
+        "hsn_sc": "3926",
+        "desc": "Premium Ergonomic Laptop Stand",
+        "uqc": "OTH",
+        "qty": 2,
+        "val": 7080,
+        "txval": 6000,
+        "iamt": 0,
+        "camt": 540,
+        "samt": 540,
+        "csamt": 0,
+        "rt": 18
+      }
+    ]
+  },
+  "supeco": {
+    "cl14_2": [
+      {
+        "etin": "29AABCA0027R1ZW",
+        "sup_name": "Amazon Seller Services",
+        "txval": 25800,
+        "iamt": 3192,
+        "camt": 460,
+        "samt": 460,
+        "csamt": 0
+      },
+      {
+        "etin": "29AAACF1479P1ZU",
+        "sup_name": "Flipkart Internet",
+        "txval": 6000,
+        "iamt": 0,
+        "camt": 540,
+        "samt": 540,
+        "csamt": 0
+      }
+    ]
+  }
+}

@@ -7,6 +7,7 @@ const footerLinks = [
   { label: 'About Us', to: '/about' },
   { label: 'How to Use', to: '/how-to-use' },
   { label: 'FAQ', to: '/faq' },
+  { label: 'GST Tool ✦', to: '/gst-tool' },
   { label: 'Privacy Policy', to: '/privacy-policy' },
   { label: 'Terms & Conditions', to: '/terms' },
   { label: 'Disclaimer', to: '/disclaimer' },
