@@ -121,7 +121,7 @@ export function generateGstr1Excel({ gstin, period, aggregatedData, outputFilePa
   xlsx.utils.book_append_sheet(wb, wsEXEMP, 'exemp');
 
   // 5. Sheet: hsn
-  const rawHsn = aggregatedData.sections.hsn?.hsn_b2b || aggregatedData.sections.hsn?.data || [];
+  const rawHsn = aggregatedData.sections.hsn?.hsn_b2c || aggregatedData.sections.hsn?.hsn_b2b || aggregatedData.sections.hsn?.data || [];
   const hsnRows = rawHsn.map(row => ({
     'HSN': row.hsn_sc,
     'Description': row.desc,

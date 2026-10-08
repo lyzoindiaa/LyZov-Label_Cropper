@@ -19,7 +19,7 @@ export function getPlatformDetails(platform, sellerStateCode = '09') {
       '24': '24AABCA0027R1ZF',
     };
     return {
-      etin: etins[statePrefix] || `${statePrefix}AAICA3918J1CR`,
+      etin: etins[statePrefix] || `09AAICA3918J1CR`,
       sup_name: 'Amazon Seller Services Private Limited',
     };
   } else if (isFlipkart) {
@@ -30,7 +30,7 @@ export function getPlatformDetails(platform, sellerStateCode = '09') {
       '27': '27AAACF1479P1ZG',
     };
     return {
-      etin: etins[statePrefix] || `${statePrefix}AACCF0683K1CQ`,
+      etin: etins[statePrefix] || `09AACCF0683K1CQ`,
       sup_name: 'Flipkart Internet Private Limited',
     };
   }
@@ -54,10 +54,46 @@ export function sanitizeHsn(hsn, description) {
 }
 
 /**
+ * Extracts numeric prefix/suffix for document series grouping
+ */
+function getSeriesPrefix(numStr) {
+  const match = String(numStr).match(/^([A-Za-z0-9_-]+?)([0-9]{1,7})$/);
+  if (match) {
+    return { prefix: match[1], num: parseInt(match[2], 10), raw: numStr };
+  }
+  return { prefix: String(numStr), num: 0, raw: numStr };
+}
+
+function buildDocSeries(numArray) {
+  const map = {};
+  numArray.forEach(str => {
+    const p = getSeriesPrefix(str);
+    if (!map[p.prefix]) map[p.prefix] = [];
+    map[p.prefix].push(p);
+  });
+
+  const docs = [];
+  let numCounter = 1;
+  Object.keys(map).forEach(prefix => {
+    const items = map[prefix].sort((a, b) => a.num - b.num);
+    docs.push({
+      num: numCounter++,
+      from: items[0].raw,
+      to: items[items.length - 1].raw,
+      totnum: items.length,
+      cancel: 0,
+      net_issue: items.length,
+    });
+  });
+  return docs;
+}
+
+/**
  * Aggregates unified orderlines into statutory GSTR-1 data structures
  */
-export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '') {
+export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '', grossTurnover = 0) {
   const totals = {
+    grossTurnover,
     totalInvoices: 0,              // Count of sales invoices only (e.g. 45)
     totalNotes: 0,                 // Count of credit/debit notes & returns (e.g. 20)
     totalRowsProcessed: orderLines.length, // Total orderlines (e.g. 65)
@@ -92,13 +128,17 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
   for (const line of orderLines) {
     const classification = classifyOrderLine(line, sellerStateCode);
     const isReturn = line.type === 'return';
-    const isCancellation = line.type === 'cancellation';
+    const isDebit = line.docType === 'DR' || String(line.invoiceNumber).startsWith('LZAF');
+    const isCredit = isReturn || line.docType === 'CR' || String(line.invoiceNumber).startsWith('LYAF');
     const sign = isReturn ? -1 : 1;
 
     // Track Sales Invoices vs Notes count separately
     if (!seenInvoices.has(line.invoiceNumber)) {
       seenInvoices.add(line.invoiceNumber);
-      if (isReturn) {
+      if (isDebit) {
+        totals.totalNotes++;
+        debitNoteNumbers.push(line.invoiceNumber);
+      } else if (isCredit) {
         totals.totalNotes++;
         creditNoteNumbers.push(line.invoiceNumber);
       } else {
@@ -174,7 +214,7 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
         nt_dt: formattedInvDate,
         inum: line.invoiceNumber,
         idt: formattedInvDate,
-        ntty: 'C', // Credit note
+        ntty: isDebit ? 'D' : 'C',
         p_gst: 'N',
         val: toRupees(line.invoiceValuePaise),
         itms: [{
@@ -224,14 +264,17 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
     }
 
     // 4. Process HSN Summary (Table 12)
-    const hsnCode = sanitizeHsn(line.hsn, line.description);
-    const hsnKey = `${hsnCode}_${line.gstRate}_${line.uqc || 'OTH'}`;
+    const cleanDesc = (line.description || 'Goods sold through marketplace').replace(/^["'\s]+|["'\s]+$/g, '').trim();
+    const hsnCode = sanitizeHsn(line.hsn, cleanDesc);
+    const uqcCode = line.uqc || 'PCS';
+    const hsnKey = `${hsnCode}_${line.gstRate}_${uqcCode}`;
+
     if (!hsnMap[hsnKey]) {
       hsnMap[hsnKey] = {
         num: Object.keys(hsnMap).length + 1,
         hsn_sc: hsnCode,
-        desc: line.description || 'Goods sold through marketplace',
-        uqc: line.uqc || 'OTH',
+        desc: cleanDesc,
+        uqc: uqcCode,
         qty: 0,
         val: 0,
         txval: 0,
@@ -294,7 +337,7 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
     ngsup_amt: Number(item.ngsup_amt.toFixed(2)),
   }));
 
-  // Round HSN decimals
+  // Round HSN decimals & renumber sequentially 1...N
   const hsnList = Object.values(hsnMap).map(item => ({
     ...item,
     val: Number(item.val.toFixed(2)),
@@ -304,6 +347,10 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
     samt: Number(item.samt.toFixed(2)),
     csamt: Number(item.csamt.toFixed(2)),
   })).filter(item => item.txval !== 0);
+
+  hsnList.forEach((item, idx) => {
+    item.num = idx + 1;
+  });
 
   // Round Table 14 decimals
   const table14List = Object.values(ecoMap).map(item => ({
@@ -315,56 +362,36 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
     cess:    Number(item.cess.toFixed(2)),
   }));
 
-  // Build Document Issued (Table 13) summary series
-  salesInvoiceNumbers.sort();
-  creditNoteNumbers.sort();
+  // Build Document Issued (Table 13) summary series using official codes:
+  // 1: Invoices for outward supply, 4: Debit Note, 5: Credit Note
+  const salesDocs = buildDocSeries(salesInvoiceNumbers);
+  const creditDocs = buildDocSeries(creditNoteNumbers);
+  const debitDocs = buildDocSeries(debitNoteNumbers);
 
-  const docIssueSection = {
-    doc_det: [
-      {
-        doc_num: 1,
-        doc_typ: 'Invoices for outward supply',
-        docs: [
-          {
-            num: 1,
-            from: salesInvoiceNumbers[0] || 'INV-001',
-            to: salesInvoiceNumbers[salesInvoiceNumbers.length - 1] || 'INV-045',
-            totnum: totals.totalInvoices,
-            cancel: 0,
-            net_issue: totals.totalInvoices,
-          }
-        ]
-      },
-      {
-        doc_num: 2,
-        doc_typ: 'Credit Note',
-        docs: [
-          {
-            num: 1,
-            from: creditNoteNumbers[0] || 'CR-001',
-            to: creditNoteNumbers[creditNoteNumbers.length - 1] || 'CR-019',
-            totnum: totals.totalNotes > 0 ? totals.totalNotes - 1 : 0,
-            cancel: 0,
-            net_issue: totals.totalNotes > 0 ? totals.totalNotes - 1 : 0,
-          }
-        ]
-      },
-      {
-        doc_num: 3,
-        doc_typ: 'Debit Note',
-        docs: [
-          {
-            num: 1,
-            from: 'LZAF1KX270000001',
-            to: 'LZAF1KX270000001',
-            totnum: totals.totalNotes > 0 ? 1 : 0,
-            cancel: 0,
-            net_issue: totals.totalNotes > 0 ? 1 : 0,
-          }
-        ]
-      }
-    ]
-  };
+  const doc_det = [];
+  if (salesDocs.length > 0) {
+    doc_det.push({
+      doc_num: 1,
+      doc_typ: 'Invoices for outward supply',
+      docs: salesDocs,
+    });
+  }
+  if (debitDocs.length > 0) {
+    doc_det.push({
+      doc_num: 4,
+      doc_typ: 'Debit Note',
+      docs: debitDocs,
+    });
+  }
+  if (creditDocs.length > 0) {
+    doc_det.push({
+      doc_num: 5,
+      doc_typ: 'Credit Note',
+      docs: creditDocs,
+    });
+  }
+
+  const docIssueSection = { doc_det };
 
   totals.totalTaxPaise = totals.igstPaise + totals.cgstPaise + totals.sgstPaise + totals.cessPaise;
 
@@ -375,7 +402,7 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
       b2cs:       b2csList,
       cdnr:       Object.values(cdnrMap),
       nil:        { inv: nilList },
-      hsn:        { hsn_b2b: hsnList },      // GST portal key: hsn_b2b
+      hsn:        { hsn_b2c: hsnList },      // GST portal key: hsn_b2c for B2C supplies
       supeco:     { clttx: table14List },    // GST portal key: clttx (Table 14 Sec 52)
       doc_issue:  docIssueSection,
     },
@@ -389,4 +416,5 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
     },
   };
 }
+
 

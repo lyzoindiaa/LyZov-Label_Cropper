@@ -19,15 +19,15 @@ const GSTR1_VERSION = 'GST3.1.6';
 export function generateGstr1Json({ gstin, period, aggregatedData, outputFilePath }) {
   const { sections, totals } = aggregatedData;
 
-  // cur_gt = gross taxable value in rupees (all sections combined)
-  const cur_gt = toRupees(totals.taxableValuePaise);
+  // cur_gt = gross turnover for financial year (0 if not set)
+  const cur_gt = totals.grossTurnover || 0;
 
   // ------------------------------------------------------------------
-  // HSN section — correct key is hsn_b2b
+  // HSN section — use hsn_b2c for B2C supplies in GST 3.1.6
   // ------------------------------------------------------------------
   const rawHsn = sections.hsn || {};
-  const hsnData = rawHsn.hsn_b2b || rawHsn.data || [];
-  const hsnSection = { hsn_b2b: hsnData };
+  const hsnData = rawHsn.hsn_b2c || rawHsn.hsn_b2b || rawHsn.data || [];
+  const hsnSection = { hsn_b2c: hsnData };
 
   // ------------------------------------------------------------------
   // supeco (Table 14) — correct key is clttx

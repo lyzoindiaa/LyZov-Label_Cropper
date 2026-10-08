@@ -75,6 +75,23 @@ export async function parseFlipkartReport(filePath, sellerStateCode) {
     const rawRows = xlsx.utils.sheet_to_json(worksheet, { defval: '' });
     const isCashBackSheet = sheetName.toLowerCase().includes('cash') || sheetName.toLowerCase().includes('back');
 
+    // First pass on Sales Report to map Order Item ID / Order ID -> { hsn, description }
+    const salesProductMap = {};
+    if (!isCashBackSheet) {
+      for (const row of rawRows) {
+        const orderId = String(getVal(row, ['Order ID', 'Order Id', 'Order Item ID', 'Item ID'])).trim();
+        const orderItemId = String(getVal(row, ['Order Item ID', 'Item ID'])).trim();
+        const hsn = String(getVal(row, ['HSN Code', 'HSN', 'SAC'])).trim();
+        let desc = String(getVal(row, ['Product Title/Description', 'Product Title', 'Title', 'Description', 'SKU'])).trim();
+        desc = desc.replace(/^["'\s]+|["'\s]+$/g, '').trim();
+
+        if (hsn && hsn !== '9999') {
+          if (orderItemId) salesProductMap[orderItemId] = { hsn, desc };
+          if (orderId) salesProductMap[orderId] = { hsn, desc };
+        }
+      }
+    }
+
     let rowIndex = 1;
 
     for (const row of rawRows) {
@@ -85,7 +102,8 @@ export async function parseFlipkartReport(filePath, sellerStateCode) {
         'Invoice No', 'Invoice Number', 'Invoice ID', 'Tax Invoice No', 'Invoice Details'
       ])).trim();
 
-      const orderId = String(getVal(row, ['Order ID', 'Order Id', 'Order Item ID', 'Flipkart Order ID', 'Item ID'])).trim();
+      const orderId = String(getVal(row, ['Order ID', 'Order Id', 'Flipkart Order ID', 'Item ID'])).trim();
+      const orderItemId = String(getVal(row, ['Order Item ID', 'Item ID'])).trim();
 
       if (!invoiceNumber && !orderId) {
         continue;
@@ -109,8 +127,16 @@ export async function parseFlipkartReport(filePath, sellerStateCode) {
       ], 0)) || taxableNum;
 
       let type = 'sale';
-      if (eventTypeRaw.includes('return') || eventTypeRaw.includes('refund') || eventTypeRaw.includes('debit') || taxableNum < 0) {
+      let docType = 'INV';
+      if (eventTypeRaw.includes('debit')) {
         type = 'return';
+        docType = 'DR';
+      } else if (eventTypeRaw.includes('credit')) {
+        type = 'sale';
+        docType = 'CR';
+      } else if (eventTypeRaw.includes('return') || eventTypeRaw.includes('refund') || taxableNum < 0) {
+        type = 'return';
+        docType = 'CR';
       } else if (eventTypeRaw.includes('cancel')) {
         type = 'cancellation';
       }
@@ -175,10 +201,19 @@ export async function parseFlipkartReport(filePath, sellerStateCode) {
         }
       }
 
-      const hsn = String(getVal(row, ['HSN Code', 'HSN', 'SAC', 'HSN/SAC'])).trim();
-      const description = String(getVal(row, [
+      // Product & HSN lookup — inherit from sales product map if available
+      const mappedProduct = salesProductMap[orderItemId] || salesProductMap[orderId];
+      let hsn = String(getVal(row, ['HSN Code', 'HSN', 'SAC', 'HSN/SAC'])).trim();
+      let description = String(getVal(row, [
         'Product Title/Description', 'Product Title', 'Title', 'Description', 'SKU'
       ])).trim();
+      description = description.replace(/^["'\s]+|["'\s]+$/g, '').trim();
+
+      if ((!hsn || hsn === '9999') && mappedProduct) {
+        hsn = mappedProduct.hsn;
+        if (!description) description = mappedProduct.desc;
+      }
+
       const quantity = Math.abs(parseInt(getVal(row, ['Item Quantity', 'Quantity', 'Qty'], 1), 10)) || 1;
 
       const platformGstin = String(getVal(row, [
@@ -191,13 +226,14 @@ export async function parseFlipkartReport(filePath, sellerStateCode) {
         invoiceNumber: invoiceNumber || orderId,
         invoiceDate,
         type,
+        docType,
         buyerGstin: buyerGstin.length === 15 ? buyerGstin : '',
         shipFromState,
         placeOfSupply,
         hsn,
         description,
         quantity,
-        uqc: 'OTH',
+        uqc: 'PCS',
         taxableValuePaise: toPaise(taxableRaw),
         gstRate,
         igstPaise: toPaise(igstRaw),

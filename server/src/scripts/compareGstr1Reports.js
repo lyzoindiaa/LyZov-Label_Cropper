@@ -117,9 +117,9 @@ async function main() {
   ourB2cs.forEach(e => console.log('    pos=' + e.pos + ' rt=' + e.rt + '% ' + e.sply_ty + ' txval=' + fmt(e.txval) + ' iamt=' + fmt(e.iamt)));
 
   console.log('\n-- HSN (Table 12) --');
-  const ourHsn  = ourPayload.hsn?.hsn_b2b  || [];
-  const govtHsn = govtPayload.hsn?.hsn_b2b || [];
-  console.log('  hsn_b2b key: ' + (Array.isArray(ourHsn) ? 'PASS' : 'FAIL'));
+  const ourHsn  = ourPayload.hsn?.hsn_b2c || ourPayload.hsn?.hsn_b2b || [];
+  const govtHsn = govtPayload.hsn?.hsn_b2c || govtPayload.hsn?.hsn_b2b || govtPayload.hsn?.data || [];
+  console.log('  hsn_b2c / hsn_b2b key: ' + (Array.isArray(ourHsn) ? 'PASS' : 'FAIL'));
   console.log('  Our entries=' + ourHsn.length + '  Govt entries=' + govtHsn.length);
   ourHsn.forEach(h => console.log('    hsn_sc=' + (h.hsn_sc||'(blank)') + ' uqc=' + h.uqc + ' qty=' + h.qty + ' txval=' + fmt(h.txval)));
 
@@ -146,7 +146,7 @@ async function main() {
   console.log('\n' + '='.repeat(70));
   console.log('Schema Fix Verification:');
   console.log('  version=GST3.1.6            :', ourPayload.version === 'GST3.1.6' ? 'PASS' : 'FAIL');
-  console.log('  hsn.hsn_b2b key present     :', Array.isArray(ourPayload.hsn?.hsn_b2b) ? 'PASS' : 'FAIL');
+  console.log('  hsn.hsn_b2c / hsn_b2b key present :', (Array.isArray(ourPayload.hsn?.hsn_b2c) || Array.isArray(ourPayload.hsn?.hsn_b2b)) ? 'PASS' : 'FAIL');
   console.log('  supeco.clttx key present    :', Array.isArray(ourPayload.supeco?.clttx) ? 'PASS' : 'FAIL');
   const firstEntry = ourPayload.supeco?.clttx?.[0];
   if (firstEntry) {

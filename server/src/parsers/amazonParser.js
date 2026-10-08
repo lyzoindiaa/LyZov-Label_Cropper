@@ -131,7 +131,8 @@ export async function parseAmazonReport(filePath, sellerStateCode) {
     }
 
     const hsn = String(getVal(row, ['HSN/SAC', 'HSN / SAC', 'HSN Code', 'HSN', 'SAC'])).trim();
-    const description = String(getVal(row, ['Item Description', 'Title', 'Product Description', 'Description'])).trim();
+    let description = String(getVal(row, ['Item Description', 'Title', 'Product Description', 'Description'])).trim();
+    description = description.replace(/^["'\s]+|["'\s]+$/g, '').trim();
     const quantity = parseInt(getVal(row, ['Quantity', 'Qty', 'Item Quantity'], 1), 10) || 1;
 
     // Platform ETIN for Table 14
@@ -151,7 +152,7 @@ export async function parseAmazonReport(filePath, sellerStateCode) {
       hsn,
       description,
       quantity,
-      uqc: 'OTH',
+      uqc: 'PCS',
       taxableValuePaise: toPaise(taxableRaw),
       gstRate: gstRateRaw,
       igstPaise: toPaise(igstRaw),
