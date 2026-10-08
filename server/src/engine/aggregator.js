@@ -166,24 +166,25 @@ export function aggregateGstr1(orderLines, sellerStateCode, legalName) {
     hsnMap[hsnKey].csamt += toRupees(line.cessPaise) * sign;
 
     // 5. Process Table 14 (Supplies through E-Commerce Operator - Sec 52)
+    // GST schema uses: suppval, igst, cgst, sgst, cess, flag
     if (line.platformGstin) {
       const etin = line.platformGstin;
       if (!ecoMap[etin]) {
         ecoMap[etin] = {
           etin,
-          sup_name: line.platform === 'amazon' ? 'Amazon Seller Services' : 'Flipkart Internet',
-          txval: 0,
-          iamt: 0,
-          camt: 0,
-          samt: 0,
-          csamt: 0,
+          suppval: 0,
+          igst: 0,
+          cgst: 0,
+          sgst: 0,
+          cess: 0,
+          flag: 'N',
         };
       }
-      ecoMap[etin].txval += toRupees(line.taxableValuePaise) * sign;
-      ecoMap[etin].iamt += toRupees(line.igstPaise) * sign;
-      ecoMap[etin].camt += toRupees(line.cgstPaise) * sign;
-      ecoMap[etin].samt += toRupees(line.sgstPaise) * sign;
-      ecoMap[etin].csamt += toRupees(line.cessPaise) * sign;
+      ecoMap[etin].suppval += toRupees(line.taxableValuePaise) * sign;
+      ecoMap[etin].igst    += toRupees(line.igstPaise) * sign;
+      ecoMap[etin].cgst    += toRupees(line.cgstPaise) * sign;
+      ecoMap[etin].sgst    += toRupees(line.sgstPaise) * sign;
+      ecoMap[etin].cess    += toRupees(line.cessPaise) * sign;
     }
   }
 
@@ -211,11 +212,11 @@ export function aggregateGstr1(orderLines, sellerStateCode, legalName) {
   // Round Table 14 decimals
   const table14List = Object.values(ecoMap).map(item => ({
     ...item,
-    txval: Number(item.txval.toFixed(2)),
-    iamt: Number(item.iamt.toFixed(2)),
-    camt: Number(item.camt.toFixed(2)),
-    samt: Number(item.samt.toFixed(2)),
-    csamt: Number(item.csamt.toFixed(2)),
+    suppval: Number(item.suppval.toFixed(2)),
+    igst:    Number(item.igst.toFixed(2)),
+    cgst:    Number(item.cgst.toFixed(2)),
+    sgst:    Number(item.sgst.toFixed(2)),
+    cess:    Number(item.cess.toFixed(2)),
   }));
 
   totals.totalTaxPaise = totals.igstPaise + totals.cgstPaise + totals.sgstPaise + totals.cessPaise;
@@ -223,11 +224,11 @@ export function aggregateGstr1(orderLines, sellerStateCode, legalName) {
   return {
     totals,
     sections: {
-      b2b: Object.values(b2bMap),
-      b2cs: b2csList,
-      cdnr: Object.values(cdnrMap),
-      hsn: { data: hsnList },
-      supeco: { cl14_2: table14List }, // Table 14(ii) Section 52
+      b2b:    Object.values(b2bMap),
+      b2cs:   b2csList,
+      cdnr:   Object.values(cdnrMap),
+      hsn:    { hsn_b2b: hsnList },      // GST portal key: hsn_b2b
+      supeco: { clttx: table14List },    // GST portal key: clttx (Table 14 Sec 52)
     },
     sectionCounts: {
       b2bCount: Object.values(b2bMap).reduce((acc, curr) => acc + curr.inv.length, 0),
