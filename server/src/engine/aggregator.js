@@ -88,31 +88,36 @@ function buildDocSeries(numArray, warnings = []) {
     const minNum = items[0].num;
     const maxNum = items[items.length - 1].num;
 
-    // Detect sequence gaps (missing document numbers)
+    // Detect sequence gaps (missing / potentially cancelled document numbers)
+    let cancelCount = 0;
     if (minNum > 0 && maxNum > minNum) {
       const existingNums = new Set(items.map(i => i.num));
       const missing = [];
       for (let n = minNum; n <= maxNum; n++) {
         if (!existingNums.has(n)) {
           missing.push(`${prefix}${n}`);
+          cancelCount++;
         }
       }
       if (missing.length > 0) {
         warnings.push({
           type: 'WARNING',
           field: 'doc_issue',
-          message: `Document ${missing.join(', ')} is missing in sequence ${items[0].raw} to ${items[items.length - 1].raw}. Mark as cancelled if applicable.`,
+          message: `Document ${missing.join(', ')} is missing from the sequence ${items[0].raw}–${items[items.length - 1].raw}. ` +
+            `If cancelled, mark it in Table 13 (the "cancel" count has been set to ${cancelCount} automatically). ` +
+            `If it was issued outside this upload, please add it manually.`,
         });
       }
     }
 
+    const totnum = items.length + cancelCount; // total issued incl. cancelled
     docs.push({
       num: numCounter++,
       from: items[0].raw,
       to: items[items.length - 1].raw,
-      totnum: items.length,
-      cancel: 0,
-      net_issue: items.length,
+      totnum,
+      cancel: cancelCount,
+      net_issue: totnum - cancelCount,
     });
   });
   return docs;
@@ -294,10 +299,13 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
     }
 
     // 4. Process HSN Summary (Table 12)
+    //    Rule: when the same HSN+rate bucket is seen multiple times, keep the
+    //    description belonging to the highest-value line (most representative product).
     const cleanDesc = (line.description || 'Goods sold through marketplace').replace(/^["'\s]+|["'\s]+$/g, '').trim();
     const hsnCode = sanitizeHsn(line.hsn, cleanDesc);
     const uqcCode = line.uqc || 'PCS';
     const hsnKey = `${hsnCode}_${line.gstRate}_${uqcCode}`;
+    const lineVal = toRupees(line.taxableValuePaise) * sign;
 
     if (!hsnMap[hsnKey]) {
       hsnMap[hsnKey] = {
@@ -313,11 +321,17 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
         samt: 0,
         csamt: 0,
         rt: line.gstRate,
+        _highVal: 0,   // private tracker — stripped before export
       };
     }
-    hsnMap[hsnKey].qty += line.quantity * sign;
-    hsnMap[hsnKey].val += toRupees(line.invoiceValuePaise) * sign;
-    hsnMap[hsnKey].txval += toRupees(line.taxableValuePaise) * sign;
+    // Update description if this line has a higher taxable value than the previous best
+    if (toRupees(line.taxableValuePaise) > hsnMap[hsnKey]._highVal) {
+      hsnMap[hsnKey].desc = cleanDesc;
+      hsnMap[hsnKey]._highVal = toRupees(line.taxableValuePaise);
+    }
+    hsnMap[hsnKey].qty  += line.quantity * sign;
+    hsnMap[hsnKey].val  += toRupees(line.invoiceValuePaise) * sign;
+    hsnMap[hsnKey].txval += lineVal;
     hsnMap[hsnKey].iamt += toRupees(line.igstPaise) * sign;
     hsnMap[hsnKey].camt += toRupees(line.cgstPaise) * sign;
     hsnMap[hsnKey].samt += toRupees(line.sgstPaise) * sign;
@@ -349,13 +363,15 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
     }
   }
 
-  // Round B2CS decimals (only >0 rates)
+  // Round B2CS decimals.
+  // Zero-value buckets are intentionally excluded ─ the GST portal accepts absent
+  // zero-value B2CS rows and the offline tool treats them the same way.
   const b2csList = Object.values(b2csMap).map(item => ({
     ...item,
     txval: Number(item.txval.toFixed(2)),
-    iamt: Number(item.iamt.toFixed(2)),
-    camt: Number(item.camt.toFixed(2)),
-    samt: Number(item.samt.toFixed(2)),
+    iamt:  Number(item.iamt.toFixed(2)),
+    camt:  Number(item.camt.toFixed(2)),
+    samt:  Number(item.samt.toFixed(2)),
     csamt: Number(item.csamt.toFixed(2)),
   })).filter(item => item.txval !== 0);
 
@@ -367,16 +383,20 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
     ngsup_amt: Number(item.ngsup_amt.toFixed(2)),
   }));
 
-  // Round HSN decimals & renumber sequentially 1...N
-  const hsnList = Object.values(hsnMap).map(item => ({
-    ...item,
-    val: Number(item.val.toFixed(2)),
-    txval: Number(item.txval.toFixed(2)),
-    iamt: Number(item.iamt.toFixed(2)),
-    camt: Number(item.camt.toFixed(2)),
-    samt: Number(item.samt.toFixed(2)),
-    csamt: Number(item.csamt.toFixed(2)),
-  })).filter(item => item.txval !== 0);
+  // Round HSN decimals & renumber sequentially 1...N, stripping internal _highVal tracker
+  const hsnList = Object.values(hsnMap).map(item => {
+    // eslint-disable-next-line no-unused-vars
+    const { _highVal, ...rest } = item;
+    return {
+      ...rest,
+      val:   Number(rest.val.toFixed(2)),
+      txval: Number(rest.txval.toFixed(2)),
+      iamt:  Number(rest.iamt.toFixed(2)),
+      camt:  Number(rest.camt.toFixed(2)),
+      samt:  Number(rest.samt.toFixed(2)),
+      csamt: Number(rest.csamt.toFixed(2)),
+    };
+  }).filter(item => item.txval !== 0);
 
   hsnList.forEach((item, idx) => {
     item.num = idx + 1;
@@ -393,6 +413,9 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
   }));
 
   // Detect Same-HSN Rate Conflicts
+  // A common source is Amazon's "Exempt" tax code which reports 0% for products that
+  // normally carry 5%, 12% or 18%. The totals remain correct but the seller should
+  // confirm each product's real GST rate before filing.
   const warnings = [];
   const hsnRateMap = {};
   hsnList.forEach(item => {
@@ -400,12 +423,17 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
     hsnRateMap[item.hsn_sc].add(item.rt);
   });
   Object.keys(hsnRateMap).forEach(hsnCode => {
-    const rates = Array.from(hsnRateMap[hsnCode]);
+    const rates = Array.from(hsnRateMap[hsnCode]).sort((a, b) => a - b);
     if (rates.length > 1) {
+      const hasZero = rates.includes(0);
+      const nonZero = rates.filter(r => r > 0);
+      const hint = hasZero
+        ? ` The 0% row likely originates from an exempt/nil tax code in the marketplace report — confirm the actual rate (${nonZero.join('%, ')}%) for each product before filing.`
+        : '';
       warnings.push({
         type: 'WARNING',
         field: 'hsn',
-        message: `Data Quality Notice: HSN ${hsnCode} appears under conflicting GST rates (${rates.join('%, ')}%).`,
+        message: `Data Quality: HSN ${hsnCode} appears under multiple GST rates (${rates.join('%, ')}%).${hint}`,
       });
     }
   });

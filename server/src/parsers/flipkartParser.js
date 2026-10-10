@@ -75,7 +75,8 @@ export async function parseFlipkartReport(filePath, sellerStateCode) {
     const rawRows = xlsx.utils.sheet_to_json(worksheet, { defval: '' });
     const isCashBackSheet = sheetName.toLowerCase().includes('cash') || sheetName.toLowerCase().includes('back');
 
-    // First pass on Sales Report to map Order Item ID / Order ID -> { hsn, description }
+    // First pass on Sales Report to map Order Item ID / Order ID -> { hsn, description, gstRate }
+    // This is used later to resolve HSN on cashback notes that have no HSN column.
     const salesProductMap = {};
     if (!isCashBackSheet) {
       for (const row of rawRows) {
@@ -85,9 +86,16 @@ export async function parseFlipkartReport(filePath, sellerStateCode) {
         let desc = String(getVal(row, ['Product Title/Description', 'Product Title', 'Title', 'Description', 'SKU'])).trim();
         desc = desc.replace(/^["'\s]+|["'\s]+$/g, '').trim();
 
+        // Capture gstRate for cross-reference warnings
+        const igstRateRaw = parseFloat(getVal(row, ['IGST Rate', 'IGST %', 'Rate of IGST'], 0)) || 0;
+        const cgstRateRaw = parseFloat(getVal(row, ['CGST Rate', 'CGST %', 'Rate of CGST'], 0)) || 0;
+        const sgstRateRaw = parseFloat(getVal(row, ['SGST Rate (or UTGST as applicable)', 'SGST Rate', 'SGST %', 'Rate of SGST'], 0)) || 0;
+        const rowGstRate = igstRateRaw > 0 ? igstRateRaw : (cgstRateRaw + sgstRateRaw) || parseFloat(getVal(row, ['GST Rate', 'Tax Rate', 'Rate'], 0)) || 0;
+
         if (hsn && hsn !== '9999') {
-          if (orderItemId) salesProductMap[orderItemId] = { hsn, desc };
-          if (orderId) salesProductMap[orderId] = { hsn, desc };
+          const entry = { hsn, desc, gstRate: rowGstRate };
+          if (orderItemId) salesProductMap[orderItemId] = entry;
+          if (orderId) salesProductMap[orderId] = entry;
         }
       }
     }
@@ -201,7 +209,9 @@ export async function parseFlipkartReport(filePath, sellerStateCode) {
         }
       }
 
-      // Product & HSN lookup — inherit from sales product map if available
+      // Product & HSN lookup — inherit from sales product map if available.
+      // For cashback sheets there is no HSN column at all, so we MUST resolve from
+      // the parent order in salesProductMap to avoid the 99999999 placeholder.
       const mappedProduct = salesProductMap[orderItemId] || salesProductMap[orderId];
       let hsn = String(getVal(row, ['HSN Code', 'HSN', 'SAC', 'HSN/SAC'])).trim();
       let description = String(getVal(row, [
@@ -209,9 +219,20 @@ export async function parseFlipkartReport(filePath, sellerStateCode) {
       ])).trim();
       description = description.replace(/^["'\s]+|["'\s]+$/g, '').trim();
 
-      if ((!hsn || hsn === '9999') && mappedProduct) {
+      if ((!hsn || hsn === '9999' || hsn === '99999999') && mappedProduct) {
         hsn = mappedProduct.hsn;
         if (!description) description = mappedProduct.desc;
+      }
+
+      // Cashback rows with no match → emit a warning so the seller can check manually
+      if (isCashBackSheet && (!hsn || hsn === '9999' || hsn === '99999999')) {
+        warnings.push({
+          type: 'WARNING',
+          field: 'hsn',
+          sourceRow: rowIndex,
+          platform: 'flipkart',
+          message: `Sheet "${sheetName}" Row ${rowIndex}: Cashback note for order "${orderId}" could not be linked to a product HSN — no matching sale row found. Please set the correct HSN manually.`,
+        });
       }
 
       // Cashback notes adjust monetary value only, so quantity = 0

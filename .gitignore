@@ -31,3 +31,7 @@ server/uploads/
 
 # Env files
 server/.env
+
+# Local database
+server/data/
+

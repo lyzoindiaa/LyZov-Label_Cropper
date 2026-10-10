@@ -19,8 +19,10 @@ const GSTR1_VERSION = 'GST3.1.6';
 export function generateGstr1Json({ gstin, period, aggregatedData, outputFilePath }) {
   const { sections, totals } = aggregatedData;
 
-  // cur_gt = gross turnover for financial year (0 if not set)
-  const cur_gt = totals.grossTurnover || 0;
+  // cur_gt = gross turnover for financial year.
+  // Omit (or leave 0) when the business profile has no real cumulative figure yet,
+  // to avoid sending a misleading zero to the portal validator.
+  const cur_gt = totals.grossTurnover > 0 ? totals.grossTurnover : undefined;
 
   // ------------------------------------------------------------------
   // HSN section — use hsn_b2c for B2C supplies in GST 3.1.6
@@ -61,7 +63,7 @@ export function generateGstr1Json({ gstin, period, aggregatedData, outputFilePat
   const payload = {
     gstin,
     fp:         period,          // e.g., '092026'
-    cur_gt,
+    ...(cur_gt !== undefined ? { cur_gt } : {}),
     version:    GSTR1_VERSION,
     hash:       'hash',
     b2b:        sections.b2b   || [],
