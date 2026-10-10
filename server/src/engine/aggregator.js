@@ -296,7 +296,7 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
     // 5. Process Table 14 (Supplies through E-Commerce Operator - Sec 52)
     if (line.platform || line.platformGstin) {
       const details = getPlatformDetails(line.platform || 'flipkart', sellerStateCode);
-      const etin = line.platformGstin || details.etin;
+      const etin = details.etin || line.platformGstin;
       const sup_name = details.sup_name;
 
       if (!ecoMap[etin]) {
