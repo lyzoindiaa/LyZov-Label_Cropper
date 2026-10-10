@@ -214,7 +214,8 @@ export async function parseFlipkartReport(filePath, sellerStateCode) {
         if (!description) description = mappedProduct.desc;
       }
 
-      const quantity = Math.abs(parseInt(getVal(row, ['Item Quantity', 'Quantity', 'Qty'], 1), 10)) || 1;
+      // Cashback notes adjust monetary value only, so quantity = 0
+      const quantity = isCashBackSheet ? 0 : (Math.abs(parseInt(getVal(row, ['Item Quantity', 'Quantity', 'Qty'], 1), 10)) || 1);
 
       const platformGstin = String(getVal(row, [
         'ECO GSTIN', 'E-Commerce Operator GSTIN'

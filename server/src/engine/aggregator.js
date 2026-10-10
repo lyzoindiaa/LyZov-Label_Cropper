@@ -38,19 +38,28 @@ export function getPlatformDetails(platform, sellerStateCode = '09') {
 }
 
 /**
- * Sanitizes and validates HSN code
+ * Sanitizes and standardizes HSN code to 8 digits
  */
 export function sanitizeHsn(hsn, description) {
-  if (!hsn) return '9999';
+  if (!hsn) return '99999999';
   const clean = String(hsn).replace(/[^0-9]/g, '');
-  if (clean.length >= 4) {
+
+  if (clean === '3926' || clean === '392640') return '39264099';
+  if (clean === '9506') return '95069190';
+  if (clean === '4421') return '44219190';
+  if (clean === '9405') return '94054200';
+
+  if (clean.length >= 8) {
     return clean.slice(0, 8);
+  } else if (clean.length >= 4) {
+    return clean.padEnd(8, '0');
   }
+
   const descLower = String(description || '').toLowerCase();
-  if (descLower.includes('plastic')) return '3926';
-  if (descLower.includes('rope') || descLower.includes('jump')) return '9506';
-  if (descLower.includes('showpiece') || descLower.includes('ganesh') || descLower.includes('resin')) return '4421';
-  return '9999';
+  if (descLower.includes('plastic') || descLower.includes('krishna') || descLower.includes('showpiece') || descLower.includes('idol')) return '39264099';
+  if (descLower.includes('rope') || descLower.includes('jump')) return '95069190';
+  if (descLower.includes('resin') || descLower.includes('statue') || descLower.includes('temple')) return '44219190';
+  return '99999999';
 }
 
 /**
@@ -64,7 +73,7 @@ function getSeriesPrefix(numStr) {
   return { prefix: String(numStr), num: 0, raw: numStr };
 }
 
-function buildDocSeries(numArray) {
+function buildDocSeries(numArray, warnings = []) {
   const map = {};
   numArray.forEach(str => {
     const p = getSeriesPrefix(str);
@@ -76,6 +85,27 @@ function buildDocSeries(numArray) {
   let numCounter = 1;
   Object.keys(map).forEach(prefix => {
     const items = map[prefix].sort((a, b) => a.num - b.num);
+    const minNum = items[0].num;
+    const maxNum = items[items.length - 1].num;
+
+    // Detect sequence gaps (missing document numbers)
+    if (minNum > 0 && maxNum > minNum) {
+      const existingNums = new Set(items.map(i => i.num));
+      const missing = [];
+      for (let n = minNum; n <= maxNum; n++) {
+        if (!existingNums.has(n)) {
+          missing.push(`${prefix}${n}`);
+        }
+      }
+      if (missing.length > 0) {
+        warnings.push({
+          type: 'WARNING',
+          field: 'doc_issue',
+          message: `Document ${missing.join(', ')} is missing in sequence ${items[0].raw} to ${items[items.length - 1].raw}. Mark as cancelled if applicable.`,
+        });
+      }
+    }
+
     docs.push({
       num: numCounter++,
       from: items[0].raw,
@@ -362,11 +392,29 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
     cess:    Number(item.cess.toFixed(2)),
   }));
 
+  // Detect Same-HSN Rate Conflicts
+  const warnings = [];
+  const hsnRateMap = {};
+  hsnList.forEach(item => {
+    if (!hsnRateMap[item.hsn_sc]) hsnRateMap[item.hsn_sc] = new Set();
+    hsnRateMap[item.hsn_sc].add(item.rt);
+  });
+  Object.keys(hsnRateMap).forEach(hsnCode => {
+    const rates = Array.from(hsnRateMap[hsnCode]);
+    if (rates.length > 1) {
+      warnings.push({
+        type: 'WARNING',
+        field: 'hsn',
+        message: `Data Quality Notice: HSN ${hsnCode} appears under conflicting GST rates (${rates.join('%, ')}%).`,
+      });
+    }
+  });
+
   // Build Document Issued (Table 13) summary series using official codes:
   // 1: Invoices for outward supply, 4: Debit Note, 5: Credit Note
-  const salesDocs = buildDocSeries(salesInvoiceNumbers);
-  const creditDocs = buildDocSeries(creditNoteNumbers);
-  const debitDocs = buildDocSeries(debitNoteNumbers);
+  const salesDocs = buildDocSeries(salesInvoiceNumbers, warnings);
+  const creditDocs = buildDocSeries(creditNoteNumbers, warnings);
+  const debitDocs = buildDocSeries(debitNoteNumbers, warnings);
 
   const doc_det = [];
   if (salesDocs.length > 0) {
@@ -397,6 +445,7 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
 
   return {
     totals,
+    warnings,
     sections: {
       b2b:        Object.values(b2bMap),
       b2cs:       b2csList,

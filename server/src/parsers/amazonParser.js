@@ -130,9 +130,35 @@ export async function parseAmazonReport(filePath, sellerStateCode) {
       }
     }
 
-    const hsn = String(getVal(row, ['HSN/SAC', 'HSN / SAC', 'HSN Code', 'HSN', 'SAC'])).trim();
+    let hsn = String(getVal(row, ['HSN/SAC', 'HSN / SAC', 'HSN Code', 'HSN', 'SAC'])).trim();
     let description = String(getVal(row, ['Item Description', 'Title', 'Product Description', 'Description'])).trim();
     description = description.replace(/^["'\s]+|["'\s]+$/g, '').trim();
+
+    // HSN sanitization and warning tracking for non-numeric HSN text
+    const cleanHsn = hsn.replace(/[^0-9]/g, '');
+    if (!cleanHsn || cleanHsn.length < 4) {
+      const descLower = description.toLowerCase();
+      if (hsn.toLowerCase().includes('plastic') || descLower.includes('krishna') || descLower.includes('showpiece') || descLower.includes('idol')) {
+        warnings.push({
+          type: 'WARNING',
+          field: 'hsn',
+          sourceRow: rowIndex,
+          platform: 'amazon',
+          message: `Row ${rowIndex}: Non-numeric HSN '${hsn}' mapped to '39264099' based on product title '${description.slice(0, 40)}...'`,
+        });
+        hsn = '39264099';
+      } else if (hsn.toLowerCase().includes('jumprope') || descLower.includes('rope') || descLower.includes('jump')) {
+        warnings.push({
+          type: 'WARNING',
+          field: 'hsn',
+          sourceRow: rowIndex,
+          platform: 'amazon',
+          message: `Row ${rowIndex}: Non-numeric HSN '${hsn}' mapped to '95069190' based on product title '${description.slice(0, 40)}...'`,
+        });
+        hsn = '95069190';
+      }
+    }
+
     const quantity = parseInt(getVal(row, ['Quantity', 'Qty', 'Item Quantity'], 1), 10) || 1;
 
     // Platform ETIN for Table 14
