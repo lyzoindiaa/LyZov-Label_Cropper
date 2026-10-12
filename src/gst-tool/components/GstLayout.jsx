@@ -4,18 +4,19 @@ import '../gst.css';
 import {
   LayoutDashboard, Building2, Upload, FileBarChart2,
   Download, CreditCard, HelpCircle, LogOut, ChevronRight,
-  FileText, Bell, Shield, Crown
+  FileText, Bell, Shield, Crown, Calculator
 } from 'lucide-react';
 import { gstApi, getActiveUser } from '../api/client';
 
 const BASE_NAV = [
-  { to: '/gst-tool/dashboard',  label: 'Dashboard',  icon: LayoutDashboard },
-  { to: '/gst-tool/businesses', label: 'My GSTINs',  icon: Building2 },
-  { to: '/gst-tool/upload',     label: 'New Return',  icon: Upload },
-  { to: '/gst-tool/summary',    label: 'Summary',     icon: FileBarChart2 },
-  { to: '/gst-tool/downloads',  label: 'Downloads',   icon: Download },
-  { to: '/gst-tool/billing',    label: 'Billing',     icon: CreditCard },
-  { to: '/gst-tool/help',       label: 'Help',        icon: HelpCircle },
+  { to: '/gst-tool/dashboard',  label: 'Dashboard',      icon: LayoutDashboard },
+  { to: '/gst-tool/businesses', label: 'My GSTINs',      icon: Building2 },
+  { to: '/gst-tool/upload',     label: 'New Return',      icon: Upload },
+  { to: '/gst-tool/summary',    label: 'Summary (GSTR-1)',icon: FileBarChart2 },
+  { to: '/gst-tool/gstr3b',     label: 'GSTR-3B Helper',  icon: Calculator, badge: 'NEW' },
+  { to: '/gst-tool/downloads',  label: 'Downloads',       icon: Download },
+  { to: '/gst-tool/billing',    label: 'Billing',         icon: CreditCard },
+  { to: '/gst-tool/help',       label: 'Help',            icon: HelpCircle },
 ];
 
 export default function GstLayout() {
@@ -96,8 +97,8 @@ export default function GstLayout() {
 
         {/* Navigation */}
         <nav style={{ padding: '16px 8px', flex: 1 }}>
-          {navItems.map(({ to, label, icon: Icon, isAdminOnly }) => {
-            const active = location.pathname === to;
+          {navItems.map(({ to, label, icon: Icon, isAdminOnly, badge }) => {
+            const active = location.pathname === to || (to === '/gst-tool/gstr3b' && location.pathname.startsWith('/gst-tool/gstr3b'));
             return (
               <NavLink key={to} to={to} style={{ textDecoration: 'none' }}>
                 <div style={{
@@ -123,6 +124,14 @@ export default function GstLayout() {
                 >
                   <Icon size={16} />
                   <span style={{ flex: 1 }}>{label}</span>
+                  {badge && (
+                    <span style={{
+                      fontSize: '0.62rem', fontWeight: 800, padding: '1px 5px',
+                      borderRadius: 4, background: 'rgba(0,214,143,0.2)', color: 'var(--gst-emerald)'
+                    }}>
+                      {badge}
+                    </span>
+                  )}
                   {isAdminOnly && (
                     <span style={{
                       fontSize: '0.62rem', fontWeight: 800, padding: '1px 5px',

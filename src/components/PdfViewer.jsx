@@ -53,7 +53,9 @@ export default function PdfViewer() {
     selectionMode,
     setSelectionMode,
     clearSelection,
-    splitMode,
+    cropMode,
+    selectCropMode,
+    MARKETPLACE_PRESETS,
     autoDetectLabel,
     rotation,
     rotateClockwise,
@@ -92,6 +94,13 @@ export default function PdfViewer() {
   const onPageLoadSuccess = (page) => {
     const { width, height } = page;
     setPageDimensions({ width, height });
+    if (containerRef.current && width > 0) {
+      const containerWidth = containerRef.current.clientWidth - 32;
+      if (containerWidth < width) {
+        const autoScale = Number(Math.max(0.35, Math.min(1.0, containerWidth / width)).toFixed(2));
+        setZoom(autoScale);
+      }
+    }
   };
 
   // Fit to container width helper
@@ -127,6 +136,25 @@ export default function PdfViewer() {
     }
 
     const coords = getRelativeCoords(e);
+
+    // In fixed marketplace mode (Flipkart, Meesho), clicking repositions the fixed box centered at click.
+    // Amazon is full-page (1.0 × 1.0), so no repositioning needed.
+    if (cropMode !== 'other' && cropMode !== 'amazon' && selection) {
+      const halfW = selection.widthRatio / 2;
+      const halfH = selection.heightRatio / 2;
+      const newX = Math.max(0, Math.min(1 - selection.widthRatio, coords.x - halfW));
+      const newY = Math.max(0, Math.min(1 - selection.heightRatio, coords.y - halfH));
+      setSelection({
+        ...selection,
+        xRatio: newX,
+        yRatio: newY,
+      });
+      return;
+    }
+    // Amazon full-page mode: clicking does nothing (whole page is always selected)
+    if (cropMode === 'amazon') return;
+
+    // In 'other' (Adjustable) mode, start drawing new custom box
     setInteractionMode('draw');
     setDragStart(coords);
     setSelection({
@@ -373,54 +401,37 @@ export default function PdfViewer() {
             Auto-Detect Label
           </Button>
 
-          {/* Thermal Presets */}
+          {/* Marketplace Label Mode Buttons */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, ml: 0.5, flexWrap: 'wrap' }}>
             <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: { xs: 'none', sm: 'block' } }}>
-              PRESETS:
+              MARKETPLACE:
             </Typography>
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={() => applyPreset('4x6-top')}
-              sx={{
-                fontSize: '0.72rem',
-                py: 0.2,
-                px: 0.9,
-                borderColor: 'rgba(255, 110, 199, 0.35)',
-                color: '#ff6ec7',
-                '&:hover': { borderColor: '#ff6ec7', bgcolor: 'rgba(255, 110, 199, 0.1)' },
-              }}
-            >
-              4" × 6" Thermal
-            </Button>
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={() => applyPreset('4x4-top')}
-              sx={{
-                fontSize: '0.72rem',
-                py: 0.2,
-                px: 0.9,
-                borderColor: 'rgba(255, 255, 255, 0.15)',
-                color: 'text.primary',
-              }}
-            >
-              4" × 4"
-            </Button>
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={() => applyPreset('3x2-top')}
-              sx={{
-                fontSize: '0.72rem',
-                py: 0.2,
-                px: 0.9,
-                borderColor: 'rgba(255, 255, 255, 0.15)',
-                color: 'text.primary',
-              }}
-            >
-              3" × 2"
-            </Button>
+            {Object.values(MARKETPLACE_PRESETS).map((p) => {
+              const active = cropMode === p.id;
+              return (
+                <Button
+                  key={p.id}
+                  size="small"
+                  variant={active ? 'contained' : 'outlined'}
+                  onClick={() => selectCropMode(p.id)}
+                  sx={{
+                    fontSize: '0.72rem',
+                    py: 0.2,
+                    px: 0.9,
+                    fontWeight: active ? 800 : 500,
+                    bgcolor: active ? p.color : 'transparent',
+                    color: active ? '#081420' : 'text.primary',
+                    borderColor: active ? p.color : 'rgba(255, 255, 255, 0.15)',
+                    '&:hover': {
+                      borderColor: p.color,
+                      bgcolor: active ? p.color : `${p.color}20`,
+                    },
+                  }}
+                >
+                  {p.name} {p.fixed ? '(Fixed)' : '(Adjust)'}
+                </Button>
+              );
+            })}
 
             {/* Custom Saved Presets */}
             {customPresets.map((preset) => (
@@ -589,35 +600,39 @@ export default function PdfViewer() {
       {/* Helpful Status Bar */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1 }}>
         <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
-          {splitMode !== 'none' ? (
+          {cropMode === 'amazon' && selection ? (
             <>
-              ✂️ <b>Grid Split Mode Active:</b> Slicing each sheet into multiple labels ({splitMode.replace('-', ' ')}).
+              📦 <b>Amazon — Full Page Auto-Selected:</b> The entire first page is automatically captured. Click <b>Crop &amp; Export</b> to extract your label.
+            </>
+          ) : cropMode !== 'other' && selection ? (
+            <>
+              🛍️ <b>{MARKETPLACE_PRESETS[cropMode]?.name} Fixed Mode:</b> Locked to standard label size ({inchWidth}" × {inchHeight}"). Drag inside the box to align with your label.
             </>
           ) : selection ? (
             <>
-              ✨ Drag inside the box to move. Drag corner dots to resize. Use <b>Arrow keys</b> (or <b>Shift+Arrow</b>) to micro-nudge.
+              ✨ <b>Custom Adjust Mode:</b> Drag inside the box to move. Drag corner dots to resize width &amp; height. Use Arrow keys to nudge.
             </>
           ) : selectionMode === 'select' ? (
             <>
-              🎯 <b>Selection Mode Active:</b> Tap &amp; drag on the PDF below, or tap <b>&quot;Auto-Detect&quot;</b>.
+              🎯 <b>Selection Mode Active:</b> Tap &amp; drag on the PDF below, or choose a marketplace above.
             </>
           ) : (
             <>
-              🔍 <b>Inspect Mode:</b> Tap <b>&quot;Auto-Detect Label&quot;</b> or <b>&quot;Select Crop Area&quot;</b> when ready.
+              🔍 Select a marketplace above (Amazon, Flipkart, Meesho) or tap <b>&quot;Auto-Detect Label&quot;</b>.
             </>
           )}
         </Typography>
 
-        {selection && splitMode === 'none' && (
+        {selection && (
           <Chip
             size="small"
-            label={`${inchWidth}" × ${inchHeight}" (${pointWidth} × ${pointHeight} pt)`}
+            label={`${cropMode !== 'other' ? `🔒 ${MARKETPLACE_PRESETS[cropMode]?.name} • ` : ''}${inchWidth}" × ${inchHeight}" (${pointWidth} × ${pointHeight} pt)`}
             sx={{
-              bgcolor: 'rgba(0, 201, 255, 0.15)',
-              color: '#00c9ff',
+              bgcolor: cropMode !== 'other' ? `${MARKETPLACE_PRESETS[cropMode]?.color}25` : 'rgba(0, 201, 255, 0.15)',
+              color: cropMode !== 'other' ? MARKETPLACE_PRESETS[cropMode]?.color : '#00c9ff',
               fontWeight: 700,
               fontSize: '0.75rem',
-              border: '1px solid rgba(0, 201, 255, 0.3)',
+              border: `1px solid ${cropMode !== 'other' ? MARKETPLACE_PRESETS[cropMode]?.color : 'rgba(0, 201, 255, 0.3)'}`,
             }}
           />
         )}
@@ -692,66 +707,8 @@ export default function PdfViewer() {
             />
           </Document>
 
-          {/* Grid Split Lines (when 2-up or 4-up mode is enabled) */}
-          {splitMode === '2-up-vertical' && (
-            <Box
-              sx={{
-                position: 'absolute',
-                top: '50%',
-                left: 0,
-                right: 0,
-                borderTop: '2px dashed #00c9ff',
-                pointerEvents: 'none',
-                zIndex: 15,
-                boxShadow: '0 0 10px rgba(0,201,255,0.6)',
-              }}
-            />
-          )}
-
-          {splitMode === '2-up-horizontal' && (
-            <Box
-              sx={{
-                position: 'absolute',
-                left: '50%',
-                top: 0,
-                bottom: 0,
-                borderLeft: '2px dashed #00c9ff',
-                pointerEvents: 'none',
-                zIndex: 15,
-                boxShadow: '0 0 10px rgba(0,201,255,0.6)',
-              }}
-            />
-          )}
-
-          {splitMode === '4-up-grid' && (
-            <>
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: 0,
-                  right: 0,
-                  borderTop: '2px dashed #00c9ff',
-                  pointerEvents: 'none',
-                  zIndex: 15,
-                }}
-              />
-              <Box
-                sx={{
-                  position: 'absolute',
-                  left: '50%',
-                  top: 0,
-                  bottom: 0,
-                  borderLeft: '2px dashed #00c9ff',
-                  pointerEvents: 'none',
-                  zIndex: 15,
-                }}
-              />
-            </>
-          )}
-
           {/* Interactive Crop Box */}
-          {selection && splitMode === 'none' && (
+          {selection && (
             <Box
               data-role="selection-box"
               onMouseDown={handleBoxMouseDown}
@@ -762,7 +719,7 @@ export default function PdfViewer() {
                 top: `${selection.yRatio * 100}%`,
                 width: `${selection.widthRatio * 100}%`,
                 height: `${selection.heightRatio * 100}%`,
-                border: '2px solid #00c9ff',
+                border: `2px solid ${cropMode !== 'other' ? MARKETPLACE_PRESETS[cropMode]?.color || '#00c9ff' : '#00c9ff'}`,
                 boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 15px rgba(0, 201, 255, 0.5)',
                 cursor: 'move',
                 zIndex: 10,
@@ -776,22 +733,27 @@ export default function PdfViewer() {
                   position: 'absolute',
                   top: -24,
                   left: 0,
-                  bgcolor: '#00c9ff',
+                  bgcolor: cropMode !== 'other' ? MARKETPLACE_PRESETS[cropMode]?.color || '#00c9ff' : '#00c9ff',
                   color: '#081420',
                   px: 1,
                   py: 0.2,
                   borderRadius: '4px 4px 0 0',
                   fontSize: '0.7rem',
-                  fontWeight: 700,
+                  fontWeight: 800,
                   pointerEvents: 'none',
                   whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
                 }}
               >
-                {inchWidth}" × {inchHeight}"
+                <span>{cropMode !== 'other' ? `🔒 ${MARKETPLACE_PRESETS[cropMode]?.name}` : '📐 Custom'}</span>
+                <span>•</span>
+                <span>{inchWidth}" × {inchHeight}"</span>
               </Box>
 
-              {/* 4 Corner Handles – larger hit target on touch */}
-              {['nw', 'ne', 'se', 'sw'].map((h) => (
+              {/* 4 Corner Handles – only available in 'other' (Adjustable) mode */}
+              {cropMode === 'other' && ['nw', 'ne', 'se', 'sw'].map((h) => (
                 <Box
                   key={h}
                   data-handle={h}

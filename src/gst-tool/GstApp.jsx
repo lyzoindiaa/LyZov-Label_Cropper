@@ -12,6 +12,11 @@ import GstDownloads from './pages/GstDownloads';
 import GstBilling from './pages/GstBilling';
 import GstHelp from './pages/GstHelp';
 import GstAdminPage from './pages/GstAdminPage';
+import Gstr3bDashboard from './pages/Gstr3bDashboard';
+import Gstr3bReconcile from './pages/Gstr3bReconcile';
+import Gstr3bItcReview from './pages/Gstr3bItcReview';
+import Gstr3bOffsetPayable from './pages/Gstr3bOffsetPayable';
+import Gstr3bDownloads from './pages/Gstr3bDownloads';
 
 export default function GstApp() {
   return (
@@ -31,6 +36,13 @@ export default function GstApp() {
         <Route path="/downloads" element={<GstDownloads />} />
         <Route path="/billing" element={<GstBilling />} />
         <Route path="/help" element={<GstHelp />} />
+
+        {/* GSTR-3B Helper pages */}
+        <Route path="/gstr3b" element={<Gstr3bDashboard />} />
+        <Route path="/gstr3b/reconcile" element={<Gstr3bReconcile />} />
+        <Route path="/gstr3b/itc" element={<Gstr3bItcReview />} />
+        <Route path="/gstr3b/offset" element={<Gstr3bOffsetPayable />} />
+        <Route path="/gstr3b/downloads" element={<Gstr3bDownloads />} />
       </Route>
     </Routes>
   );

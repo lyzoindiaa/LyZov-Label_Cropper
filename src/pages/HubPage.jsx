@@ -20,14 +20,14 @@ const TOOLS = [
     accentDim: "#0096cc",
     glowColor: "rgba(0,201,255,0.22)",
     route: "/cropper",
-    badge: "Free · No Signup",
+    badge: "Free ï¿½ No Signup",
     badgeClass: "gst-badge-blue",
     features: [
       "Drag-and-drop multi-page PDF upload",
-      "Visual crop zone — drag to select once",
+      "Visual crop zone ï¿½ drag to select once",
       "Batch export as ZIP of images or PDF",
       "Thermal printer ready (4x6, 6x4, A4)",
-      "100% client-side — files never leave your device",
+      "100% client-side ï¿½ files never leave your device",
     ],
     useCases: ["Shipping Labels", "Barcodes", "Product Tags", "Invoices"],
     cta: "Open Cropper Studio",
@@ -64,15 +64,15 @@ const HOW_IT_WORKS = [
   { step: "01", icon: MousePointer, title: "Choose your tool", desc: "Browse the tools below and click into the one you need. No account required to get started.", accent: "#00c9ff" },
   { step: "02", icon: Upload, title: "Upload your file", desc: "Drag and drop or browse for your file. Every tool shows you exactly what formats it accepts.", accent: "#a78bfa" },
   { step: "03", icon: Cpu, title: "Processed locally", desc: "All computation runs in your browser. Your files are never sent to any server, ever.", accent: "#00d68f" },
-  { step: "04", icon: Download, title: "Download your result", desc: "Get your output instantly — cropped labels, GSTR-1 JSON, or Excel report — with one click.", accent: "#f5a623" },
+  { step: "04", icon: Download, title: "Download your result", desc: "Get your output instantly ï¿½ cropped labels, GSTR-1 JSON, or Excel report ï¿½ with one click.", accent: "#f5a623" },
 ];
 
 const WHY_LYZOV = [
   { icon: Lock, title: "100% Private", desc: "Your files and documents never leave your device. All processing runs locally in the browser with zero server calls." },
   { icon: Zap, title: "Instant Results", desc: "No upload queues, no delays. Results are generated in real time as soon as you provide the input." },
-  { icon: Layers, title: "Purpose-Built", desc: "Each tool is laser-focused on doing exactly one job — and doing it better than any generic solution." },
+  { icon: Layers, title: "Purpose-Built", desc: "Each tool is laser-focused on doing exactly one job ï¿½ and doing it better than any generic solution." },
   { icon: Globe, title: "Works Everywhere", desc: "Any modern browser on any OS. No app installs, no plugins, no admin permissions needed." },
-  { icon: Clock, title: "Always Available", desc: "Browser-based tools have no downtime. Open the URL and start working — any time, anywhere." },
+  { icon: Clock, title: "Always Available", desc: "Browser-based tools have no downtime. Open the URL and start working ï¿½ any time, anywhere." },
   { icon: TrendingUp, title: "Continuously Improving", desc: "Tools are updated regularly based on real user feedback. New formats and features added often." },
 ];
 
@@ -84,11 +84,11 @@ const COMING_SOON = [
 ];
 
 const FAQS = [
-  { q: "Do I need to create an account to use these tools?", a: "For the Label Cropper Studio, no account is needed at all — just open and use it. The GST Tool offers a 30-day free trial without a credit card, and a login is needed only to save your business GSTINs and return history across sessions." },
-  { q: "Are my files safe? Is my data uploaded to any server?", a: "The Label Cropper Studio is 100% client-side — your PDF files are processed entirely in your browser and never uploaded anywhere. The GST Tool also processes your reports locally; only account credentials and return summaries are stored on the server." },
-  { q: "What file formats are supported?", a: "The Cropper Studio accepts any standard PDF file. The GST Tool accepts CSV and Excel (.xlsx, .xls) — specifically Amazon MTR (Merchant Tax Report) and Flipkart GST / Sales Tax Report formats." },
-  { q: "Can I use these tools on my phone or tablet?", a: "Yes, all tools work on modern mobile browsers. For the best experience — especially for the visual crop zone selector — a desktop or laptop with a larger screen is recommended." },
-  { q: "Will more tools be added?", a: "Absolutely. LyZov Tools is a growing collection. Upcoming additions include a P&L Analyzer, Invoice Generator, Barcode Studio, and Packing List Tool — all following the same privacy-first, browser-based approach." },
+  { q: "Do I need to create an account to use these tools?", a: "For the Label Cropper Studio, no account is needed at all ï¿½ just open and use it. The GST Tool offers a 30-day free trial without a credit card, and a login is needed only to save your business GSTINs and return history across sessions." },
+  { q: "Are my files safe? Is my data uploaded to any server?", a: "The Label Cropper Studio is 100% client-side ï¿½ your PDF files are processed entirely in your browser and never uploaded anywhere. The GST Tool also processes your reports locally; only account credentials and return summaries are stored on the server." },
+  { q: "What file formats are supported?", a: "The Cropper Studio accepts any standard PDF file. The GST Tool accepts CSV and Excel (.xlsx, .xls) ï¿½ specifically Amazon MTR (Merchant Tax Report) and Flipkart GST / Sales Tax Report formats." },
+  { q: "Can I use these tools on my phone or tablet?", a: "Yes, all tools work on modern mobile browsers. For the best experience ï¿½ especially for the visual crop zone selector ï¿½ a desktop or laptop with a larger screen is recommended." },
+  { q: "Will more tools be added?", a: "Absolutely. LyZov Tools is a growing collection. Upcoming additions include a P&L Analyzer, Invoice Generator, Barcode Studio, and Packing List Tool ï¿½ all following the same privacy-first, browser-based approach." },
   { q: "Is there a cost to use these tools?", a: "The Label Cropper Studio is completely free. The GST Tool has a 30-day free trial with no credit card required. After the trial, plans start at Rs.149/month for individual sellers." },
 ];
 
@@ -151,20 +151,20 @@ export default function HubPage() {
           <div key={i} style={{ position: "absolute", borderRadius: "50%", pointerEvents: "none", filter: "blur(70px)", width: o.w, height: o.w, background: `radial-gradient(circle,${o.c} 0%,transparent 70%)`, top: o.t, left: o.l, right: o.r, bottom: o.b }} />
         ))}
         <div className="gst-badge gst-badge-blue" style={{ margin: "0 auto 24px", display: "inline-flex" }}>
-          <Sparkles size={11} /> Free browser-based tools · No signup required to start
+          <Sparkles size={11} /> Free browser-based tools ï¿½ No signup required to start
         </div>
         <h1 style={{ fontSize: "clamp(2.6rem,6vw,4.8rem)", fontWeight: 900, lineHeight: 1.06, letterSpacing: "-2.5px", margin: "0 auto 24px", maxWidth: 900 }}>
           Tools that actually<br /><span className="gst-gradient-text">get work done.</span>
         </h1>
         <p style={{ fontSize: "clamp(1rem,2vw,1.22rem)", color: "var(--gst-text-sec)", maxWidth: 600, margin: "0 auto 44px", lineHeight: 1.78 }}>
-          A growing collection of precision-built browser tools designed to handle repetitive, error-prone tasks — fast, private, and free to start.
+          A growing collection of precision-built browser tools designed to handle repetitive, error-prone tasks ï¿½ fast, private, and free to start.
         </p>
         <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap", marginBottom: 36 }}>
           <button className="gst-btn gst-btn-primary gst-btn-lg" onClick={() => document.querySelector("#tools").scrollIntoView({ behavior: "smooth" })}>Explore All Tools <ArrowRight size={18} /></button>
           <button className="gst-btn gst-btn-outline gst-btn-lg" onClick={() => navigate("/gst-tool")}><FileText size={16} /> Open GST Tool</button>
         </div>
         <div style={{ display: "flex", gap: 28, justifyContent: "center", flexWrap: "wrap" }}>
-          {[{ icon: ShieldCheck, text: "100% private — no server uploads" }, { icon: Zap, text: "Runs entirely in your browser" }, { icon: Star, text: "No credit card to start" }].map(({ icon: Icon, text }) => (
+          {[{ icon: ShieldCheck, text: "100% private ï¿½ no server uploads" }, { icon: Zap, text: "Runs entirely in your browser" }, { icon: Star, text: "No credit card to start" }].map(({ icon: Icon, text }) => (
             <span key={text} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: "0.83rem", color: "var(--gst-text-sec)" }}><Icon size={14} color="var(--gst-emerald)" /> {text}</span>
           ))}
         </div>
@@ -345,7 +345,7 @@ export default function HubPage() {
           </div>
         </div>
         <div style={{ borderTop: "1px solid var(--gst-border)", paddingTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-          <span style={{ fontSize: "0.78rem", color: "var(--gst-text-mute)" }}>© {new Date().getFullYear()} LyZov Tools · tools.lyzov.com · All rights reserved.</span>
+          <span style={{ fontSize: "0.78rem", color: "var(--gst-text-mute)" }}>ï¿½ {new Date().getFullYear()} LyZov Tools ï¿½ tools.lyzov.com ï¿½ All rights reserved.</span>
           <span style={{ fontSize: "0.78rem", color: "var(--gst-text-mute)", display: "flex", alignItems: "center", gap: 5 }}><Lock size={12} color="var(--gst-emerald)" /> Your data never leaves your device</span>
         </div>
       </footer>

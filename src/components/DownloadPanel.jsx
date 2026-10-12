@@ -25,12 +25,13 @@ import {
   CheckCircle2,
   RotateCcw,
   Layers,
+  Sparkles,
 } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import { mergePdfBlobs, printPdfBlob } from '../utils/pdfUtils';
 
 export default function DownloadPanel() {
-  const { croppedBlobs, setCroppedBlobs } = useContext(AppContext);
+  const { croppedBlobs, setCroppedBlobs, user, setAuthModalMode, setAuthModalOpen } = useContext(AppContext);
   const [previewItem, setPreviewItem] = useState(null);
   const [isZipping, setIsZipping] = useState(false);
   const [isMerging, setIsMerging] = useState(false);
@@ -221,6 +222,57 @@ export default function DownloadPanel() {
           </Button>
         </Box>
       </Box>
+
+      {/* Guest conversion banner from cropper-plan.md */}
+      {!user && (
+        <Box
+          sx={{
+            p: 2,
+            mb: 3,
+            borderRadius: 2.5,
+            bgcolor: 'rgba(0, 201, 255, 0.08)',
+            border: '1px solid rgba(0, 201, 255, 0.25)',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1.5,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Sparkles size={22} color="#00c9ff" />
+            <Box>
+              <Typography variant="body2" fontWeight={700} sx={{ color: '#00c9ff' }}>
+                Save your settings and get unlimited crops, free for 30 days!
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                No credit card or payment required. Quick 10-second signup.
+              </Typography>
+            </Box>
+          </Box>
+          <Button
+            size="small"
+            variant="contained"
+            onClick={() => {
+              setAuthModalMode('auth');
+              setAuthModalOpen(true);
+            }}
+            sx={{
+              background: 'linear-gradient(135deg, #00c9ff 0%, #ff6ec7 100%)',
+              color: '#ffffff',
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              borderRadius: 2,
+              textTransform: 'none',
+              px: 2,
+              py: 0.6,
+              boxShadow: '0 4px 14px rgba(0, 201, 255, 0.35)',
+            }}
+          >
+            Start 30-Day Free Trial
+          </Button>
+        </Box>
+      )}
 
       {/* Individual Cropped Cards */}
       <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>

@@ -19,8 +19,13 @@ import {
   ShieldCheck,
   PanelLeftClose,
   PanelLeftOpen,
+  Crown,
+  LogOut,
+  User as UserIcon,
+  Sparkles,
 } from 'lucide-react';
 import { AppProvider, AppContext } from './context/AppContext';
+import CropperAuthModal from './components/CropperAuthModal';
 import GstApp from './gst-tool/GstApp';
 import PdfUploader from './components/PdfUploader';
 import PdfViewer from './components/PdfViewer';
@@ -61,7 +66,22 @@ const darkTheme = createTheme({
 });
 
 function MainContent() {
-  const { activeTab, setActiveTab, croppedBlobs } = useContext(AppContext);
+  const {
+    activeTab,
+    setActiveTab,
+    croppedBlobs,
+    user,
+    setUser,
+    isTrialExpired,
+    daysLeftInTrial,
+    authModalOpen,
+    setAuthModalOpen,
+    authModalMode,
+    setAuthModalMode,
+    logoutUser,
+    GUEST_DAILY_LIMIT,
+    guestUsage,
+  } = useContext(AppContext);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
@@ -70,8 +90,8 @@ function MainContent() {
       <Box
         component="header"
         sx={{
-          py: 2,
-          px: { xs: 2, sm: 3, md: 4 },
+          py: 1.5,
+          px: { xs: 1.5, sm: 2.5, md: 4 },
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
           bgcolor: 'rgba(7, 10, 18, 0.85)',
           backdropFilter: 'blur(16px)',
@@ -79,8 +99,10 @@ function MainContent() {
           top: 0,
           zIndex: 100,
           display: 'flex',
+          flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
+          gap: 1.5,
           width: '100%',
         }}
       >
@@ -100,28 +122,143 @@ function MainContent() {
             <Scissors size={20} color="#ffffff" />
           </Box>
           <Box>
-            <Typography variant="h6" fontWeight={800} sx={{ letterSpacing: '-0.5px', lineHeight: 1.1, fontSize: '1.15rem' }}>
+            <Typography variant="h6" fontWeight={800} sx={{ letterSpacing: '-0.5px', lineHeight: 1.1, fontSize: { xs: '1rem', sm: '1.15rem' } }}>
               LyZov <span style={{ color: '#00c9ff' }}>Cropper</span> Studio
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
               Batch PDF Label Cropper &amp; Thermal Printer
             </Typography>
           </Box>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Chip
-            icon={<ShieldCheck size={14} color="#00c9ff" />}
-            label="100% Client-Side"
-            size="small"
-            sx={{
-              bgcolor: 'rgba(0, 201, 255, 0.1)',
-              color: '#00c9ff',
-              border: '1px solid rgba(0, 201, 255, 0.25)',
-              fontWeight: 600,
-              display: { xs: 'none', md: 'inline-flex' },
-            }}
-          />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 }, flexWrap: 'wrap' }}>
+          {/* User Auth & 30-Day Trial Status */}
+          {user ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+              {user.plan === 'trial' ? (
+                <Tooltip title={isTrialExpired ? 'Your 30-day trial has expired. Subscribe to continue!' : `${daysLeftInTrial} days remaining in your free trial`}>
+                  <Chip
+                    icon={<Sparkles size={13} color={isTrialExpired ? '#ff4d6d' : '#00c9ff'} />}
+                    label={isTrialExpired ? 'Trial Expired' : `Trial: ${daysLeftInTrial}d left`}
+                    size="small"
+                    onClick={() => {
+                      setAuthModalMode('paywall');
+                      setAuthModalOpen(true);
+                    }}
+                    sx={{
+                      bgcolor: isTrialExpired ? 'rgba(255, 77, 109, 0.15)' : 'rgba(0, 201, 255, 0.12)',
+                      color: isTrialExpired ? '#ff4d6d' : '#00c9ff',
+                      border: `1px solid ${isTrialExpired ? 'rgba(255, 77, 109, 0.35)' : 'rgba(0, 201, 255, 0.3)'}`,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  />
+                </Tooltip>
+              ) : (
+                <Chip
+                  icon={<Crown size={13} color="#00d68f" />}
+                  label="Pro Active"
+                  size="small"
+                  sx={{
+                    bgcolor: 'rgba(0, 214, 143, 0.12)',
+                    color: '#00d68f',
+                    border: '1px solid rgba(0, 214, 143, 0.3)',
+                    fontWeight: 700,
+                  }}
+                />
+              )}
+
+              {user.plan === 'trial' && (
+                <Button
+                  size="small"
+                  variant="contained"
+                  onClick={() => {
+                    setAuthModalMode('paywall');
+                    setAuthModalOpen(true);
+                  }}
+                  sx={{
+                    background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
+                    color: '#ffffff',
+                    fontWeight: 800,
+                    fontSize: '0.75rem',
+                    py: 0.5,
+                    px: 1.2,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    display: { xs: 'none', sm: 'inline-flex' },
+                  }}
+                >
+                  Upgrade ₹99/mo
+                </Button>
+              )}
+
+              <Chip
+                avatar={<UserIcon size={13} color="#94a3b8" />}
+                label={user.name ? user.name.split(' ')[0] : 'Seller'}
+                size="small"
+                sx={{
+                  bgcolor: 'rgba(255,255,255,0.06)',
+                  color: '#f1f5f9',
+                  fontWeight: 600,
+                  display: { xs: 'none', md: 'inline-flex' },
+                }}
+              />
+
+              <Tooltip title="Log Out">
+                <Button
+                  size="small"
+                  onClick={logoutUser}
+                  sx={{
+                    color: '#94a3b8',
+                    minWidth: 32,
+                    p: 0.6,
+                    '&:hover': { color: '#ff4d6d' },
+                  }}
+                >
+                  <LogOut size={16} />
+                </Button>
+              </Tooltip>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+              <Tooltip title="You can crop up to 5 labels today for free without signing in!">
+                <Chip
+                  icon={<Sparkles size={13} color="#00c9ff" />}
+                  label={`Guest: ${Math.max(0, (GUEST_DAILY_LIMIT || 5) - (guestUsage?.count || 0))}/5 free today`}
+                  size="small"
+                  sx={{
+                    bgcolor: 'rgba(0, 201, 255, 0.1)',
+                    color: '#00c9ff',
+                    border: '1px solid rgba(0, 201, 255, 0.25)',
+                    fontWeight: 700,
+                  }}
+                />
+              </Tooltip>
+
+              <Button
+                variant="contained"
+                size="small"
+                onClick={() => {
+                  setAuthModalMode('auth');
+                  setAuthModalOpen(true);
+                }}
+                sx={{
+                  background: 'linear-gradient(135deg, #00c9ff 0%, #ff6ec7 100%)',
+                  color: '#ffffff',
+                  fontWeight: 800,
+                  fontSize: '0.8rem',
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  px: 1.8,
+                  py: 0.5,
+                  boxShadow: '0 4px 14px rgba(0, 201, 255, 0.35)',
+                }}
+              >
+                Get 30-Day Free Trial
+              </Button>
+            </Box>
+          )}
+
           <Button
             component={Link}
             to="/"
@@ -131,16 +268,18 @@ function MainContent() {
               color: '#94a3b8',
               borderColor: 'rgba(255,255,255,0.15)',
               fontWeight: 700,
-              fontSize: '0.8rem',
+              fontSize: '0.78rem',
               borderRadius: '10px',
               textTransform: 'none',
-              px: 2, py: 0.75,
+              px: 1.5,
+              py: 0.6,
               '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
               display: { xs: 'none', sm: 'inline-flex' },
             }}
           >
             ← All Tools
           </Button>
+
           <Button
             component={Link}
             to="/gst-tool"
@@ -150,16 +289,12 @@ function MainContent() {
               background: 'linear-gradient(135deg, #00d68f 0%, #f5a623 100%)',
               color: '#0a0f1e',
               fontWeight: 800,
-              fontSize: '0.82rem',
+              fontSize: '0.8rem',
               borderRadius: '10px',
               textTransform: 'none',
-              px: 2,
-              py: 0.75,
+              px: 1.8,
+              py: 0.6,
               boxShadow: '0 4px 14px rgba(0, 214, 143, 0.4)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #00b377 0%, #d9911e 100%)',
-                boxShadow: '0 6px 18px rgba(0, 214, 143, 0.6)',
-              },
             }}
           >
             ✦ GST Tool
@@ -175,24 +310,29 @@ function MainContent() {
             mb: 2,
             borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
             display: 'flex',
+            flexWrap: 'wrap',
             justifyContent: 'space-between',
             alignItems: 'center',
+            gap: 1.5,
             width: '100%',
-            overflowX: 'auto',
           }}
         >
           <Tabs
             value={activeTab}
             onChange={(_, val) => setActiveTab(val)}
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
             textColor="secondary"
             indicatorColor="secondary"
             sx={{
+              minHeight: 44,
               '& .MuiTab-root': {
                 textTransform: 'none',
                 fontWeight: 700,
-                fontSize: '0.92rem',
-                minWidth: 140,
-                py: 1.2,
+                fontSize: { xs: '0.82rem', sm: '0.92rem' },
+                minWidth: { xs: 110, sm: 140 },
+                py: 1,
               },
             }}
           >
@@ -306,6 +446,19 @@ function MainContent() {
           </Box>
         )}
       </Box>
+
+      {/* Cropper Auth & 30-Day Paywall Modal */}
+      <CropperAuthModal
+        open={authModalOpen}
+        mode={authModalMode}
+        user={user}
+        onAuthSuccess={(u) => {
+          setUser(u);
+          setAuthModalOpen(false);
+        }}
+        onClose={() => setAuthModalOpen(false)}
+        canDismiss={true}
+      />
 
       {/* Footer – present on all pages for AdSense/navigation compliance */}
       <Footer />

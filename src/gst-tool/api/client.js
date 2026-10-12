@@ -262,4 +262,97 @@ export const gstApi = {
       method: 'DELETE',
     });
   },
+
+  // --- GSTR-3B Endpoints ---
+  async gstr3bCompute(businessId, period) {
+    return request('/gstr3b/compute', {
+      method: 'POST',
+      body: JSON.stringify({ businessId, period }),
+    });
+  },
+
+  async gstr3bHistory(businessId) {
+    const qs = businessId ? `?businessId=${businessId}` : '';
+    return request(`/gstr3b/history${qs}`);
+  },
+
+  async gstr3bSummary(returnId) {
+    return request(`/gstr3b/${returnId}/summary`);
+  },
+
+  async gstr3bCompare(returnId, portalJson) {
+    return request(`/gstr3b/${returnId}/compare`, {
+      method: 'POST',
+      body: JSON.stringify({ portalJson, source: 'uploaded_json' }),
+    });
+  },
+
+  async gstr3bCompareManual(returnId, manualPortalData) {
+    return request(`/gstr3b/${returnId}/compare`, {
+      method: 'POST',
+      body: JSON.stringify({ manualPortalData, source: 'manual_entry' }),
+    });
+  },
+
+  async gstr3bUploadGstr2b(returnId, gstr2bJson, fileName) {
+    return request(`/gstr3b/${returnId}/gstr2b`, {
+      method: 'POST',
+      body: JSON.stringify({ gstr2bJson, fileName }),
+    });
+  },
+
+  async gstr3bGetGstr2b(returnId) {
+    return request(`/gstr3b/${returnId}/gstr2b`);
+  },
+
+  async gstr3bUpdateItcEligibility(returnId, invoiceIdx, eligibility, ineligibilityReason) {
+    return request(`/gstr3b/${returnId}/gstr2b/${invoiceIdx}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ eligibility, ineligibilityReason }),
+    });
+  },
+
+  async gstr3bComputeItc(returnId) {
+    return request(`/gstr3b/${returnId}/compute-itc`, { method: 'POST' });
+  },
+
+  async gstr3bSaveCashLedger(returnId, payload) {
+    return request(`/gstr3b/${returnId}/cash-ledger`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async gstr3bComputeOffset(returnId) {
+    return request(`/gstr3b/${returnId}/compute-offset`, { method: 'POST' });
+  },
+
+  gstr3bDownloadJson(returnId) {
+    const token = getToken();
+    window.open(`${API_BASE}/gstr3b/${returnId}/download/json?token=${token}`, '_blank');
+  },
+
+  gstr3bDownloadExcel(returnId) {
+    const token = getToken();
+    window.open(`${API_BASE}/gstr3b/${returnId}/download/excel?token=${token}`, '_blank');
+  },
+
+  // --- Billing Endpoints ---
+  async getBillingPlans() {
+    return request('/billing/plans');
+  },
+
+  async createBillingOrder(planId) {
+    return request('/billing/create-order', {
+      method: 'POST',
+      body: JSON.stringify({ planId }),
+    });
+  },
+
+  async verifyBillingPayment(payload) {
+    return request('/billing/verify', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
 };

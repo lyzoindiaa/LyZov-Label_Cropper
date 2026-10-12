@@ -34,4 +34,5 @@ server/.env
 
 # Local database
 server/data/
+data/
 

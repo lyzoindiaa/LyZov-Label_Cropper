@@ -13,6 +13,7 @@ import uploadRoutes from './routes/uploadRoutes.js';
 import returnRoutes from './routes/returnRoutes.js';
 import billingRoutes from './routes/billingRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import gstr3bRoutes from './routes/gstr3bRoutes.js';
 
 dotenv.config();
 
@@ -53,6 +54,7 @@ app.use('/api/uploads', uploadRoutes);
 app.use('/api/returns', returnRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/gstr3b', gstr3bRoutes);
 
 // Centralized error handler
 app.use(errorHandler);

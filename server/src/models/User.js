@@ -26,7 +26,7 @@ const userSchema = new mongoose.Schema({
   },
   plan: {
     type: String,
-    enum: ['trial', 'starter', 'pro'],
+    enum: ['trial', 'starter', 'pro', 'cropper_monthly', 'cropper_yearly'],
     default: 'trial',
   },
   role: {

@@ -6,8 +6,23 @@ import { Payment } from '../models/Payment.js';
 import { toRupees } from '../engine/money.js';
 
 const router = express.Router();
-
 const PLANS = {
+  cropper_monthly: {
+    id: 'cropper_monthly',
+    name: 'Label Cropper Pro',
+    priceINR: 99,
+    amountPaise: 9900,
+    durationDays: 30,
+    description: 'Unlimited batch cropping for Amazon, Flipkart, Meesho & custom labels',
+  },
+  cropper_yearly: {
+    id: 'cropper_yearly',
+    name: 'Label Cropper Pro (Annual)',
+    priceINR: 999,
+    amountPaise: 99900,
+    durationDays: 365,
+    description: '1 Full Year of Unlimited Label Cropping (Best Value)',
+  },
   starter: {
     id: 'starter',
     name: 'Starter Plan',
