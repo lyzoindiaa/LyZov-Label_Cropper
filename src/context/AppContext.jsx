@@ -25,16 +25,17 @@ export const MARKETPLACE_PRESETS = {
     id: 'flipkart',
     name: 'Flipkart',
     label: 'Flipkart',
-    badge: 'Fixed 3.22"×5.13"',
-    description: 'Standard Flipkart logistics shipping label (3.22" × 5.13" / 232 × 369 pt)',
+    badge: 'Fixed Center 3"×5"',
+    description: 'Standard Flipkart shipping label — auto-centered cleanly above invoice',
     color: '#2874f0',
-    // Flipkart labels are printed 2-up on A4 (label on left half, blank space on right).
-    // These ratios center the crop on the actual label content area.
+    // Flipkart shipping labels are centered on the upper portion of the page.
+    // Width ratio 0.38 (centered with 0.31 margin) and height 0.43 (yRatio 0.038)
+    // captures the complete label with top/bottom padding while stopping cleanly above the Tax Invoice line.
     selection: {
-      xRatio: 0.36,
-      yRatio: 0.02,
-      widthRatio: 0.26,
-      heightRatio: 0.90,
+      xRatio: 0.31,
+      yRatio: 0.038,
+      widthRatio: 0.38,
+      heightRatio: 0.43,
     },
     fixed: true,
   },
@@ -253,13 +254,37 @@ export const AppProvider = ({ children }) => {
     }));
 
     setPdfFiles((prev) => {
-      if (prev.length === 0 && !selection) {
-        setSelection({ ...MARKETPLACE_PRESETS[cropMode || 'amazon'].selection });
-        setSelectionMode('select');
+      // Auto-detect marketplace if first file or new file uploaded
+      let detectedMode = cropMode || 'amazon';
+      const firstFileName = newEntries[0].name.toLowerCase();
+      if (firstFileName.includes('amazon')) {
+        detectedMode = 'amazon';
+      } else if (
+        firstFileName.includes('flipkart') ||
+        firstFileName.startsWith('order_') ||
+        firstFileName.includes('order') ||
+        firstFileName.includes('od3')
+      ) {
+        detectedMode = 'flipkart';
+      } else if (firstFileName.includes('meesho')) {
+        detectedMode = 'meesho';
       }
+
+      setCropMode(detectedMode);
+      setSelectionMode('select');
+      if (detectedMode === 'amazon') {
+        setCropOptions((opts) => ({ ...opts, pagesToCrop: 'first' }));
+        setSelection({ xRatio: 0.0, yRatio: 0.0, widthRatio: 1.0, heightRatio: 1.0 });
+      } else {
+        const preset = MARKETPLACE_PRESETS[detectedMode];
+        if (preset) {
+          setSelection({ ...preset.selection });
+        }
+      }
+
       return [...prev, ...newEntries];
     });
-  }, [selection, cropMode, requireCropperAccess]);
+  }, [cropMode, requireCropperAccess]);
 
   const removePdfFile = useCallback((index) => {
     setPdfFiles((prev) => {

@@ -107,9 +107,24 @@ export default function PdfViewer() {
   const handleFitWidth = useCallback(() => {
     if (containerRef.current && pageDimensions.width > 0) {
       const containerWidth = containerRef.current.clientWidth - 48; // padding
-      const targetScale = Math.min(2.0, Math.max(0.6, containerWidth / pageDimensions.width));
+      const targetScale = Math.min(2.0, Math.max(0.4, containerWidth / pageDimensions.width));
       setZoom(Number(targetScale.toFixed(2)));
     }
+  }, [pageDimensions.width, setZoom]);
+
+  // Auto-fit to container width on screen resize
+  useEffect(() => {
+    const handleAutoFit = () => {
+      if (containerRef.current && pageDimensions.width > 0) {
+        const containerWidth = containerRef.current.clientWidth - 40;
+        if (containerWidth < pageDimensions.width) {
+          const autoScale = Number(Math.max(0.35, Math.min(1.0, containerWidth / pageDimensions.width)).toFixed(2));
+          setZoom(autoScale);
+        }
+      }
+    };
+    window.addEventListener('resize', handleAutoFit);
+    return () => window.removeEventListener('resize', handleAutoFit);
   }, [pageDimensions.width, setZoom]);
 
   const getRelativeCoords = (e) => {
@@ -137,22 +152,12 @@ export default function PdfViewer() {
 
     const coords = getRelativeCoords(e);
 
-    // In fixed marketplace mode (Flipkart, Meesho), clicking repositions the fixed box centered at click.
-    // Amazon is full-page (1.0 × 1.0), so no repositioning needed.
-    if (cropMode !== 'other' && cropMode !== 'amazon' && selection) {
-      const halfW = selection.widthRatio / 2;
-      const halfH = selection.heightRatio / 2;
-      const newX = Math.max(0, Math.min(1 - selection.widthRatio, coords.x - halfW));
-      const newY = Math.max(0, Math.min(1 - selection.heightRatio, coords.y - halfH));
-      setSelection({
-        ...selection,
-        xRatio: newX,
-        yRatio: newY,
-      });
+    // In fixed marketplace mode (Flipkart, Meesho, Amazon), clicking on the background canvas
+    // should NOT jump/teleport the box away from its calibrated centered position.
+    // The user can drag inside the box itself or use arrow keys if they want to nudge it.
+    if (cropMode !== 'other') {
       return;
     }
-    // Amazon full-page mode: clicking does nothing (whole page is always selected)
-    if (cropMode === 'amazon') return;
 
     // In 'other' (Adjustable) mode, start drawing new custom box
     setInteractionMode('draw');
@@ -335,16 +340,16 @@ export default function PdfViewer() {
       {/* Top Toolbar: Mode, Presets, Rotation & Zoom */}
       <Box
         sx={{
-          p: { xs: 1, sm: 1.5 },
+          p: { xs: 1.2, sm: 1.5 },
           bgcolor: 'rgba(255, 255, 255, 0.04)',
           backdropFilter: 'blur(10px)',
           borderRadius: 3,
           border: '1px solid rgba(255, 255, 255, 0.08)',
           display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
+          flexDirection: { xs: 'column', lg: 'row' },
+          alignItems: { xs: 'stretch', lg: 'center' },
           justifyContent: 'space-between',
-          gap: { xs: 1, sm: 1.5 },
+          gap: { xs: 1.2, sm: 1.5 },
           width: '100%',
         }}
       >
@@ -476,7 +481,7 @@ export default function PdfViewer() {
         </Box>
 
         {/* Rotation, Zoom & Page Nav */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}>
           <ButtonGroup size="small" variant="outlined">
             <Tooltip title="Rotate Left 90°">
               <IconButton size="small" onClick={rotateCounterClockwise} sx={{ borderColor: 'rgba(255,255,255,0.15)' }}>
