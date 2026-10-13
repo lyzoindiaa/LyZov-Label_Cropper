@@ -32,8 +32,9 @@ export default function CropProcessor() {
     selectedPdfIndex,
     selection,
     setSelectionMode,
-    splitMode,
-    setSplitMode,
+    cropMode,
+    selectCropMode,
+    MARKETPLACE_PRESETS,
     autoDetectLabel,
     rotation,
     setCroppedBlobs,
@@ -46,13 +47,15 @@ export default function CropProcessor() {
     namingPattern,
     setNamingPattern,
     setActiveTab,
+    requireCropperAccess,
+    recordCropUsage,
   } = useContext(AppContext);
 
   const previewCanvasRef = useRef(null);
 
   // Live real-time crop snippet canvas rendering
   useEffect(() => {
-    if (!selection || splitMode !== 'none') return;
+    if (!selection) return;
 
     const sourceCanvas = document.querySelector('.react-pdf__Page__canvas');
     const targetCanvas = previewCanvasRef.current;
@@ -78,11 +81,13 @@ export default function CropProcessor() {
 
     ctx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
     ctx.drawImage(sourceCanvas, sx, sy, sw, sh, 0, 0, targetCanvas.width, targetCanvas.height);
-  }, [selection, selectedPdfIndex, rotation, splitMode]);
+  }, [selection, selectedPdfIndex, rotation, cropMode]);
 
   const handleBatchCrop = async () => {
-    if (splitMode === 'none' && !selection) {
-      alert('Please select a crop area or choose a Grid Split mode first.');
+    if (!requireCropperAccess()) return;
+
+    if (!selection) {
+      alert('Please select a crop area or choose a marketplace label mode first.');
       return;
     }
     if (pdfFiles.length === 0) {
@@ -102,7 +107,6 @@ export default function CropProcessor() {
         const croppedItems = await cropPdfBlob(item.file, selection, {
           ...cropOptions,
           rotation,
-          splitMode,
         });
 
         const baseClean = item.name.replace(/\.pdf$/i, '');
@@ -122,6 +126,7 @@ export default function CropProcessor() {
       }
 
       setCroppedBlobs(results);
+      recordCropUsage(results.length || 1);
       setActiveTab(1);
     } catch (err) {
       console.error('Batch cropping failed', err);
@@ -141,7 +146,7 @@ export default function CropProcessor() {
   const mmW = selection ? Math.round(((selection.widthRatio * 612) / 72) * 25.4) : 0;
   const mmH = selection ? Math.round(((selection.heightRatio * 792) / 72) * 25.4) : 0;
 
-  const isReadyToCrop = (selection !== null || splitMode !== 'none') && pdfFiles.length > 0;
+  const isReadyToCrop = selection !== null && pdfFiles.length > 0;
 
   return (
     <Paper
@@ -175,37 +180,140 @@ export default function CropProcessor() {
         )}
       </Box>
 
-      {/* Slicing / Grid Mode */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8 }}>
-        <Typography variant="caption" color="text.secondary" fontWeight={600}>
-          CROP / SPLIT MODE:
-        </Typography>
+      {/* Marketplace Label Mode Selector */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ letterSpacing: '0.5px' }}>
+            SELECT MARKETPLACE / LABEL TYPE:
+          </Typography>
+          <Chip
+            size="small"
+            label={MARKETPLACE_PRESETS[cropMode]?.fixed ? '🔒 Fixed Size' : '✏️ Free Adjust'}
+            sx={{
+              height: 20,
+              fontSize: '0.68rem',
+              fontWeight: 800,
+              bgcolor: MARKETPLACE_PRESETS[cropMode]?.fixed ? 'rgba(255, 153, 0, 0.15)' : 'rgba(0, 201, 255, 0.15)',
+              color: MARKETPLACE_PRESETS[cropMode]?.fixed ? '#ff9900' : '#00c9ff',
+              border: `1px solid ${MARKETPLACE_PRESETS[cropMode]?.fixed ? 'rgba(255, 153, 0, 0.3)' : 'rgba(0, 201, 255, 0.3)'}`,
+            }}
+          />
+        </Box>
+
         <RadioGroup
-          value={splitMode}
-          onChange={(e) => setSplitMode(e.target.value)}
-          sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.5 }}
+          value={cropMode}
+          onChange={(e) => selectCropMode(e.target.value)}
+          sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1 }}
         >
-          <FormControlLabel
-            value="none"
-            control={<Radio size="small" sx={{ color: '#00c9ff', '&.Mui-checked': { color: '#00c9ff' } }} />}
-            label={<Typography variant="caption">Single Crop Box</Typography>}
-          />
-          <FormControlLabel
-            value="2-up-vertical"
-            control={<Radio size="small" sx={{ color: '#00c9ff', '&.Mui-checked': { color: '#00c9ff' } }} />}
-            label={<Typography variant="caption">2-Up Top / Bottom</Typography>}
-          />
-          <FormControlLabel
-            value="2-up-horizontal"
-            control={<Radio size="small" sx={{ color: '#00c9ff', '&.Mui-checked': { color: '#00c9ff' } }} />}
-            label={<Typography variant="caption">2-Up Left / Right</Typography>}
-          />
-          <FormControlLabel
-            value="4-up-grid"
-            control={<Radio size="small" sx={{ color: '#00c9ff', '&.Mui-checked': { color: '#00c9ff' } }} />}
-            label={<Typography variant="caption">4-Up Grid (2×2)</Typography>}
-          />
+          {Object.values(MARKETPLACE_PRESETS).map((p) => {
+            const isSelected = cropMode === p.id;
+            return (
+              <Box
+                key={p.id}
+                onClick={() => selectCropMode(p.id)}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  p: 1.2,
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  border: isSelected
+                    ? `1.5px solid ${p.color}`
+                    : '1px solid rgba(255, 255, 255, 0.08)',
+                  bgcolor: isSelected
+                    ? `${p.color}15`
+                    : 'rgba(255, 255, 255, 0.02)',
+                  transition: 'all 0.18s ease',
+                  '&:hover': {
+                    borderColor: p.color,
+                    bgcolor: `${p.color}10`,
+                  },
+                }}
+              >
+                <Radio
+                  checked={isSelected}
+                  size="small"
+                  sx={{
+                    p: 0.5,
+                    mr: 0.8,
+                    color: p.color,
+                    '&.Mui-checked': { color: p.color },
+                  }}
+                />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                    <Typography
+                      variant="body2"
+                      fontWeight={isSelected ? 800 : 600}
+                      sx={{ color: isSelected ? '#ffffff' : 'text.primary', fontSize: '0.85rem' }}
+                    >
+                      {p.name}
+                    </Typography>
+                    <span
+                      style={{
+                        fontSize: '0.62rem',
+                        fontWeight: 700,
+                        padding: '1px 5px',
+                        borderRadius: 4,
+                        background: `${p.color}25`,
+                        color: p.color,
+                      }}
+                    >
+                      {p.badge}
+                    </span>
+                  </Box>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      display: 'block',
+                      fontSize: '0.68rem',
+                      lineHeight: 1.2,
+                      mt: 0.3,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {p.id === 'other' ? 'Adjust size & position' : 'Fixed label dimensions'}
+                  </Typography>
+                </Box>
+              </Box>
+            );
+          })}
         </RadioGroup>
+
+        {/* Informational Banner */}
+        <Box
+          sx={{
+            p: 1.2,
+            borderRadius: 1.8,
+            bgcolor: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 255, 255, 0.06)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+          }}
+        >
+          <Box sx={{ fontSize: 16 }}>
+            {cropMode === 'amazon' ? '📦' : cropMode === 'flipkart' ? '🛍️' : cropMode === 'meesho' ? '🏷️' : '📐'}
+          </Box>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.72rem', lineHeight: 1.3 }}>
+            {cropMode === 'other' ? (
+              <>
+                <b style={{ color: '#00c9ff' }}>Custom Adjust Mode:</b> Drag corner dots on the viewer to resize width &amp; height. Drag inside the box to reposition.
+              </>
+            ) : cropMode === 'amazon' ? (
+              <>
+                <b style={{ color: MARKETPLACE_PRESETS.amazon.color }}>Amazon — Full Page Auto-Selected:</b> The entire first page is automatically selected. Just click <b>Crop &amp; Export</b> to extract your label.
+              </>
+            ) : (
+              <>
+                <b style={{ color: MARKETPLACE_PRESETS[cropMode]?.color }}>{MARKETPLACE_PRESETS[cropMode]?.name} Fixed Size:</b> Width &amp; height are locked to standard label dimensions. Drag inside the box on the viewer to position it over your label.
+              </>
+            )}
+          </Typography>
+        </Box>
       </Box>
 
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)' }} />
@@ -222,48 +330,29 @@ export default function CropProcessor() {
           sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}
         >
           <FormControlLabel
+            value="first"
+            control={<Radio size="small" sx={{ color: '#00c9ff', '&.Mui-checked': { color: '#00c9ff' } }} />}
+            label={
+              <Typography variant="caption" sx={{ fontWeight: cropOptions.pagesToCrop === 'first' ? 700 : 500, color: cropOptions.pagesToCrop === 'first' ? '#00c9ff' : 'text.primary' }}>
+                Page 1 Only {cropMode === 'amazon' ? '(Amazon Label)' : ''}
+              </Typography>
+            }
+          />
+          <FormControlLabel
             value="all"
             control={<Radio size="small" sx={{ color: '#00c9ff', '&.Mui-checked': { color: '#00c9ff' } }} />}
             label={<Typography variant="caption">All Pages</Typography>}
           />
           <FormControlLabel
-            value="first"
-            control={<Radio size="small" sx={{ color: '#00c9ff', '&.Mui-checked': { color: '#00c9ff' } }} />}
-            label={<Typography variant="caption">Page 1</Typography>}
-          />
-          <FormControlLabel
             value="page2"
             control={<Radio size="small" sx={{ color: '#00c9ff', '&.Mui-checked': { color: '#00c9ff' } }} />}
-            label={<Typography variant="caption" sx={{ fontWeight: 700, color: '#00c9ff' }}>Page 2 (Amazon Label)</Typography>}
+            label={<Typography variant="caption">Page 2 Only</Typography>}
           />
         </RadioGroup>
       </Box>
 
-      {/* Live Preview Card or Split Mode Notification */}
-      {splitMode !== 'none' ? (
-        <Box
-          sx={{
-            p: 1.8,
-            borderRadius: 2,
-            bgcolor: 'rgba(0, 201, 255, 0.08)',
-            border: '1px solid rgba(0, 201, 255, 0.25)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-          }}
-        >
-          <GridIcon size={24} color="#00c9ff" />
-          <Box>
-            <Typography variant="body2" fontWeight={700} color="#00c9ff">
-              {splitMode === '4-up-grid' ? '4-Up Grid Split Active' : '2-Up Sheet Split Active'}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Each sheet will be automatically split into{' '}
-              {splitMode === '4-up-grid' ? '4' : '2'} separate thermal labels.
-            </Typography>
-          </Box>
-        </Box>
-      ) : selection ? (
+      {/* Live Preview Card */}
+      {selection ? (
         <Box
           sx={{
             p: 1.8,

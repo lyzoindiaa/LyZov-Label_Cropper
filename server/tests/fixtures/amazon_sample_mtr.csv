@@ -1,0 +1,6 @@
+Invoice Number,Invoice Date,Transaction Type,Order Id,Ship From State,Customer Bill-To State,Tax Exclusive Gross,Tax Rate,IGST Amount,CGST Amount,SGST Amount,Cess Amount,Invoice Amount,Customer Tax ID,HSN / SAC,Item Description,Quantity,E-Commerce Operator GSTIN
+AZ-2026-101,2026-09-02,Shipment,404-1234567-0001,KA,MH,15000.00,18,2700.00,0.00,0.00,0.00,17700.00,27AABCU9603R1ZX,8517,Wireless Noise Cancelling Headphones,1,29AABCA0027R1ZW
+AZ-2026-102,2026-09-05,Shipment,404-1234567-0002,KA,KA,4500.00,18,0.00,405.00,405.00,0.00,5310.00,,8518,Bluetooth Portable Speaker,1,29AABCA0027R1ZW
+AZ-2026-103,2026-09-10,Shipment,404-1234567-0003,KA,DL,8200.00,12,984.00,0.00,0.00,0.00,9184.00,,6203,Men Casual Denim Trousers,2,29AABCA0027R1ZW
+AZ-2026-104,2026-09-15,Refund,404-1234567-0004,KA,DL,4100.00,12,492.00,0.00,0.00,0.00,4592.00,,6203,Men Casual Denim Trousers (Return),1,29AABCA0027R1ZW
+AZ-2026-105,2026-09-22,Shipment,404-1234567-0005,KA,KA,2200.00,5,0.00,55.00,55.00,0.00,2310.00,,6402,Orthopedic Lightweight Slippers,1,29AABCA0027R1ZW
