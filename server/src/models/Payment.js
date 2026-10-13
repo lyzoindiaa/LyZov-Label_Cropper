@@ -9,7 +9,7 @@ const paymentSchema = new mongoose.Schema({
   },
   plan: {
     type: String,
-    enum: ['starter', 'pro'],
+    enum: ['starter', 'pro', 'cropper_monthly', 'cropper_yearly'],
     required: true,
   },
   amountPaise: {

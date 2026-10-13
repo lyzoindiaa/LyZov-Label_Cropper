@@ -91,68 +91,70 @@ export default function CropperAuthModal({
 
   const handlePay = async () => {
     setError('');
+
+    // SECURITY: Razorpay checkout script must be loaded before payment can proceed.
+    // If it isn't available (ad-blocker, offline, slow network), we stop here.
+    // The old code had a mock-verify fallback here that granted Pro access for free.
+    if (!window.Razorpay) {
+      setError(
+        'Payment gateway failed to load. Please disable any ad-blockers, reload the page, and try again.'
+      );
+      return;
+    }
+
     setPaying(true);
     try {
       const order = await gstApi.createBillingOrder(selectedPlan);
 
-      // Check if Razorpay is loaded in window
-      if (window.Razorpay) {
-        const options = {
-          key: order.keyId,
-          amount: order.amountPaise,
-          currency: 'INR',
-          name: 'LyZov Label Cropper',
-          description: selectedPlan === 'cropper_yearly'
-            ? 'Label Cropper Pro Annual (₹999/yr)'
-            : 'Label Cropper Pro Monthly (₹99/mo)',
-          order_id: order.orderId,
-          handler: async function (response) {
-            try {
-              const verified = await gstApi.verifyBillingPayment({
-                razorpayOrderId: response.razorpay_order_id,
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpaySignature: response.razorpay_signature,
-              });
-              const updatedUser = {
-                ...user,
-                plan: verified.plan,
-                trialEndsAt: verified.validTill,
-              };
-              localStorage.setItem('gst_user', JSON.stringify(updatedUser));
-              onAuthSuccess(updatedUser);
-            } catch (vErr) {
-              setError(vErr?.data?.error || 'Payment verification failed');
-            }
-          },
-          prefill: {
-            name: user?.name || '',
-            email: user?.email || '',
-            contact: user?.phone || '',
-          },
-          theme: {
-            color: '#00c9ff',
-          },
-        };
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-      } else {
-        // Fallback direct verification for development / mock setup
-        const verified = await gstApi.verifyBillingPayment({
-          razorpayOrderId: order.orderId,
-          razorpayPaymentId: `pay_mock_${Date.now()}`,
-          razorpaySignature: 'mock_verified',
-        });
-        const updatedUser = {
-          ...user,
-          plan: verified.plan,
-          trialEndsAt: verified.validTill,
-        };
-        localStorage.setItem('gst_user', JSON.stringify(updatedUser));
-        onAuthSuccess(updatedUser);
-      }
+      const options = {
+        key: order.keyId,
+        amount: order.amountPaise,
+        currency: 'INR',
+        name: 'LyZov Label Cropper',
+        description: selectedPlan === 'cropper_yearly'
+          ? 'Label Cropper Pro Annual (₹999/yr)'
+          : 'Label Cropper Pro Monthly (₹99/mo)',
+        order_id: order.orderId,
+        handler: async function (response) {
+          try {
+            // All three Razorpay fields are required — backend enforces HMAC verification
+            const verified = await gstApi.verifyBillingPayment({
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+            });
+            const updatedUser = {
+              ...user,
+              plan: verified.plan,
+              trialEndsAt: verified.validTill,
+            };
+            localStorage.setItem('gst_user', JSON.stringify(updatedUser));
+            onAuthSuccess(updatedUser);
+          } catch (vErr) {
+            setError(vErr?.data?.error || 'Payment verification failed. Contact support.');
+          }
+        },
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+          contact: user?.phone || '',
+        },
+        theme: {
+          color: '#00c9ff',
+        },
+        modal: {
+          ondismiss: () => setPaying(false),
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', (response) => {
+        setError(`Payment failed: ${response.error?.description || 'Unknown error'}`);
+        setPaying(false);
+      });
+      rzp.open();
     } catch (err) {
       setError(err?.data?.error || err.message || 'Payment processing failed');
-    } finally {
       setPaying(false);
     }
   };

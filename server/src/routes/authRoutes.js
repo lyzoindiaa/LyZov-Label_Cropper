@@ -8,9 +8,17 @@ import { authenticate } from '../middleware/auth.js';
 const router = express.Router();
 
 function generateToken(user) {
-  const secret = process.env.JWT_SECRET || 'super_secret_gst_tool_jwt_key_2026';
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    // Crash fast in production; tolerate only in local dev
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET environment variable is not set. Refusing to sign tokens.');
+    }
+    console.warn('[SECURITY WARNING] JWT_SECRET is not set. Using insecure default — set it before going to production!');
+  }
+  const signingSecret = secret || 'super_secret_gst_tool_jwt_key_2026_DEV_ONLY';
   const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
-  return jwt.sign({ userId: user._id, role: user.role || 'user' }, secret, { expiresIn });
+  return jwt.sign({ userId: user._id, role: user.role || 'user' }, signingSecret, { expiresIn });
 }
 
 // POST /api/auth/signup

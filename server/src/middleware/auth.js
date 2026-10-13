@@ -14,9 +14,15 @@ export async function authenticate(req, res, next) {
     if (!token) {
       return res.status(401).json({ error: 'Access token required' });
     }
-    const secret = process.env.JWT_SECRET || 'super_secret_gst_tool_jwt_key_2026';
-    
-    const decoded = jwt.verify(token, secret);
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      if (process.env.NODE_ENV === 'production') {
+        return res.status(500).json({ error: 'Server configuration error. Contact support.' });
+      }
+      console.warn('[SECURITY WARNING] JWT_SECRET not set — using insecure dev default');
+    }
+    const signingSecret = secret || 'super_secret_gst_tool_jwt_key_2026_DEV_ONLY';
+    const decoded = jwt.verify(token, signingSecret);
     const user = await User.findById(decoded.userId).select('-passwordHash');
     
     if (!user) {

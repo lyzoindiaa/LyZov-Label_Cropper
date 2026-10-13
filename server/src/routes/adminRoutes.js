@@ -96,7 +96,7 @@ router.patch('/customers/:id/plan', async (req, res, next) => {
       return res.status(404).json({ error: 'Customer not found' });
     }
 
-    if (plan && ['trial', 'starter', 'pro'].includes(plan)) {
+    if (plan && ['trial', 'starter', 'pro', 'cropper_monthly', 'cropper_yearly'].includes(plan)) {
       user.plan = plan;
     }
 

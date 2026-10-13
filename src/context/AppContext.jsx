@@ -1,6 +1,6 @@
-import React, { createContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useState, useCallback, useEffect, useRef } from 'react';
 import { detectLabelBoundingBox } from '../utils/pdfUtils';
-import { getActiveUser, clearAuthSession } from '../gst-tool/api/client';
+import { getActiveUser, clearAuthSession, setAuthSession, gstApi } from '../gst-tool/api/client';
 
 export const AppContext = createContext();
 
@@ -130,6 +130,40 @@ export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(() => getActiveUser());
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState('auth'); // 'auth' | 'paywall'
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // SECURITY PATCH: Validate localStorage session against the server on boot.
+  // Without this, any user can open DevTools and set:
+  //   localStorage.setItem('gst_user', JSON.stringify({ plan: 'cropper_yearly', ... }))
+  // to get unlimited Pro access without paying.
+  // On every page load, we silently fetch /api/auth/me and overwrite the
+  // local user with the authoritative server-side plan & trialEndsAt.
+  // ─────────────────────────────────────────────────────────────────────────
+  const sessionValidatedRef = useRef(false);
+  useEffect(() => {
+    if (sessionValidatedRef.current) return;
+    sessionValidatedRef.current = true;
+
+    const localUser = getActiveUser();
+    if (!localUser) return; // Guest — nothing to validate
+
+    // Fire-and-forget: update the user state with authoritative server data
+    gstApi.getMe().then((res) => {
+      if (res?.user) {
+        const serverUser = res.user;
+        // Overwrite localStorage with the real plan from the database
+        setAuthSession(null, serverUser, null);
+        setUser(serverUser);
+      }
+    }).catch((err) => {
+      // If the token is expired or invalid, clear the session
+      if (err?.status === 401) {
+        clearAuthSession();
+        setUser(null);
+      }
+      // Other errors (network, server down) are silent — don't log out user
+    });
+  }, []);
 
   const isTrialExpired = Boolean(
     user &&
