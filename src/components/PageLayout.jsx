@@ -1,9 +1,19 @@
 import React, { useEffect, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Box, Typography, Chip, Tooltip, IconButton, Button } from '@mui/material';
-import { Scissors, ShieldCheck, Sun, Moon } from 'lucide-react';
+import { Scissors, ShieldCheck, Sun, Moon, ArrowRight, Sparkles } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import Footer from './Footer';
+
+const NAV_PAGES = [
+  { label: 'How to Use', path: '/how-to-use' },
+  { label: 'FAQ', path: '/faq' },
+  { label: 'About Us', path: '/about' },
+  { label: 'Contact', path: '/contact' },
+  { label: 'Privacy Policy', path: '/privacy-policy' },
+  { label: 'Terms', path: '/terms' },
+  { label: 'Disclaimer', path: '/disclaimer' },
+];
 
 /**
  * PageLayout – shared wrapper for all informational/legal pages.
@@ -11,16 +21,17 @@ import Footer from './Footer';
  * Props:
  *  - title       (string)  – browser <title> suffix
  *  - description (string)  – meta description content
+ *  - maxWidth    (number)  – container max width (default: 1240)
  *  - children               – page body content
  */
-export default function PageLayout({ title, description, children }) {
+export default function PageLayout({ title, description, maxWidth = 1240, children }) {
   const { theme, toggleTheme } = useContext(AppContext);
+  const location = useLocation();
 
   useEffect(() => {
     const siteName = 'LyZov Cropper Studio';
     document.title = title ? `${title} | ${siteName}` : siteName;
 
-    // Update or create meta description
     let meta = document.querySelector('meta[name="description"]');
     if (!meta) {
       meta = document.createElement('meta');
@@ -29,29 +40,28 @@ export default function PageLayout({ title, description, children }) {
     }
     if (description) meta.setAttribute('content', description);
 
-    // Scroll to top on navigation
     window.scrollTo(0, 0);
   }, [title, description]);
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default', color: 'text.primary' }}>
-      {/* Sticky Navbar – identical to homepage */}
+      {/* Sticky Header Navbar */}
       <Box
         component="header"
         sx={{
-          py: 2,
-          px: { xs: 2, sm: 3, md: 4 },
+          py: 1.5,
+          px: { xs: 2, sm: 3, md: 5 },
           borderBottom: '1px solid',
           borderColor: 'divider',
-          bgcolor: theme === 'dark' ? 'rgba(7,10,18,0.85)' : 'rgba(255,255,255,0.88)',
-          backdropFilter: 'blur(16px)',
+          bgcolor: theme === 'dark' ? 'rgba(8,12,24,0.92)' : 'rgba(255,255,255,0.92)',
+          backdropFilter: 'blur(20px)',
           position: 'sticky',
           top: 0,
           zIndex: 100,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 1.5,
+          gap: 2,
           width: '100%',
         }}
       >
@@ -85,17 +95,50 @@ export default function PageLayout({ title, description, children }) {
           </Box>
         </Link>
 
+        {/* Center Quick Links (Desktop) */}
+        <Box sx={{ display: { xs: 'none', lg: 'flex' }, alignItems: 'center', gap: 1 }}>
+          {NAV_PAGES.slice(0, 4).map((p) => {
+            const active = location.pathname === p.path;
+            return (
+              <Button
+                key={p.path}
+                component={Link}
+                to={p.path}
+                size="small"
+                sx={{
+                  color: active ? (theme === 'dark' ? '#00c9ff' : '#0284c7') : 'text.secondary',
+                  bgcolor: active ? (theme === 'dark' ? 'rgba(0,201,255,0.1)' : 'rgba(2,132,199,0.08)') : 'transparent',
+                  fontWeight: active ? 700 : 500,
+                  fontSize: '0.82rem',
+                  textTransform: 'none',
+                  borderRadius: 2,
+                  px: 1.5,
+                  py: 0.5,
+                  '&:hover': {
+                    bgcolor: theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                    color: 'text.primary',
+                  },
+                }}
+              >
+                {p.label}
+              </Button>
+            );
+          })}
+        </Box>
+
+        {/* Right Actions */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Chip
             icon={<ShieldCheck size={14} color={theme === 'dark' ? '#00c9ff' : '#0284c7'} />}
-            label="100% Client-Side • No Uploads to Server"
+            label="100% Client-Side"
             size="small"
             sx={{
               bgcolor: theme === 'dark' ? 'rgba(0,201,255,0.1)' : 'rgba(2,132,199,0.1)',
               color: theme === 'dark' ? '#00c9ff' : '#0284c7',
               border: '1px solid',
               borderColor: theme === 'dark' ? 'rgba(0,201,255,0.25)' : 'rgba(2,132,199,0.25)',
-              fontWeight: 600,
+              fontWeight: 700,
+              fontSize: '0.72rem',
               display: { xs: 'none', md: 'inline-flex' },
             }}
           />
@@ -108,15 +151,19 @@ export default function PageLayout({ title, description, children }) {
             sx={{
               background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
               color: '#ffffff',
-              fontWeight: 700,
-              fontSize: '0.8rem',
-              borderRadius: 2,
+              fontWeight: 800,
+              fontSize: '0.82rem',
+              borderRadius: 2.2,
               textTransform: 'none',
-              px: 1.8,
-              py: 0.6,
+              px: 2,
+              py: 0.7,
+              boxShadow: '0 4px 14px rgba(0,201,255,0.3)',
+              '&:hover': {
+                boxShadow: '0 6px 20px rgba(0,201,255,0.45)',
+              },
             }}
           >
-            Open Cropper
+            Launch Studio <ArrowRight size={15} style={{ marginLeft: 5 }} />
           </Button>
 
           {/* Theme Toggle Button */}
@@ -146,15 +193,68 @@ export default function PageLayout({ title, description, children }) {
         </Box>
       </Box>
 
-      {/* Page Content */}
+      {/* Sub-Navigation Pill Strip for Quick Navigation across Pages */}
+      <Box
+        sx={{
+          bgcolor: theme === 'dark' ? 'rgba(14,22,40,0.6)' : 'rgba(241,245,249,0.7)',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          py: 1,
+          px: { xs: 2, sm: 3, md: 5 },
+          overflowX: 'auto',
+          whiteSpace: 'nowrap',
+          display: 'flex',
+          gap: 1,
+          scrollbarWidth: 'none',
+          '&::-webkit-scrollbar': { display: 'none' },
+        }}
+      >
+        <Box sx={{ maxWidth, width: '100%', mx: 'auto', display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, mr: 1, display: { xs: 'none', sm: 'inline-block' } }}>
+            PAGES:
+          </Typography>
+          {NAV_PAGES.map((p) => {
+            const active = location.pathname === p.path;
+            return (
+              <Button
+                key={p.path}
+                component={Link}
+                to={p.path}
+                size="small"
+                sx={{
+                  color: active ? '#ffffff' : 'text.secondary',
+                  background: active ? 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)' : 'transparent',
+                  fontWeight: active ? 700 : 500,
+                  fontSize: '0.78rem',
+                  textTransform: 'none',
+                  borderRadius: '20px',
+                  px: 1.6,
+                  py: 0.35,
+                  minWidth: 'auto',
+                  border: active ? 'none' : '1px solid transparent',
+                  '&:hover': {
+                    bgcolor: active ? undefined : (theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'),
+                    borderColor: active ? undefined : 'divider',
+                    color: 'text.primary',
+                  },
+                }}
+              >
+                {p.label}
+              </Button>
+            );
+          })}
+        </Box>
+      </Box>
+
+      {/* Page Content – Wide container utilizing modern large screens */}
       <Box
         component="main"
         sx={{
           flex: 1,
           width: '100%',
-          maxWidth: 860,
+          maxWidth,
           mx: 'auto',
-          px: { xs: 2, sm: 3, md: 4 },
+          px: { xs: 2, sm: 3, md: 5 },
           py: { xs: 4, md: 6 },
         }}
       >

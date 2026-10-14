@@ -1,94 +1,419 @@
-import React from 'react';
-import { Box, Typography, Divider } from '@mui/material';
-import { Mail, Clock, GitFork, Bug } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Box, Typography, Button, Chip, Tooltip } from '@mui/material';
+import {
+  Mail,
+  Clock,
+  GitFork,
+  Bug,
+  Copy,
+  Check,
+  Send,
+  Sparkles,
+  ShieldAlert,
+  ArrowRight,
+  ExternalLink,
+  MessageSquare,
+} from 'lucide-react';
 import PageLayout from '../components/PageLayout';
 
-const channels = [
-  {
-    icon: <Mail size={22} color="#00c9ff" />,
-    title: 'Email Us',
-    body: (
-      <>
-        Write to{' '}
-        <a href="mailto:lyzovindia@gmail.com" style={{ color: '#00c9ff' }}>
-          lyzovindia@gmail.com
-        </a>
-        . We are available Monday to Saturday, 10 AM to 5 PM.
-      </>
-    ),
-  },
-  {
-    icon: <Clock size={22} color="#94a3b8" />,
-    title: 'Support Hours',
-    body: 'Monday to Saturday, 10 AM to 5 PM.',
-  },
-  {
-    icon: <Bug size={22} color="#00c9ff" />,
-    title: 'Bug Reports',
-    body: 'Email us with what happened, the browser and OS you use, and steps to reproduce the issue.',
-  },
-  {
-    icon: <GitFork size={22} color="#94a3b8" />,
-    title: 'Open Source Contributions',
-    body: 'LyZov Cropper Studio is open-source. You are welcome to review the code, suggest improvements, or fork the project.',
-  },
-];
+const SUPPORT_EMAIL = 'lyzovindia@gmail.com';
 
 export default function ContactPage() {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyEmail = () => {
+    navigator.clipboard.writeText(SUPPORT_EMAIL);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
   return (
     <PageLayout
       title="Contact Us"
-      description="Get in touch with the LyZov Cropper Studio team for bug reports, feature requests, or general feedback about our free PDF label cropping tool."
+      description="Get in touch with the LyZov Cropper Studio team for bug reports, thermal printer compatibility help, or feature suggestions."
+      maxWidth={1240}
     >
-      <Box sx={{ mb: 5 }}>
-        <Typography
-          component="h1"
-          variant="h4"
-          fontWeight={800}
-          sx={{
-            letterSpacing: '-0.5px',
-            color: 'text.primary',
-            mb: 1.5,
-          }}
-        >
-          Contact Us
-        </Typography>
-        <Typography color="text.secondary" sx={{ lineHeight: 1.75, maxWidth: 600 }}>
-          Have a question, spotted a bug, or want to share feedback? Reach us by email during
-          our support hours.
-        </Typography>
+      {/* Hero Header */}
+      <Box
+        sx={{
+          position: 'relative',
+          borderRadius: { xs: 3, md: 4 },
+          p: { xs: 3, sm: 4, md: 5 },
+          mb: 5,
+          background: 'radial-gradient(ellipse at top left, rgba(0,201,255,0.12) 0%, rgba(168,85,247,0.06) 50%, rgba(0,0,0,0) 80%), rgba(255,255,255,0.02)',
+          border: '1px solid',
+          borderColor: 'rgba(0,201,255,0.2)',
+        }}
+      >
+        <Box sx={{ maxWidth: 800 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2, flexWrap: 'wrap' }}>
+            <Chip
+              icon={<Sparkles size={14} color="#00c9ff" />}
+              label="Engineering &amp; Community Support"
+              size="small"
+              sx={{
+                bgcolor: 'rgba(0,201,255,0.12)',
+                color: '#00c9ff',
+                fontWeight: 700,
+                border: '1px solid rgba(0,201,255,0.3)',
+              }}
+            />
+            <Chip
+              icon={<Clock size={14} color="#10b981" />}
+              label="Response Time: Within 24-48 Hours"
+              size="small"
+              sx={{
+                bgcolor: 'rgba(16,185,129,0.12)',
+                color: '#10b981',
+                fontWeight: 700,
+                border: '1px solid rgba(16,185,129,0.3)',
+              }}
+            />
+          </Box>
+
+          <Typography
+            component="h1"
+            variant="h3"
+            fontWeight={900}
+            sx={{
+              letterSpacing: '-1px',
+              color: 'text.primary',
+              fontSize: { xs: '1.85rem', sm: '2.4rem', md: '2.8rem' },
+              lineHeight: 1.2,
+              mb: 1.5,
+            }}
+          >
+            We're Here to Help You{' '}
+            <span
+              style={{
+                background: 'linear-gradient(135deg, #00c9ff 0%, #a855f7 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              Ship Faster
+            </span>
+          </Typography>
+
+          <Typography color="text.secondary" sx={{ fontSize: '1.05rem', lineHeight: 1.7, maxWidth: 660 }}>
+            Have a question, spotted a weird PDF format that doesn't crop properly, or have an idea to make the tool faster? Reach our team directly.
+          </Typography>
+        </Box>
       </Box>
 
-      <Divider sx={{ borderColor: 'divider', mb: 4 }} />
-
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {channels.map(({ icon, title, body }) => (
+      {/* 2-Column Responsive Contact Grid */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: '1.1fr 0.9fr' },
+          gap: 3.5,
+          mb: 6,
+          alignItems: 'start',
+        }}
+      >
+        {/* Left Column: Direct Communication Card & Bug Report Format */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {/* Main Email Card */}
           <Box
-            key={title}
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'rgba(0,201,255,0.25)',
+              borderRadius: 3.5,
+              p: { xs: 3, sm: 4 },
+              boxShadow: '0 12px 30px -10px rgba(0,0,0,0.15)',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+              <Box
+                sx={{
+                  width: 50,
+                  height: 50,
+                  borderRadius: 3,
+                  background: 'linear-gradient(135deg, #00c9ff 0%, #0284c7 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#fff',
+                  boxShadow: '0 6px 16px rgba(0,201,255,0.3)',
+                }}
+              >
+                <Mail size={24} />
+              </Box>
+              <Box>
+                <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary', lineHeight: 1.2 }}>
+                  Direct Email Support
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Official correspondence channel
+                </Typography>
+              </Box>
+            </Box>
+
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.75, mb: 3 }}>
+              Write to our team for questions, partnership inquiries, or custom label layout requests.
+              We are active Monday to Saturday from 10:00 AM to 5:00 PM IST.
+            </Typography>
+
+            {/* Email Action Bar */}
+            <Box
+              sx={{
+                bgcolor: 'action.hover',
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2.5,
+                p: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 1.5,
+                mb: 3,
+              }}
+            >
+              <Typography
+                variant="body2"
+                fontWeight={700}
+                sx={{
+                  color: '#00c9ff',
+                  fontFamily: 'monospace',
+                  fontSize: '0.95rem',
+                  px: 1,
+                }}
+              >
+                {SUPPORT_EMAIL}
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={handleCopyEmail}
+                  startIcon={copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    borderColor: copied ? '#10b981' : 'divider',
+                    color: copied ? '#10b981' : 'text.primary',
+                  }}
+                >
+                  {copied ? 'Copied!' : 'Copy'}
+                </Button>
+                <Button
+                  component="a"
+                  href={`mailto:${SUPPORT_EMAIL}?subject=LyZov%20Cropper%20Inquiry`}
+                  size="small"
+                  variant="contained"
+                  endIcon={<Send size={14} />}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    background: 'linear-gradient(135deg, #00c9ff 0%, #0284c7 100%)',
+                    color: '#000',
+                    fontWeight: 700,
+                  }}
+                >
+                  Open Mail Client
+                </Button>
+              </Box>
+            </Box>
+
+            {/* Operating Hours Info */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+              <Clock size={16} color="#94a3b8" />
+              <Typography variant="caption" color="text.secondary">
+                Operating Hours: Monday – Saturday, 10:00 AM – 5:00 PM IST (GMT +5:30)
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Bug Reporting Guidelines Card */}
+          <Box
             sx={{
               bgcolor: 'background.paper',
               border: '1px solid',
               borderColor: 'divider',
-              borderRadius: 3,
-              p: 2.5,
-              display: 'flex',
-              gap: 2,
-              alignItems: 'flex-start',
-              transition: 'border-color 0.25s',
-              '&:hover': { borderColor: 'primary.main' },
+              borderRadius: 3.5,
+              p: 3,
             }}
           >
-            <Box sx={{ mt: 0.25, flexShrink: 0 }}>{icon}</Box>
-            <Box>
-              <Typography fontWeight={700} sx={{ color: 'text.primary', mb: 0.75 }}>
-                {title}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Bug size={20} color="#f59e0b" />
+              <Typography variant="subtitle1" fontWeight={800} sx={{ color: 'text.primary' }}>
+                How to File an Effective Bug Report
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                {body}
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.7 }}>
+              If a specific courier's PDF doesn't render or behaves oddly, help us debug by including:
+            </Typography>
+            <Box component="ul" sx={{ pl: 2.5, m: 0, mb: 2, color: 'text.secondary', fontSize: '0.88rem', lineHeight: 1.7 }}>
+              <li>Your operating system (Windows, macOS, Linux, ChromeOS)</li>
+              <li>Your web browser & version (Chrome 125, Safari 17, etc.)</li>
+              <li>A description of what happened vs what you expected</li>
+              <li>A sample redacted PDF (remember to black out sensitive buyer names or addresses)</li>
+            </Box>
+          </Box>
+        </Box>
+
+        {/* Right Column: Open Source, Privacy Reminder, Quick Jump */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {/* Open Source Card */}
+          <Box
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: 3.5,
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+              <Box
+                sx={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 2.5,
+                  bgcolor: 'rgba(168, 85, 247, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#a855f7',
+                }}
+              >
+                <GitFork size={22} />
+              </Box>
+              <Box>
+                <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                  Open-Source Community
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Transparent &amp; Community-Driven
+                </Typography>
+              </Box>
+            </Box>
+
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.75, mb: 2.5 }}>
+              LyZov Cropper Studio is committed to the open web. Developers are welcome to review the client-side code, inspect the PDF coordinate algorithms, submit pull requests, or report issues on GitHub.
+            </Typography>
+
+            <Button
+              component="a"
+              href="https://github.com/lyzoindiaa/LyZov-Label_Cropper/issues"
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="outlined"
+              fullWidth
+              endIcon={<ExternalLink size={16} />}
+              sx={{
+                borderColor: 'divider',
+                color: 'text.primary',
+                fontWeight: 700,
+                borderRadius: 2.5,
+                textTransform: 'none',
+                py: 1,
+                '&:hover': {
+                  borderColor: '#a855f7',
+                  bgcolor: 'rgba(168, 85, 247, 0.05)',
+                },
+              }}
+            >
+              Open a GitHub Issue
+            </Button>
+          </Box>
+
+          {/* Privacy Notice Alert */}
+          <Box
+            sx={{
+              p: 2.5,
+              borderRadius: 3,
+              bgcolor: 'rgba(245, 158, 11, 0.08)',
+              border: '1px solid rgba(245, 158, 11, 0.25)',
+              display: 'flex',
+              gap: 1.75,
+              alignItems: 'flex-start',
+            }}
+          >
+            <ShieldAlert size={22} color="#f59e0b" style={{ flexShrink: 0, marginTop: 2 }} />
+            <Box>
+              <Typography fontWeight={700} sx={{ color: 'text.primary', fontSize: '0.9rem', mb: 0.5 }}>
+                Protect Buyer Privacy
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.6, display: 'block' }}>
+                When sharing sample PDF files for bug reproduction, ensure you blackout or redact customer addresses, phone numbers, and payment details before attaching.
               </Typography>
             </Box>
           </Box>
-        ))}
+
+          {/* Quick Links Card */}
+          <Box
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: 3,
+            }}
+          >
+            <Typography variant="subtitle2" fontWeight={800} sx={{ color: 'text.primary', mb: 2 }}>
+              Looking for Immediate Answers?
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Button
+                component={Link}
+                to="/faq"
+                variant="text"
+                endIcon={<ArrowRight size={15} />}
+                sx={{
+                  justifyContent: 'space-between',
+                  textTransform: 'none',
+                  color: 'text.primary',
+                  fontWeight: 600,
+                  p: 1.25,
+                  borderRadius: 2,
+                  '&:hover': { bgcolor: 'action.hover', color: '#00c9ff' },
+                }}
+              >
+                Browse Frequently Asked Questions
+              </Button>
+              <Button
+                component={Link}
+                to="/how-to-use"
+                variant="text"
+                endIcon={<ArrowRight size={15} />}
+                sx={{
+                  justifyContent: 'space-between',
+                  textTransform: 'none',
+                  color: 'text.primary',
+                  fontWeight: 600,
+                  p: 1.25,
+                  borderRadius: 2,
+                  '&:hover': { bgcolor: 'action.hover', color: '#00c9ff' },
+                }}
+              >
+                Read the Step-by-Step Guide
+              </Button>
+              <Button
+                component={Link}
+                to="/"
+                variant="text"
+                endIcon={<ArrowRight size={15} />}
+                sx={{
+                  justifyContent: 'space-between',
+                  textTransform: 'none',
+                  color: 'text.primary',
+                  fontWeight: 600,
+                  p: 1.25,
+                  borderRadius: 2,
+                  '&:hover': { bgcolor: 'action.hover', color: '#00c9ff' },
+                }}
+              >
+                Open Cropper Studio Canvas
+              </Button>
+            </Box>
+          </Box>
+        </Box>
       </Box>
     </PageLayout>
   );

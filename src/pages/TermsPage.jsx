@@ -1,156 +1,579 @@
-import React from 'react';
-import { Box, Typography, Divider } from '@mui/material';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Box, Typography, Chip, Button } from '@mui/material';
+import {
+  FileText,
+  CheckCircle,
+  Briefcase,
+  Code2,
+  Sparkles,
+  ArrowRight,
+  AlertTriangle,
+} from 'lucide-react';
 import PageLayout from '../components/PageLayout';
 
 const EFFECTIVE_DATE = 'September 23, 2026';
 
-function Section({ title, children }) {
-  return (
-    <Box sx={{ mb: 4 }}>
-      <Typography variant="h6" fontWeight={700} sx={{ color: 'text.primary', mb: 1.25 }}>
-        {title}
-      </Typography>
-      {children}
-    </Box>
-  );
-}
-
-function P({ children }) {
-  return (
-    <Typography color="text.secondary" sx={{ lineHeight: 1.8, mb: 1.5 }}>
-      {children}
-    </Typography>
-  );
-}
+const SECTIONS = [
+  { id: 'acceptance', number: '01', title: 'Acceptance of Terms' },
+  { id: 'service', number: '02', title: 'Description of Service' },
+  { id: 'permitted-use', number: '03', title: 'Permitted Use' },
+  { id: 'intellectual-property', number: '04', title: 'Intellectual Property' },
+  { id: 'warranties', number: '05', title: 'Disclaimer of Warranties' },
+  { id: 'liability', number: '06', title: 'Limitation of Liability' },
+  { id: 'third-party', number: '07', title: 'Third-Party Services' },
+  { id: 'modifications', number: '08', title: 'Modifications to Service' },
+  { id: 'governing-law', number: '09', title: 'Governing Law' },
+  { id: 'contact', number: '10', title: 'Contact Information' },
+];
 
 export default function TermsPage() {
+  const [activeSection, setActiveSection] = useState('acceptance');
+
+  const scrollToSection = (id) => {
+    setActiveSection(id);
+    const el = document.getElementById(id);
+    if (el) {
+      const yOffset = -90;
+      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+  };
+
   return (
     <PageLayout
       title="Terms & Conditions"
-      description="Read the Terms and Conditions for using LyZov Cropper Studio. By using this free browser-based PDF label cropper, you agree to these terms."
+      description="Read the Terms and Conditions for using LyZov Cropper Studio — client-side browser PDF label cropping with full commercial rights."
+      maxWidth={1240}
     >
-      <Box sx={{ mb: 5 }}>
-        <Typography
-          component="h1"
-          variant="h4"
-          fontWeight={800}
-          sx={{
-            letterSpacing: '-0.5px',
-            color: 'text.primary',
-            mb: 1,
-          }}
-        >
-          Terms &amp; Conditions
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Effective date: {EFFECTIVE_DATE}
-        </Typography>
+      {/* Hero Header */}
+      <Box
+        sx={{
+          position: 'relative',
+          borderRadius: { xs: 3, md: 4 },
+          p: { xs: 3, sm: 4, md: 5 },
+          mb: 4,
+          background: 'radial-gradient(ellipse at top left, rgba(0,201,255,0.12) 0%, rgba(168,85,247,0.06) 50%, rgba(0,0,0,0) 80%), rgba(255,255,255,0.02)',
+          border: '1px solid',
+          borderColor: 'rgba(0,201,255,0.25)',
+        }}
+      >
+        <Box sx={{ maxWidth: 840 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2, flexWrap: 'wrap' }}>
+            <Chip
+              icon={<FileText size={14} color="#00c9ff" />}
+              label="User Agreement &amp; Rights"
+              size="small"
+              sx={{
+                bgcolor: 'rgba(0,201,255,0.12)',
+                color: '#00c9ff',
+                fontWeight: 700,
+                border: '1px solid rgba(0,201,255,0.3)',
+              }}
+            />
+            <Chip
+              label={`Effective: ${EFFECTIVE_DATE}`}
+              size="small"
+              sx={{
+                bgcolor: 'action.hover',
+                fontWeight: 600,
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            />
+          </Box>
+
+          <Typography
+            component="h1"
+            variant="h3"
+            fontWeight={900}
+            sx={{
+              letterSpacing: '-1px',
+              color: 'text.primary',
+              fontSize: { xs: '1.85rem', sm: '2.4rem', md: '2.8rem' },
+              lineHeight: 1.2,
+              mb: 1.5,
+            }}
+          >
+            Terms &amp;{' '}
+            <span
+              style={{
+                background: 'linear-gradient(135deg, #00c9ff 0%, #a855f7 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              Conditions
+            </span>
+          </Typography>
+
+          <Typography color="text.secondary" sx={{ fontSize: '1.05rem', lineHeight: 1.7 }}>
+            Clear, transparent guidelines governing the use of LyZov Cropper Studio. All PDF processing
+            is performed locally in your browser with zero document retention.
+          </Typography>
+        </Box>
       </Box>
 
-      <Divider sx={{ borderColor: 'divider', mb: 4 }} />
-
-      <Section title="1. Acceptance of Terms">
-        <P>
-          By accessing or using LyZov Cropper Studio ("the Tool"), you agree to be bound
-          by these Terms &amp; Conditions. If you do not agree to these terms, please do not
-          use the Tool.
-        </P>
-      </Section>
-
-      <Section title="2. Description of Service">
-        <P>
-          LyZov Cropper Studio is a free, browser-based utility that allows users to upload
-          PDF files, define a crop region, and download cropped PDF files. All processing
-          takes place entirely within the user's web browser. The Tool does not require
-          account registration and does not transmit files to any server.
-        </P>
-      </Section>
-
-      <Section title="3. Permitted Use">
-        <P>
-          You may use LyZov Cropper Studio for lawful personal, commercial, or educational
-          purposes. You agree not to use the Tool to:
-        </P>
+      {/* 3 Core Principles Highlights */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+          gap: 2.5,
+          mb: 5,
+        }}
+      >
         <Box
-          component="ul"
-          sx={{ pl: 2.5, color: 'text.secondary', '& li': { mb: 0.75, lineHeight: 1.75 } }}
+          sx={{
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'rgba(0,201,255,0.2)',
+            borderRadius: 3,
+            p: 2.5,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+          }}
         >
-          <li>Process files containing content that is illegal under applicable law</li>
-          <li>Infringe the intellectual property rights of any third party</li>
-          <li>Attempt to reverse-engineer, disrupt, or abuse the Tool in any way</li>
-          <li>Circumvent any usage restrictions or technical measures</li>
+          <Box
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: 2.5,
+              bgcolor: 'rgba(0,201,255,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#00c9ff',
+              flexShrink: 0,
+            }}
+          >
+            <Briefcase size={22} />
+          </Box>
+          <Box>
+            <Typography fontWeight={800} sx={{ color: 'text.primary', fontSize: '0.95rem' }}>
+              Full Commercial Rights
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              You own 100% of your generated cropped outputs
+            </Typography>
+          </Box>
         </Box>
-      </Section>
 
-      <Section title="4. Intellectual Property">
-        <P>
-          The LyZov Cropper Studio source code, user interface, and branding are the
-          intellectual property of their respective authors. The Tool is made available
-          as an open-source project. Please refer to the project repository for the
-          specific open-source licence that governs use and redistribution of the source code.
-        </P>
-        <P>
-          You retain full ownership of all files you upload and any cropped outputs you
-          download. We make no claim of ownership over your files or their contents.
-        </P>
-      </Section>
+        <Box
+          sx={{
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'rgba(168,85,247,0.2)',
+            borderRadius: 3,
+            p: 2.5,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+          }}
+        >
+          <Box
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: 2.5,
+              bgcolor: 'rgba(168,85,247,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#a855f7',
+              flexShrink: 0,
+            }}
+          >
+            <Code2 size={22} />
+          </Box>
+          <Box>
+            <Typography fontWeight={800} sx={{ color: 'text.primary', fontSize: '0.95rem' }}>
+              Open-Source Project
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Community transparent, no vendor lock-in
+            </Typography>
+          </Box>
+        </Box>
 
-      <Section title="5. Disclaimer of Warranties">
-        <P>
-          The Tool is provided "as is" and "as available" without any warranties of any kind,
-          express or implied, including but not limited to warranties of merchantability,
-          fitness for a particular purpose, or non-infringement. We do not warrant that the
-          Tool will be error-free, uninterrupted, or produce results that meet your specific
-          requirements.
-        </P>
-      </Section>
+        <Box
+          sx={{
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'rgba(16,185,129,0.2)',
+            borderRadius: 3,
+            p: 2.5,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+          }}
+        >
+          <Box
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: 2.5,
+              bgcolor: 'rgba(16,185,129,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#10b981',
+              flexShrink: 0,
+            }}
+          >
+            <CheckCircle size={22} />
+          </Box>
+          <Box>
+            <Typography fontWeight={800} sx={{ color: 'text.primary', fontSize: '0.95rem' }}>
+              No Account Required
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Instant access without subscription traps
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
 
-      <Section title="6. Limitation of Liability">
-        <P>
-          To the fullest extent permitted by applicable law, LyZov Cropper Studio and its
-          authors shall not be liable for any indirect, incidental, special, consequential,
-          or punitive damages arising from your use of or inability to use the Tool —
-          including but not limited to loss of data, loss of profits, or business interruption
-          — even if advised of the possibility of such damages.
-        </P>
-        <P>
-          Because all file processing occurs in your browser, you are solely responsible for
-          ensuring that the files you process and the cropped outputs you download are
-          accurate and suitable for your intended purpose before printing or distribution.
-        </P>
-      </Section>
+      {/* 2-Column Responsive Layout */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', lg: '300px 1fr' },
+          gap: 4,
+          alignItems: 'start',
+          mb: 6,
+        }}
+      >
+        {/* Left Column: Sticky Table of Contents */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, position: { lg: 'sticky' }, top: { lg: 90 } }}>
+          <Box
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3,
+              p: 2.5,
+            }}
+          >
+            <Typography variant="caption" fontWeight={800} color="text.secondary" sx={{ textTransform: 'uppercase', px: 1, mb: 1.5, display: 'block' }}>
+              Terms Index
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              {SECTIONS.map((sec) => {
+                const isActive = activeSection === sec.id;
+                return (
+                  <Box
+                    key={sec.id}
+                    component="button"
+                    onClick={() => scrollToSection(sec.id)}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      px: 1.5,
+                      py: 1,
+                      borderRadius: 2,
+                      border: 'none',
+                      bgcolor: isActive ? 'rgba(0,201,255,0.1)' : 'transparent',
+                      color: isActive ? '#00c9ff' : 'text.primary',
+                      fontWeight: isActive ? 700 : 500,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      fontSize: '0.85rem',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        bgcolor: isActive ? 'rgba(0,201,255,0.15)' : 'action.hover',
+                      },
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ fontFamily: 'monospace', opacity: 0.6 }}>
+                      {sec.number}
+                    </Typography>
+                    <Typography variant="inherit" sx={{ lineHeight: 1.3 }}>
+                      {sec.title}
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+          </Box>
 
-      <Section title="7. Third-Party Services">
-        <P>
-          The Tool may display advertising served by Google AdSense and use Google Analytics
-          for aggregate usage statistics. These services are governed by their own terms of
-          service and privacy policies, and we are not responsible for their behaviour or data
-          practices.
-        </P>
-      </Section>
+          {/* Contact Assistance Card */}
+          <Box
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3,
+              p: 2.5,
+            }}
+          >
+            <Typography variant="subtitle2" fontWeight={800} sx={{ color: 'text.primary', mb: 1 }}>
+              Questions about our terms?
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem', mb: 2 }}>
+              If you need an enterprise evaluation or clarification on open-source licensing, get in touch.
+            </Typography>
+            <Button
+              component={Link}
+              to="/contact"
+              variant="outlined"
+              size="small"
+              fullWidth
+              endIcon={<ArrowRight size={14} />}
+              sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+            >
+              Contact Legal Desk
+            </Button>
+          </Box>
+        </Box>
 
-      <Section title="8. Modifications to the Service">
-        <P>
-          We reserve the right to modify, suspend, or discontinue the Tool at any time
-          without prior notice. We also reserve the right to update these Terms &amp; Conditions
-          at any time. The updated terms will be posted on this page with a revised effective
-          date. Your continued use of the Tool constitutes acceptance of the updated terms.
-        </P>
-      </Section>
+        {/* Right Column: Structured Section Cards */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {/* 1. Acceptance */}
+          <Box
+            id="acceptance"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="01" size="small" sx={{ fontWeight: 800, bgcolor: 'action.hover', color: '#00c9ff' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                1. Acceptance of Terms
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+              By accessing or using LyZov Cropper Studio ("the Tool"), you agree to be bound by these Terms &amp; Conditions. If you do not agree to these terms, please do not use the Tool.
+            </Typography>
+          </Box>
 
-      <Section title="9. Governing Law">
-        <P>
-          These Terms &amp; Conditions shall be governed by and construed in accordance with
-          applicable laws. Any disputes arising from these terms or your use of the Tool
-          shall be resolved through good-faith negotiation in the first instance.
-        </P>
-      </Section>
+          {/* 2. Service Description */}
+          <Box
+            id="service"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="02" size="small" sx={{ fontWeight: 800, bgcolor: 'action.hover', color: '#00c9ff' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                2. Description of Service
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+              LyZov Cropper Studio is a free, browser-based utility that allows users to upload PDF files, define a crop region, and download cropped PDF files. All processing takes place entirely within the user's web browser. The Tool does not require account registration and does not transmit files to any server.
+            </Typography>
+          </Box>
 
-      <Section title="10. Contact">
-        <P>
-          For questions about these Terms &amp; Conditions, please see our Contact Us page.
-        </P>
-      </Section>
+          {/* 3. Permitted Use */}
+          <Box
+            id="permitted-use"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="03" size="small" sx={{ fontWeight: 800, bgcolor: 'action.hover', color: '#00c9ff' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                3. Permitted Use
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8, mb: 2 }}>
+              You may use LyZov Cropper Studio for lawful personal, commercial, or educational purposes. You agree not to use the Tool to:
+            </Typography>
+            <Box component="ul" sx={{ pl: 2.5, m: 0, color: 'text.secondary', fontSize: '0.9rem', lineHeight: 1.8 }}>
+              <li>Process files containing content that is unlawful or promotes illegal acts</li>
+              <li>Infringe upon the intellectual property or copyright of third parties</li>
+              <li>Attempt to reverse-engineer, disrupt, or introduce malicious payloads</li>
+              <li>Circumvent any browser security sandboxes or technical measures</li>
+            </Box>
+          </Box>
+
+          {/* 4. Intellectual Property */}
+          <Box
+            id="intellectual-property"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'rgba(0,201,255,0.25)',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="04" size="small" sx={{ fontWeight: 800, bgcolor: 'rgba(0,201,255,0.1)', color: '#00c9ff' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                4. Intellectual Property &amp; Output Ownership
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8, mb: 1.5 }}>
+              The LyZov Cropper Studio source code, branding, and user interface are the intellectual property of their respective authors. The Tool is made available as an open-source project under community guidelines.
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+              <strong style={{ color: '#00c9ff' }}>You retain 100% full ownership</strong> of all files you upload and all cropped label PDFs you export. We make zero claims of ownership, royalty, or rights over your files or their contents.
+            </Typography>
+          </Box>
+
+          {/* 5. Disclaimer of Warranties */}
+          <Box
+            id="warranties"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="05" size="small" sx={{ fontWeight: 800, bgcolor: 'action.hover', color: '#00c9ff' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                5. Disclaimer of Warranties
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+              The Tool is provided "as is" and "as available" without warranties of any kind, express or implied. We do not warrant that the Tool will operate completely uninterrupted, error-free, or meet every custom printer firmware specification.
+            </Typography>
+          </Box>
+
+          {/* 6. Limitation of Liability */}
+          <Box
+            id="liability"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="06" size="small" sx={{ fontWeight: 800, bgcolor: 'action.hover', color: '#00c9ff' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                6. Limitation of Liability
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8, mb: 1.5 }}>
+              To the fullest extent permitted by applicable law, LyZov Cropper Studio and its contributors shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from the use of the Tool.
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+              Because all file processing occurs inside your device, you are solely responsible for verifying that your cropped shipping labels are scanned and test-printed accurately before applying them to physical parcels.
+            </Typography>
+          </Box>
+
+          {/* 7. Third-Party Services */}
+          <Box
+            id="third-party"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="07" size="small" sx={{ fontWeight: 800, bgcolor: 'action.hover', color: '#00c9ff' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                7. Third-Party Services
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+              The Tool may display advertising served by Google AdSense and utilize aggregate analytics. These third-party services operate under their own independent terms of service and privacy agreements.
+            </Typography>
+          </Box>
+
+          {/* 8. Modifications */}
+          <Box
+            id="modifications"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="08" size="small" sx={{ fontWeight: 800, bgcolor: 'action.hover', color: '#00c9ff' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                8. Modifications to Service
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+              We reserve the right to modify, upgrade, or temporarily suspend the Tool at any time without prior individual notice. Updated terms will be published on this page with a revised effective date.
+            </Typography>
+          </Box>
+
+          {/* 9. Governing Law */}
+          <Box
+            id="governing-law"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="09" size="small" sx={{ fontWeight: 800, bgcolor: 'action.hover', color: '#00c9ff' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                9. Governing Law
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+              These Terms &amp; Conditions shall be governed by and construed in accordance with applicable laws. Any questions or disputes shall be addressed through good-faith communication in the first instance.
+            </Typography>
+          </Box>
+
+          {/* 10. Contact */}
+          <Box
+            id="contact"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="10" size="small" sx={{ fontWeight: 800, bgcolor: 'action.hover', color: '#00c9ff' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                10. Contact Information
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8, mb: 2 }}>
+              For legal inquiries, copyright concerns, or license clarifications, please reach our team through our Contact Us page.
+            </Typography>
+            <Button
+              component={Link}
+              to="/contact"
+              variant="outlined"
+              size="small"
+              endIcon={<ArrowRight size={14} />}
+              sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+            >
+              Contact Support Desk
+            </Button>
+          </Box>
+        </Box>
+      </Box>
     </PageLayout>
   );
 }
