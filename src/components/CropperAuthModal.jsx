@@ -168,11 +168,12 @@ export default function CropperAuthModal({
       slotProps={{
         paper: {
           sx: {
-            bgcolor: '#0d131f',
-            color: '#f1f5f9',
+            bgcolor: 'background.paper',
+            color: 'text.primary',
             borderRadius: 4,
-            border: '1px solid rgba(0, 201, 255, 0.25)',
-            boxShadow: '0 24px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 201, 255, 0.15)',
+            border: '1px solid',
+            borderColor: 'divider',
+            boxShadow: '0 24px 60px rgba(0, 0, 0, 0.35)',
             overflow: 'hidden',
             m: { xs: 1.5, sm: 2 },
           },
@@ -184,7 +185,8 @@ export default function CropperAuthModal({
         sx={{
           background: 'linear-gradient(135deg, rgba(0, 201, 255, 0.2) 0%, rgba(255, 110, 199, 0.2) 100%)',
           p: { xs: 2.5, sm: 3 },
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
           position: 'relative',
         }}
       >
@@ -204,7 +206,7 @@ export default function CropperAuthModal({
               width: 44,
               height: 44,
               borderRadius: '12px',
-              background: 'linear-gradient(135deg, #00c9ff 0%, #ff6ec7 100%)',
+              background: 'linear-gradient(135deg, #00c9ff 0%, #a78bfa 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -415,7 +417,7 @@ export default function CropperAuthModal({
                     fontWeight: 800,
                     fontSize: '0.95rem',
                     borderRadius: 2.5,
-                    background: 'linear-gradient(135deg, #00c9ff 0%, #ff6ec7 100%)',
+                    background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
                     boxShadow: '0 4px 18px rgba(0, 201, 255, 0.35)',
                     textTransform: 'none',
                   }}
@@ -425,7 +427,7 @@ export default function CropperAuthModal({
               </Box>
             )}
 
-            <Divider sx={{ my: 2.5, borderColor: 'rgba(255, 255, 255, 0.08)' }} />
+            <Divider sx={{ my: 2.5, borderColor: 'divider' }} />
 
             {/* Feature Checklist */}
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1 }}>

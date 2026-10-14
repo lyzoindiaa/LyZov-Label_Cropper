@@ -60,9 +60,9 @@ function FaqItem({ question, answer }) {
   return (
     <Box
       sx={{
-        bgcolor: '#0d131f',
+        bgcolor: 'background.paper',
         border: '1px solid',
-        borderColor: open ? 'rgba(0,201,255,0.3)' : 'rgba(255,255,255,0.08)',
+        borderColor: open ? 'primary.main' : 'divider',
         borderRadius: 2.5,
         overflow: 'hidden',
         transition: 'border-color 0.25s',
@@ -88,7 +88,7 @@ function FaqItem({ question, answer }) {
         <Typography
           fontWeight={600}
           sx={{
-            color: open ? '#00c9ff' : '#f1f5f9',
+            color: open ? 'primary.main' : 'text.primary',
             fontSize: '0.92rem',
             lineHeight: 1.5,
             transition: 'color 0.2s',
@@ -102,7 +102,7 @@ function FaqItem({ question, answer }) {
             flexShrink: 0,
             transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
             transition: 'transform 0.25s',
-            color: '#94a3b8',
+            color: 'text.secondary',
           }}
         >
           <ChevronDown size={18} />
@@ -111,7 +111,7 @@ function FaqItem({ question, answer }) {
 
       <Collapse in={open}>
         <Box sx={{ px: 2.5, pb: 2.5 }}>
-          <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)', mb: 2 }} />
+          <Divider sx={{ borderColor: 'divider', mb: 2 }} />
           <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
             {answer}
           </Typography>
@@ -134,9 +134,7 @@ export default function FaqPage() {
           fontWeight={800}
           sx={{
             letterSpacing: '-0.5px',
-            background: 'linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+            color: 'text.primary',
             mb: 1.5,
           }}
         >
@@ -148,7 +146,7 @@ export default function FaqPage() {
         </Typography>
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.07)', mb: 4 }} />
+      <Divider sx={{ borderColor: 'divider', mb: 4 }} />
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
         {faqs.map(({ q, a }) => (

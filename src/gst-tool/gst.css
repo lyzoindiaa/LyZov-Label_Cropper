@@ -7,6 +7,35 @@
 
 /* ── CSS Variables ── */
 :root {
+  --gst-bg:         #f8fafc;
+  --gst-surface:    #ffffff;
+  --gst-surface2:   #f1f5f9;
+  --gst-border:     rgba(0,0,0,0.08);
+  --gst-border2:    rgba(0,0,0,0.12);
+
+  --gst-emerald:    #00a86b;
+  --gst-emerald-dim:#008f61;
+  --gst-gold:       #d97706;
+  --gst-gold-dim:   #b45309;
+  --gst-blue:       #2563eb;
+  --gst-red:        #ef4444;
+  --gst-warn:       #f59e0b;
+
+  --gst-text:       #0f172a;
+  --gst-text-sec:   #475569;
+  --gst-text-mute:  #64748b;
+
+  --gst-radius:     14px;
+  --gst-radius-sm:  8px;
+  --gst-radius-lg:  20px;
+
+  --gst-shadow:     0 4px 20px rgba(0,0,0,0.06);
+  --gst-shadow-lg:  0 8px 32px rgba(0,0,0,0.08);
+  --gst-glow-em:    0 0 24px rgba(0,168,107,0.18);
+  --gst-glow-gold:  0 0 24px rgba(217,119,6,0.18);
+}
+
+:root[data-theme="dark"] {
   --gst-bg:         #080c18;
   --gst-surface:    #0e1628;
   --gst-surface2:   #131d35;
@@ -25,10 +54,6 @@
   --gst-text-sec:   #8896b3;
   --gst-text-mute:  #4a5672;
 
-  --gst-radius:     14px;
-  --gst-radius-sm:  8px;
-  --gst-radius-lg:  20px;
-
   --gst-shadow:     0 4px 24px rgba(0,0,0,0.5);
   --gst-shadow-lg:  0 8px 48px rgba(0,0,0,0.6);
   --gst-glow-em:    0 0 24px rgba(0,214,143,0.25);
@@ -44,6 +69,70 @@
   background: var(--gst-bg);
   color: var(--gst-text);
   min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+@media (max-width: 860px) {
+  .gst-nav-desktop {
+    display: none !important;
+  }
+}
+
+.gst-mobile-toggle {
+  display: inline-flex !important;
+}
+
+@media (min-width: 861px) {
+  .gst-mobile-toggle {
+    display: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .gst-btn {
+    white-space: normal;
+  }
+  .gst-btn-lg {
+    padding: 12px 20px !important;
+    font-size: 0.92rem !important;
+    width: 100% !important;
+    max-width: 320px !important;
+    justify-content: center !important;
+  }
+}
+
+/* ── Responsive Sidebar for GstLayout ── */
+.gst-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--gst-surface);
+  border-right: 1px solid var(--gst-border);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+@media (max-width: 768px) {
+  .gst-sidebar {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh;
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.4);
+  }
+  .gst-sidebar.open {
+    transform: translateX(0) !important;
+  }
 }
 
 /* ── Utility: Glass Card ── */
@@ -55,7 +144,7 @@
   box-shadow: var(--gst-shadow);
 }
 .gst-card-glass {
-  background: rgba(14,22,40,0.7);
+  background: var(--surface-glass, rgba(14,22,40,0.7));
   backdrop-filter: blur(20px);
   border: 1px solid var(--gst-border2);
   border-radius: var(--gst-radius);

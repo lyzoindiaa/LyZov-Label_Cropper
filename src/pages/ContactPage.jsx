@@ -23,7 +23,7 @@ const channels = [
     body: 'Monday to Saturday, 10 AM to 5 PM.',
   },
   {
-    icon: <Bug size={22} color="#ff6ec7" />,
+    icon: <Bug size={22} color="#00c9ff" />,
     title: 'Bug Reports',
     body: 'Email us with what happened, the browser and OS you use, and steps to reproduce the issue.',
   },
@@ -47,9 +47,7 @@ export default function ContactPage() {
           fontWeight={800}
           sx={{
             letterSpacing: '-0.5px',
-            background: 'linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+            color: 'text.primary',
             mb: 1.5,
           }}
         >
@@ -61,27 +59,28 @@ export default function ContactPage() {
         </Typography>
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.07)', mb: 4 }} />
+      <Divider sx={{ borderColor: 'divider', mb: 4 }} />
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {channels.map(({ icon, title, body }) => (
           <Box
             key={title}
             sx={{
-              bgcolor: '#0d131f',
-              border: '1px solid rgba(255,255,255,0.08)',
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
               borderRadius: 3,
               p: 2.5,
               display: 'flex',
               gap: 2,
               alignItems: 'flex-start',
               transition: 'border-color 0.25s',
-              '&:hover': { borderColor: 'rgba(0,201,255,0.2)' },
+              '&:hover': { borderColor: 'primary.main' },
             }}
           >
             <Box sx={{ mt: 0.25, flexShrink: 0 }}>{icon}</Box>
             <Box>
-              <Typography fontWeight={700} sx={{ color: '#f1f5f9', mb: 0.75 }}>
+              <Typography fontWeight={700} sx={{ color: 'text.primary', mb: 0.75 }}>
                 {title}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>

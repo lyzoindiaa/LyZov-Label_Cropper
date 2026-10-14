@@ -15,12 +15,12 @@ const highlights = [
     body: 'Every computation happens inside your browser. Your PDF files never leave your device — no accounts, no cloud uploads, no third-party processing, ever.',
   },
   {
-    icon: <Zap size={22} color="#ff6ec7" />,
+    icon: <Zap size={22} color="#f5a623" />,
     title: 'Built for Throughput',
     body: 'Process dozens of PDFs in a single session and download them as individual files or a convenient ZIP archive — ready to hand off to any thermal or label printer.',
   },
   {
-    icon: <Globe size={22} color="#ff6ec7" />,
+    icon: <Globe size={22} color="#00d68f" />,
     title: 'Works Anywhere, No Install',
     body: 'LyZov Cropper Studio is a pure browser-based web app. Open it on any modern browser on any operating system — nothing to install, nothing to update.',
   },
@@ -40,9 +40,7 @@ export default function AboutPage() {
           fontWeight={800}
           sx={{
             letterSpacing: '-0.5px',
-            background: 'linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+            color: 'text.primary',
             mb: 1.5,
           }}
         >
@@ -55,11 +53,11 @@ export default function AboutPage() {
         </Typography>
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.07)', mb: 4 }} />
+      <Divider sx={{ borderColor: 'divider', mb: 4 }} />
 
       {/* What We Do */}
       <Box sx={{ mb: 5 }}>
-        <Typography variant="h5" fontWeight={700} sx={{ mb: 2, color: '#f1f5f9' }}>
+        <Typography variant="h5" fontWeight={700} sx={{ mb: 2, color: 'text.primary' }}>
           What We Do
         </Typography>
         <Typography color="text.secondary" sx={{ lineHeight: 1.8, mb: 2 }}>
@@ -88,19 +86,20 @@ export default function AboutPage() {
           <Box
             key={title}
             sx={{
-              bgcolor: '#0d131f',
-              border: '1px solid rgba(255,255,255,0.08)',
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
               borderRadius: 3,
               p: 3,
               display: 'flex',
               flexDirection: 'column',
               gap: 1.5,
               transition: 'border-color 0.25s',
-              '&:hover': { borderColor: 'rgba(0,201,255,0.25)' },
+              '&:hover': { borderColor: 'primary.main' },
             }}
           >
             {icon}
-            <Typography fontWeight={700} sx={{ color: '#f1f5f9' }}>
+            <Typography fontWeight={700} sx={{ color: 'text.primary' }}>
               {title}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
@@ -110,11 +109,11 @@ export default function AboutPage() {
         ))}
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.07)', mb: 4 }} />
+      <Divider sx={{ borderColor: 'divider', mb: 4 }} />
 
       {/* Our Commitment */}
       <Box sx={{ mb: 5 }}>
-        <Typography variant="h5" fontWeight={700} sx={{ mb: 2, color: '#f1f5f9' }}>
+        <Typography variant="h5" fontWeight={700} sx={{ mb: 2, color: 'text.primary' }}>
           Our Commitment
         </Typography>
         <Typography color="text.secondary" sx={{ lineHeight: 1.8, mb: 2 }}>

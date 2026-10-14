@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import "../gst-tool/gst.css";
+import { AppContext } from "../context/AppContext";
 import {
   Scissors, FileText, ArrowRight, Zap, ShieldCheck,
   Star, Globe, Layers, CheckCircle2, Sparkles, BookOpen,
   Upload, Download, MousePointer, ChevronDown,
   Package, Clock, Lock, Cpu, Lightbulb, TrendingUp,
-  Users, BarChart2, FileCheck, Printer,
+  Users, BarChart2, FileCheck, Printer, Sun, Moon,
+  Menu, X,
 } from "lucide-react";
 
 const TOOLS = [
@@ -94,8 +96,10 @@ const FAQS = [
 
 export default function HubPage() {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useContext(AppContext);
   const [hoveredTool, setHoveredTool] = useState(null);
   const [openFaq, setOpenFaq] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -113,21 +117,26 @@ export default function HubPage() {
     return () => observer.disconnect();
   }, []);
 
-  const S = { px: "clamp(20px,8vw,160px)" };
+  const S = { px: "clamp(12px, 4vw, 80px)" };
+
+  const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
-    <div className="gst-root" style={{ background: "var(--gst-bg)" }}>
+    <div className="gst-root" style={{ background: "var(--gst-bg)", minHeight: "100vh", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
 
       {/* NAVBAR */}
       <header style={{
         position: "sticky", top: 0, zIndex: 100,
-        background: "rgba(8,12,24,0.93)", backdropFilter: "blur(20px)",
+        background: theme === "dark" ? "rgba(8,12,24,0.93)" : "rgba(255,255,255,0.93)",
+        backdropFilter: "blur(20px)",
         borderBottom: "1px solid var(--gst-border)",
-        padding: `0 ${S.px}`, height: 64,
+        padding: `0 ${S.px}`, minHeight: 64,
         display: "flex", alignItems: "center", justifyContent: "space-between",
+        width: "100%", maxWidth: "100vw", boxSizing: "border-box", gap: 10,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#00c9ff,#a78bfa)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(0,201,255,0.35)" }}>
+        {/* Brand / Logo */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0" }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#00c9ff,#a78bfa)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(0,201,255,0.35)", flexShrink: 0 }}>
             <Sparkles size={18} color="#0a0f1e" />
           </div>
           <div>
@@ -135,55 +144,122 @@ export default function HubPage() {
             <div style={{ color: "var(--gst-text-mute)", fontSize: "0.67rem", lineHeight: 1.1 }}>tools.lyzov.com</div>
           </div>
         </div>
-        <nav style={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <a href="#tools" className="gst-btn gst-btn-ghost gst-btn-sm">Tools</a>
-          <a href="#how" className="gst-btn gst-btn-ghost gst-btn-sm">How it works</a>
-          <a href="#why" className="gst-btn gst-btn-ghost gst-btn-sm">Why LyZov</a>
-          <a href="#faq" className="gst-btn gst-btn-ghost gst-btn-sm">FAQ</a>
-          <button className="gst-btn gst-btn-outline gst-btn-sm" style={{ marginLeft: 8 }} onClick={() => navigate("/cropper")}><Scissors size={14} /> Cropper</button>
-          <button className="gst-btn gst-btn-primary gst-btn-sm" onClick={() => navigate("/gst-tool")}><FileText size={14} /> GST Tool</button>
+
+        {/* Desktop Links & Action Buttons */}
+        <nav style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div className="gst-nav-desktop" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <a href="#tools" className="gst-btn gst-btn-ghost gst-btn-sm">Tools</a>
+            <a href="#how" className="gst-btn gst-btn-ghost gst-btn-sm">How it works</a>
+            <a href="#why" className="gst-btn gst-btn-ghost gst-btn-sm">Why LyZov</a>
+            <a href="#faq" className="gst-btn gst-btn-ghost gst-btn-sm">FAQ</a>
+          </div>
+          
+          <button className="gst-btn gst-btn-outline gst-btn-sm" onClick={() => navigate("/cropper")}>
+            <Scissors size={14} /> <span style={{ display: "inline" }}>Cropper</span>
+          </button>
+          
+          <button className="gst-nav-desktop gst-btn gst-btn-primary gst-btn-sm" onClick={() => navigate("/gst-tool")}>
+            <FileText size={14} /> GST Tool
+          </button>
+          
+          <button
+            id="themeToggle"
+            type="button"
+            className="gst-btn gst-btn-ghost gst-btn-sm"
+            onClick={toggleTheme}
+            aria-label="Toggle light and dark theme"
+            style={{ padding: "8px 10px", borderRadius: "8px", minWidth: 36 }}
+          >
+            {theme === "dark" ? <Sun size={16} color="#f5a623" /> : <Moon size={16} color="#0284c7" />}
+          </button>
+
+          {/* Mobile hamburger menu toggle */}
+          <button
+            type="button"
+            className="gst-mobile-toggle gst-btn gst-btn-ghost gst-btn-sm"
+            onClick={() => setMobileMenuOpen(prev => !prev)}
+            aria-label="Toggle navigation menu"
+            style={{ padding: "8px", borderRadius: "8px", minWidth: 36 }}
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </nav>
       </header>
 
+      {/* Mobile Slide-down Navigation Menu */}
+      {mobileMenuOpen && (
+        <div style={{
+          position: "sticky", top: 64, zIndex: 99,
+          background: theme === "dark" ? "rgba(10,15,30,0.98)" : "rgba(255,255,255,0.98)",
+          backdropFilter: "blur(20px)",
+          borderBottom: "1px solid var(--gst-border)",
+          padding: `16px ${S.px} 24px`,
+          display: "flex", flexDirection: "column", gap: 10,
+          animation: "gst-fade-in 0.25s ease",
+          boxShadow: "0 12px 30px rgba(0,0,0,0.15)",
+        }}>
+          <a href="#tools" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={closeMobileMenu}>
+            <BookOpen size={16} color="#00c9ff" /> Available Tools
+          </a>
+          <a href="#how" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={closeMobileMenu}>
+            <Lightbulb size={16} color="#a78bfa" /> How it Works
+          </a>
+          <a href="#why" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={closeMobileMenu}>
+            <Star size={16} color="#00d68f" /> Why LyZov Tools
+          </a>
+          <a href="#faq" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={closeMobileMenu}>
+            <Users size={16} color="#f5a623" /> Frequently Asked Questions
+          </a>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
+            <button className="gst-btn gst-btn-outline" style={{ justifyContent: "center", minHeight: 44 }} onClick={() => { closeMobileMenu(); navigate("/cropper"); }}>
+              <Scissors size={15} /> Cropper Studio
+            </button>
+            <button className="gst-btn gst-btn-primary" style={{ justifyContent: "center", minHeight: 44 }} onClick={() => { closeMobileMenu(); navigate("/gst-tool"); }}>
+              <FileText size={15} /> GST Tool
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* HERO */}
-      <section style={{ textAlign: "center", padding: `clamp(80px,13vh,140px) ${S.px} clamp(60px,9vh,110px)`, position: "relative", overflow: "hidden" }}>
+      <section style={{ textAlign: "center", padding: `clamp(60px,11vh,120px) ${S.px} clamp(50px,8vh,90px)`, position: "relative", overflow: "hidden" }}>
         {[{ t: "5%", l: "8%", w: 520, c: "rgba(0,201,255,0.07)" }, { t: "15%", r: "8%", w: 420, c: "rgba(167,139,250,0.07)" }, { b: "-5%", l: "38%", w: 340, c: "rgba(0,214,143,0.07)" }].map((o, i) => (
           <div key={i} style={{ position: "absolute", borderRadius: "50%", pointerEvents: "none", filter: "blur(70px)", width: o.w, height: o.w, background: `radial-gradient(circle,${o.c} 0%,transparent 70%)`, top: o.t, left: o.l, right: o.r, bottom: o.b }} />
         ))}
         <div className="gst-badge gst-badge-blue" style={{ margin: "0 auto 24px", display: "inline-flex" }}>
-          <Sparkles size={11} /> Free browser-based tools � No signup required to start
+          <Sparkles size={11} /> Free browser-based tools • No signup required to start
         </div>
-        <h1 style={{ fontSize: "clamp(2.6rem,6vw,4.8rem)", fontWeight: 900, lineHeight: 1.06, letterSpacing: "-2.5px", margin: "0 auto 24px", maxWidth: 900 }}>
+        <h1 style={{ fontSize: "clamp(2.4rem,5.5vw,4.4rem)", fontWeight: 900, lineHeight: 1.08, letterSpacing: "-2px", margin: "0 auto 24px", maxWidth: 900, color: "var(--gst-text)" }}>
           Tools that actually<br /><span className="gst-gradient-text">get work done.</span>
         </h1>
-        <p style={{ fontSize: "clamp(1rem,2vw,1.22rem)", color: "var(--gst-text-sec)", maxWidth: 600, margin: "0 auto 44px", lineHeight: 1.78 }}>
-          A growing collection of precision-built browser tools designed to handle repetitive, error-prone tasks � fast, private, and free to start.
+        <p style={{ fontSize: "clamp(0.98rem,1.8vw,1.18rem)", color: "var(--gst-text-sec)", maxWidth: 600, margin: "0 auto 40px", lineHeight: 1.75 }}>
+          A growing collection of precision-built browser tools designed to handle repetitive, error-prone tasks — fast, private, and free to start.
         </p>
         <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap", marginBottom: 36 }}>
           <button className="gst-btn gst-btn-primary gst-btn-lg" onClick={() => document.querySelector("#tools").scrollIntoView({ behavior: "smooth" })}>Explore All Tools <ArrowRight size={18} /></button>
           <button className="gst-btn gst-btn-outline gst-btn-lg" onClick={() => navigate("/gst-tool")}><FileText size={16} /> Open GST Tool</button>
         </div>
         <div style={{ display: "flex", gap: 28, justifyContent: "center", flexWrap: "wrap" }}>
-          {[{ icon: ShieldCheck, text: "100% private � no server uploads" }, { icon: Zap, text: "Runs entirely in your browser" }, { icon: Star, text: "No credit card to start" }].map(({ icon: Icon, text }) => (
+          {[{ icon: ShieldCheck, text: "100% private • no server uploads" }, { icon: Zap, text: "Runs entirely in your browser" }, { icon: Star, text: "No credit card to start" }].map(({ icon: Icon, text }) => (
             <span key={text} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: "0.83rem", color: "var(--gst-text-sec)" }}><Icon size={14} color="var(--gst-emerald)" /> {text}</span>
           ))}
         </div>
       </section>
 
       {/* TOOLS */}
-      <section id="tools" style={{ padding: `clamp(60px,10vh,100px) ${S.px}` }}>
-        <div className="hub-obs" style={{ textAlign: "center", marginBottom: 56 }}>
+      <section id="tools" style={{ padding: `clamp(50px,8vh,90px) ${S.px}` }}>
+        <div className="hub-obs" style={{ textAlign: "center", marginBottom: 50 }}>
           <div className="gst-badge gst-badge-gold" style={{ margin: "0 auto 16px", display: "inline-flex" }}><BookOpen size={11} /> Available Tools</div>
-          <h2 style={{ fontSize: "clamp(1.8rem,3.5vw,2.6rem)", fontWeight: 800, letterSpacing: "-0.8px", margin: "0 0 14px" }}>Pick your <span className="gst-gradient-text">tool</span></h2>
+          <h2 style={{ fontSize: "clamp(1.8rem,3.5vw,2.6rem)", fontWeight: 800, letterSpacing: "-0.8px", margin: "0 0 14px", color: "var(--gst-text)" }}>Pick your <span className="gst-gradient-text">tool</span></h2>
           <p style={{ color: "var(--gst-text-sec)", maxWidth: 520, margin: "0 auto", lineHeight: 1.75 }}>Each tool is fully self-contained, works offline after first load, and keeps your data completely private on your device.</p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(360px,1fr))", gap: 28, maxWidth: 920, margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%, 280px), 1fr))", gap: "clamp(16px, 3vw, 28px)", maxWidth: 920, margin: "0 auto" }}>
           {TOOLS.map((tool) => {
             const Icon = tool.icon;
             const isH = hoveredTool === tool.id;
             return (
               <div key={tool.id} className="hub-obs"
-                style={{ background: isH ? "linear-gradient(160deg,rgba(14,22,40,0.98),rgba(10,15,30,0.9))" : "var(--gst-surface)", border: `1px solid ${isH ? tool.accent + "55" : "var(--gst-border)"}`, borderRadius: "var(--gst-radius-lg)", padding: "32px 28px", cursor: "pointer", transition: "all 0.28s ease", boxShadow: isH ? `0 0 40px ${tool.glowColor}, var(--gst-shadow-lg)` : "var(--gst-shadow)", transform: isH ? "translateY(-8px)" : "translateY(0)", position: "relative", overflow: "hidden" }}
+                style={{ background: isH ? (theme === 'dark' ? "linear-gradient(160deg,rgba(14,22,40,0.98),rgba(10,15,30,0.9))" : "var(--gst-surface2)") : "var(--gst-surface)", border: `1px solid ${isH ? tool.accent + "55" : "var(--gst-border)"}`, borderRadius: "var(--gst-radius-lg)", padding: "clamp(20px, 4vw, 32px) clamp(16px, 3.5vw, 28px)", cursor: "pointer", transition: "all 0.28s ease", boxShadow: isH ? `0 0 40px ${tool.glowColor}, var(--gst-shadow-lg)` : "var(--gst-shadow)", transform: isH ? "translateY(-8px)" : "translateY(0)", position: "relative", overflow: "hidden" }}
                 onMouseEnter={() => setHoveredTool(tool.id)} onMouseLeave={() => setHoveredTool(null)} onClick={() => navigate(tool.route)}>
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,transparent,${tool.accent},transparent)`, opacity: isH ? 1 : 0.25, transition: "opacity 0.28s" }} />
                 <div style={{ width: 58, height: 58, borderRadius: 16, marginBottom: 22, background: `${tool.accent}15`, border: `1px solid ${tool.accent}30`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: isH ? `0 0 22px ${tool.glowColor}` : "none", transition: "box-shadow 0.28s" }}>
@@ -306,7 +382,7 @@ export default function HubPage() {
       </section>
 
       {/* BOTTOM CTA */}
-      <section style={{ margin: `0 ${S.px} clamp(60px,10vh,100px)`, background: "linear-gradient(135deg,rgba(0,201,255,0.07),rgba(167,139,250,0.05),rgba(0,214,143,0.06))", border: "1px solid rgba(0,201,255,0.16)", borderRadius: "var(--gst-radius-lg)", padding: "clamp(40px,7vw,72px)", textAlign: "center", position: "relative", overflow: "hidden" }}>
+      <section style={{ margin: `0 ${S.px} clamp(40px,8vh,80px)`, background: "linear-gradient(135deg,rgba(0,201,255,0.07),rgba(167,139,250,0.05),rgba(0,214,143,0.06))", border: "1px solid rgba(0,201,255,0.16)", borderRadius: "var(--gst-radius-lg)", padding: "clamp(24px,5vw,64px) clamp(16px,4vw,48px)", textAlign: "center", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: -80, right: -80, width: 320, height: 320, borderRadius: "50%", background: "radial-gradient(circle,rgba(167,139,250,0.1),transparent 70%)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: -60, left: -60, width: 260, height: 260, borderRadius: "50%", background: "radial-gradient(circle,rgba(0,214,143,0.08),transparent 70%)", pointerEvents: "none" }} />
         <div className="gst-badge gst-badge-green" style={{ margin: "0 auto 20px", display: "inline-flex" }}><Zap size={11} /> Open in seconds</div>
@@ -328,7 +404,7 @@ export default function HubPage() {
             </div>
             <p style={{ fontSize: "0.83rem", color: "var(--gst-text-mute)", lineHeight: 1.7, margin: 0 }}>Free, private, browser-based tools built for people who have real work to get done.</p>
           </div>
-          <div style={{ display: "flex", gap: 48, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "clamp(20px, 4vw, 48px)", flexWrap: "wrap" }}>
             {[
               { heading: "Tools", links: [{ label: "Cropper Studio", route: "/cropper" }, { label: "GST Tool", route: "/gst-tool" }] },
               { heading: "Legal", links: [{ label: "Privacy Policy", route: "/privacy-policy" }, { label: "Terms of Service", route: "/terms" }, { label: "Disclaimer", route: "/disclaimer" }] },

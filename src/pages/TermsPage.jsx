@@ -7,7 +7,7 @@ const EFFECTIVE_DATE = 'September 23, 2026';
 function Section({ title, children }) {
   return (
     <Box sx={{ mb: 4 }}>
-      <Typography variant="h6" fontWeight={700} sx={{ color: '#f1f5f9', mb: 1.25 }}>
+      <Typography variant="h6" fontWeight={700} sx={{ color: 'text.primary', mb: 1.25 }}>
         {title}
       </Typography>
       {children}
@@ -36,9 +36,7 @@ export default function TermsPage() {
           fontWeight={800}
           sx={{
             letterSpacing: '-0.5px',
-            background: 'linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+            color: 'text.primary',
             mb: 1,
           }}
         >
@@ -49,7 +47,7 @@ export default function TermsPage() {
         </Typography>
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.07)', mb: 4 }} />
+      <Divider sx={{ borderColor: 'divider', mb: 4 }} />
 
       <Section title="1. Acceptance of Terms">
         <P>

@@ -90,6 +90,42 @@ export const AppProvider = ({ children }) => {
   const [namingPattern, setNamingPattern] = useState('original_label');
   const [activeTab, setActiveTab] = useState(0);
 
+  // Theme Management (Light / Dark)
+  const getInitialTheme = () => {
+    try {
+      const saved = localStorage.getItem('theme');
+      if (saved === 'light' || saved === 'dark') return saved;
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        return 'dark';
+      }
+    } catch (e) {}
+    return (typeof document !== 'undefined' && document.documentElement.dataset.theme) || 'light';
+  };
+
+  const [theme, setTheme] = useState(getInitialTheme);
+
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => {
+      const next = prev === 'dark' ? 'light' : 'dark';
+      if (typeof document !== 'undefined') {
+        document.documentElement.dataset.theme = next;
+      }
+      try {
+        localStorage.setItem('theme', next);
+      } catch (e) {}
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.dataset.theme = theme;
+    }
+    try {
+      localStorage.setItem('theme', theme);
+    } catch (e) {}
+  }, [theme]);
+
   // Guest Mode & Daily Usage Tracking (from cropper-plan.md)
   const GUEST_DAILY_LIMIT = 5;
 
@@ -511,6 +547,8 @@ export const AppProvider = ({ children }) => {
     GUEST_DAILY_LIMIT,
     guestUsage,
     recordCropUsage,
+    theme,
+    toggleTheme,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

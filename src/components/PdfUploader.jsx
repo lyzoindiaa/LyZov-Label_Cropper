@@ -28,6 +28,7 @@ export default function PdfUploader() {
     clearAllFiles,
     selectedPdfIndex,
     setSelectedPdfIndex,
+    theme,
   } = useContext(AppContext);
 
   const fileInputRef = useRef(null);
@@ -70,10 +71,13 @@ export default function PdfUploader() {
           textAlign: 'center',
           cursor: 'pointer',
           borderRadius: 3,
-          bgcolor: isDragOver ? 'rgba(0, 201, 255, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+          bgcolor: isDragOver
+            ? (theme === 'dark' ? 'rgba(0, 201, 255, 0.08)' : 'rgba(2, 132, 199, 0.08)')
+            : (theme === 'dark' ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)'),
           border: isDragOver
-            ? '2px dashed #00c9ff'
-            : '2px dashed rgba(255, 255, 255, 0.15)',
+            ? `2px dashed ${theme === 'dark' ? '#00c9ff' : '#0284c7'}`
+            : '2px dashed',
+          borderColor: isDragOver ? undefined : 'divider',
           transition: 'all 0.2s ease',
           display: 'flex',
           flexDirection: 'column',
@@ -81,8 +85,8 @@ export default function PdfUploader() {
           justifyContent: 'center',
           gap: 1.5,
           '&:hover': {
-            borderColor: 'rgba(0, 201, 255, 0.6)',
-            bgcolor: 'rgba(0, 201, 255, 0.04)',
+            borderColor: theme === 'dark' ? 'rgba(0, 201, 255, 0.6)' : 'rgba(2, 132, 199, 0.6)',
+            bgcolor: theme === 'dark' ? 'rgba(0, 201, 255, 0.04)' : 'rgba(2, 132, 199, 0.04)',
           },
         }}
       >
@@ -138,9 +142,10 @@ export default function PdfUploader() {
       {pdfFiles.length > 0 && (
         <Box
           sx={{
-            bgcolor: 'rgba(255, 255, 255, 0.03)',
+            bgcolor: theme === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
             borderRadius: 3,
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            border: '1px solid',
+            borderColor: 'divider',
             p: 2,
           }}
         >
@@ -153,8 +158,8 @@ export default function PdfUploader() {
                 label={pdfFiles.length}
                 size="small"
                 sx={{
-                  bgcolor: 'rgba(0, 201, 255, 0.2)',
-                  color: '#00c9ff',
+                  bgcolor: theme === 'dark' ? 'rgba(0, 201, 255, 0.2)' : 'rgba(2, 132, 199, 0.15)',
+                  color: theme === 'dark' ? '#00c9ff' : '#0284c7',
                   height: 20,
                   fontSize: '0.75rem',
                   fontWeight: 700,
@@ -188,7 +193,7 @@ export default function PdfUploader() {
                           removePdfFile(idx);
                         }}
                         sx={{
-                          color: 'rgba(255, 255, 255, 0.4)',
+                          color: 'text.secondary',
                           '&:hover': { color: '#ff4d6d' },
                         }}
                       >
@@ -205,15 +210,17 @@ export default function PdfUploader() {
                       borderRadius: 2,
                       py: 0.8,
                       border: isSelected
-                        ? '1px solid rgba(0, 201, 255, 0.5)'
+                        ? `1px solid ${theme === 'dark' ? 'rgba(0, 201, 255, 0.5)' : 'rgba(2, 132, 199, 0.5)'}`
                         : '1px solid transparent',
-                      bgcolor: isSelected ? 'rgba(0, 201, 255, 0.08) !important' : 'transparent',
+                      bgcolor: isSelected
+                        ? (theme === 'dark' ? 'rgba(0, 201, 255, 0.08) !important' : 'rgba(2, 132, 199, 0.08) !important')
+                        : 'transparent',
                     }}
                   >
                     <FileText
                       size={18}
-                      color={isSelected ? '#00c9ff' : 'rgba(255,255,255,0.4)'}
-                      style={{ marginRight: 10, flexShrink: 0 }}
+                      color={isSelected ? (theme === 'dark' ? '#00c9ff' : '#0284c7') : undefined}
+                      style={{ marginRight: 10, flexShrink: 0, opacity: isSelected ? 1 : 0.6 }}
                     />
                     <ListItemText
                       primary={
@@ -221,7 +228,7 @@ export default function PdfUploader() {
                           variant="body2"
                           fontWeight={isSelected ? 700 : 500}
                           noWrap
-                          sx={{ color: isSelected ? '#ffffff' : 'text.primary' }}
+                          sx={{ color: isSelected ? (theme === 'dark' ? '#ffffff' : '#0284c7') : 'text.primary' }}
                         >
                           {item.name}
                         </Typography>

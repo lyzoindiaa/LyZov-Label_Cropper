@@ -18,13 +18,13 @@ const steps = [
   },
   {
     number: '03',
-    icon: <Crop size={24} color="#ff6ec7" />,
+    icon: <Crop size={24} color="#a78bfa" />,
     title: 'Draw the Crop Region',
     body: `Click and drag on the canvas to draw a rectangle over the area you want to keep — typically the label content. The selection box is resizable and repositionable; you can fine-tune the coordinates in the sidebar fields for pixel-level accuracy. This crop region will be applied identically to every PDF in your batch.`,
   },
   {
     number: '04',
-    icon: <Download size={24} color="#ff6ec7" />,
+    icon: <Download size={24} color="#00d68f" />,
     title: 'Process & Download',
     body: `Click the "Crop All Files" button in the sidebar to process the entire batch. Once complete, switch to the "Download & Print" tab to review the cropped thumbnails. Download files individually or download them all as a single ZIP archive. The output PDFs are ready to send directly to any label or thermal printer.`,
   },
@@ -62,9 +62,7 @@ export default function HowToUsePage() {
           fontWeight={800}
           sx={{
             letterSpacing: '-0.5px',
-            background: 'linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+            color: 'text.primary',
             mb: 1.5,
           }}
         >
@@ -76,7 +74,7 @@ export default function HowToUsePage() {
         </Typography>
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.07)', mb: 4 }} />
+      <Divider sx={{ borderColor: 'divider', mb: 4 }} />
 
       {/* Steps */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mb: 6 }}>
@@ -84,15 +82,16 @@ export default function HowToUsePage() {
           <Box
             key={number}
             sx={{
-              bgcolor: '#0d131f',
-              border: '1px solid rgba(255,255,255,0.08)',
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
               borderRadius: 3,
-              p: 3,
+              p: { xs: 2, sm: 3 },
               display: 'flex',
               gap: 2.5,
               alignItems: 'flex-start',
-              transition: 'border-color 0.25s',
-              '&:hover': { borderColor: 'rgba(0,201,255,0.2)' },
+              transition: 'border-color 0.25s, box-shadow 0.25s',
+              '&:hover': { borderColor: 'rgba(0,201,255,0.3)', boxShadow: '0 4px 20px rgba(0,0,0,0.06)' },
             }}
           >
             {/* Step number */}
@@ -116,7 +115,7 @@ export default function HowToUsePage() {
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.75 }}>
                 {icon}
-                <Typography fontWeight={700} sx={{ color: '#f1f5f9' }}>
+                <Typography fontWeight={700} sx={{ color: 'text.primary' }}>
                   {title}
                 </Typography>
               </Box>
@@ -128,11 +127,11 @@ export default function HowToUsePage() {
         ))}
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.07)', mb: 4 }} />
+      <Divider sx={{ borderColor: 'divider', mb: 4 }} />
 
       {/* Tips */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h5" fontWeight={700} sx={{ color: '#f1f5f9', mb: 3 }}>
+        <Typography variant="h5" fontWeight={700} sx={{ color: 'text.primary', mb: 3 }}>
           Tips for Best Results
         </Typography>
         <Box

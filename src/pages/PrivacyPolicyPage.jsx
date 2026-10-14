@@ -10,7 +10,7 @@ function Section({ title, children }) {
       <Typography
         variant="h6"
         fontWeight={700}
-        sx={{ color: '#f1f5f9', mb: 1.25 }}
+        sx={{ color: 'text.primary', mb: 1.25 }}
       >
         {title}
       </Typography>
@@ -40,9 +40,7 @@ export default function PrivacyPolicyPage() {
           fontWeight={800}
           sx={{
             letterSpacing: '-0.5px',
-            background: 'linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
+            color: 'text.primary',
             mb: 1,
           }}
         >
@@ -53,7 +51,7 @@ export default function PrivacyPolicyPage() {
         </Typography>
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.07)', mb: 4 }} />
+      <Divider sx={{ borderColor: 'divider', mb: 4 }} />
 
       <Section title="1. Overview">
         <P>
@@ -66,7 +64,7 @@ export default function PrivacyPolicyPage() {
 
       <Section title="2. File Uploads & Image Processing">
         <P>
-          <strong style={{ color: '#f1f5f9' }}>All file processing is entirely client-side.</strong>{' '}
+          <strong style={{ color: 'inherit' }}>All file processing is entirely client-side.</strong>{' '}
           When you upload a PDF or image file to LyZov Cropper Studio, that file is loaded
           directly into your browser's memory using JavaScript. It is processed locally on
           your device using the PDF-lib and React-PDF libraries.

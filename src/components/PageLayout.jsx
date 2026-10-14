@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
-import { Box, Typography, Chip } from '@mui/material';
-import { Scissors, ShieldCheck } from 'lucide-react';
+import { Box, Typography, Chip, Tooltip, IconButton, Button } from '@mui/material';
+import { Scissors, ShieldCheck, Sun, Moon } from 'lucide-react';
+import { AppContext } from '../context/AppContext';
 import Footer from './Footer';
 
 /**
@@ -13,6 +14,8 @@ import Footer from './Footer';
  *  - children               – page body content
  */
 export default function PageLayout({ title, description, children }) {
+  const { theme, toggleTheme } = useContext(AppContext);
+
   useEffect(() => {
     const siteName = 'LyZov Cropper Studio';
     document.title = title ? `${title} | ${siteName}` : siteName;
@@ -31,15 +34,16 @@ export default function PageLayout({ title, description, children }) {
   }, [title, description]);
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#070a12' }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default', color: 'text.primary' }}>
       {/* Sticky Navbar – identical to homepage */}
       <Box
         component="header"
         sx={{
           py: 2,
           px: { xs: 2, sm: 3, md: 4 },
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
-          bgcolor: 'rgba(7,10,18,0.85)',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: theme === 'dark' ? 'rgba(7,10,18,0.85)' : 'rgba(255,255,255,0.88)',
           backdropFilter: 'blur(16px)',
           position: 'sticky',
           top: 0,
@@ -47,6 +51,7 @@ export default function PageLayout({ title, description, children }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          gap: 1.5,
           width: '100%',
         }}
       >
@@ -56,7 +61,7 @@ export default function PageLayout({ title, description, children }) {
               width: 38,
               height: 38,
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #00c9ff 0%, #ff6ec7 100%)',
+              background: 'linear-gradient(135deg, #00c9ff 0%, #a78bfa 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -70,28 +75,75 @@ export default function PageLayout({ title, description, children }) {
             <Typography
               variant="h6"
               fontWeight={800}
-              sx={{ letterSpacing: '-0.5px', lineHeight: 1.1, fontSize: '1.15rem', color: '#f1f5f9' }}
+              sx={{ letterSpacing: '-0.5px', lineHeight: 1.1, fontSize: { xs: '1rem', sm: '1.15rem' }, color: 'text.primary' }}
             >
-              LyZov <span style={{ color: '#00c9ff' }}>Cropper</span> Studio
+              LyZov <span style={{ color: theme === 'dark' ? '#00c9ff' : '#0284c7' }}>Cropper</span> Studio
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
               Batch PDF Label Cropper &amp; Thermal Printer
             </Typography>
           </Box>
         </Link>
 
-        <Chip
-          icon={<ShieldCheck size={14} color="#00c9ff" />}
-          label="100% Client-Side • No Uploads to Server"
-          size="small"
-          sx={{
-            bgcolor: 'rgba(0,201,255,0.1)',
-            color: '#00c9ff',
-            border: '1px solid rgba(0,201,255,0.25)',
-            fontWeight: 600,
-            display: { xs: 'none', sm: 'inline-flex' },
-          }}
-        />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Chip
+            icon={<ShieldCheck size={14} color={theme === 'dark' ? '#00c9ff' : '#0284c7'} />}
+            label="100% Client-Side • No Uploads to Server"
+            size="small"
+            sx={{
+              bgcolor: theme === 'dark' ? 'rgba(0,201,255,0.1)' : 'rgba(2,132,199,0.1)',
+              color: theme === 'dark' ? '#00c9ff' : '#0284c7',
+              border: '1px solid',
+              borderColor: theme === 'dark' ? 'rgba(0,201,255,0.25)' : 'rgba(2,132,199,0.25)',
+              fontWeight: 600,
+              display: { xs: 'none', md: 'inline-flex' },
+            }}
+          />
+
+          <Button
+            component={Link}
+            to="/cropper"
+            variant="contained"
+            size="small"
+            sx={{
+              background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
+              color: '#ffffff',
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              borderRadius: 2,
+              textTransform: 'none',
+              px: 1.8,
+              py: 0.6,
+            }}
+          >
+            Open Cropper
+          </Button>
+
+          {/* Theme Toggle Button */}
+          <Tooltip title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
+            <IconButton
+              type="button"
+              onClick={toggleTheme}
+              size="small"
+              aria-label="Toggle light and dark theme"
+              sx={{
+                color: 'text.primary',
+                bgcolor: theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: '10px',
+                p: 0.8,
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  bgcolor: theme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+                  borderColor: theme === 'dark' ? '#00c9ff' : '#0284c7',
+                },
+              }}
+            >
+              {theme === 'dark' ? <Sun size={17} color="#f5a623" /> : <Moon size={17} color="#0284c7" />}
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
       {/* Page Content */}
