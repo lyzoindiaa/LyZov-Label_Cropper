@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import '../gst.css';
 import {
   LayoutDashboard, Building2, Upload, FileBarChart2,
   Download, CreditCard, HelpCircle, LogOut, ChevronRight,
-  FileText, Bell, Shield, Crown, Calculator
+  FileText, Bell, Shield, Crown, Calculator, Menu, X
 } from 'lucide-react';
 import { gstApi, getActiveUser } from '../api/client';
 
@@ -22,6 +22,7 @@ const BASE_NAV = [
 export default function GstLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const user = getActiveUser();
   const userName = user?.name || 'Seller';
   const userInitial = userName.charAt(0).toUpperCase();
@@ -36,20 +37,23 @@ export default function GstLayout() {
     : BASE_NAV;
 
   return (
-    <div className="gst-root" style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="gst-root" style={{ display: 'flex', minHeight: '100vh', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
+      {/* Mobile Backdrop */}
+      {sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.6)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 999,
+          }}
+        />
+      )}
+
       {/* ── Sidebar ── */}
-      <aside style={{
-        width: 240,
-        flexShrink: 0,
-        background: 'var(--gst-surface)',
-        borderRight: '1px solid var(--gst-border)',
-        display: 'flex',
-        flexDirection: 'column',
-        position: 'sticky',
-        top: 0,
-        height: '100vh',
-        overflowY: 'auto',
-      }}>
+      <aside className={`gst-sidebar ${sidebarOpen ? 'open' : ''}`}>
         {/* Logo */}
         <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid var(--gst-border)' }}>
           <a href="/gst-tool" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -100,7 +104,7 @@ export default function GstLayout() {
           {navItems.map(({ to, label, icon: Icon, isAdminOnly, badge }) => {
             const active = location.pathname === to || (to === '/gst-tool/gstr3b' && location.pathname.startsWith('/gst-tool/gstr3b'));
             return (
-              <NavLink key={to} to={to} style={{ textDecoration: 'none' }}>
+              <NavLink key={to} to={to} style={{ textDecoration: 'none' }} onClick={() => setSidebarOpen(false)}>
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '10px 12px',
@@ -185,20 +189,32 @@ export default function GstLayout() {
         <header style={{
           height: 60, display: 'flex', alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 24px',
+          padding: '0 16px',
           borderBottom: '1px solid var(--gst-border)',
-          background: 'rgba(8,12,24,0.8)',
+          background: 'var(--gst-surface)',
           backdropFilter: 'blur(12px)',
           position: 'sticky', top: 0, zIndex: 50,
+          gap: 10,
         }}>
-          {/* Breadcrumb */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.83rem', color: 'var(--gst-text-sec)' }}>
-            <span>LyZov</span>
-            <ChevronRight size={13} />
-            <span style={{ color: 'var(--gst-text)', fontWeight: 600 }}>GST Tool</span>
+          {/* Mobile hamburger & Breadcrumb */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button
+              type="button"
+              className="gst-mobile-toggle gst-btn gst-btn-ghost gst-btn-sm"
+              onClick={() => setSidebarOpen(prev => !prev)}
+              aria-label="Toggle sidebar menu"
+              style={{ padding: '6px 8px', minWidth: 32 }}
+            >
+              <Menu size={18} />
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.83rem', color: 'var(--gst-text-sec)' }}>
+              <span>LyZov</span>
+              <ChevronRight size={13} />
+              <span style={{ color: 'var(--gst-text)', fontWeight: 600 }}>GST Tool</span>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button className="gst-btn gst-btn-ghost gst-btn-sm" style={{ padding: '6px 10px', position: 'relative' }}>
               <Bell size={16} />
               <span style={{

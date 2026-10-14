@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useMemo } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import {
   CssBaseline,
@@ -12,6 +12,7 @@ import {
   Chip,
   Button,
   Tooltip,
+  IconButton,
 } from '@mui/material';
 import {
   Scissors,
@@ -23,6 +24,8 @@ import {
   LogOut,
   User as UserIcon,
   Sparkles,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { AppProvider, AppContext } from './context/AppContext';
 import CropperAuthModal from './components/CropperAuthModal';
@@ -43,32 +46,44 @@ import HowToUsePage from './pages/HowToUsePage';
 import FaqPage from './pages/FaqPage';
 import HubPage from './pages/HubPage';
 
-const darkTheme = createTheme({
-  palette: {
-    mode: 'dark',
-    primary: { main: '#00c9ff' },
-    secondary: { main: '#ff6ec7' },
-    background: {
-      default: '#070a12',
-      paper: '#0d131f',
+const getAppTheme = (mode = 'dark') =>
+  createTheme({
+    palette: {
+      mode,
+      primary: { main: mode === 'dark' ? '#00c9ff' : '#0284c7' },
+      secondary: { main: mode === 'dark' ? '#00d68f' : '#00a86b' },
+      background: {
+        default: mode === 'dark' ? '#080c18' : '#f8fafc',
+        paper: mode === 'dark' ? '#0e1628' : '#ffffff',
+      },
+      text: {
+        primary: mode === 'dark' ? '#f0f4ff' : '#0f172a',
+        secondary: mode === 'dark' ? '#8896b3' : '#64748b',
+      },
+      divider: mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
     },
-    text: {
-      primary: '#f1f5f9',
-      secondary: '#94a3b8',
+    typography: {
+      fontFamily: '"Plus Jakarta Sans", "Inter", -apple-system, sans-serif',
     },
-  },
-  typography: {
-    fontFamily: '"Plus Jakarta Sans", "Inter", -apple-system, sans-serif',
-  },
-  shape: {
-    borderRadius: 12,
-  },
-});
+    shape: {
+      borderRadius: 12,
+    },
+    components: {
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: 'none',
+          },
+        },
+      },
+    },
+  });
 
 function MainContent() {
   const {
     activeTab,
     setActiveTab,
+    pdfFiles,
     croppedBlobs,
     user,
     setUser,
@@ -81,19 +96,22 @@ function MainContent() {
     logoutUser,
     GUEST_DAILY_LIMIT,
     guestUsage,
+    theme,
+    toggleTheme,
   } = useContext(AppContext);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', width: '100%' }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', width: '100%', bgcolor: 'background.default', color: 'text.primary' }}>
       {/* Top Navbar */}
       <Box
         component="header"
         sx={{
           py: 1.5,
           px: { xs: 1.5, sm: 2.5, md: 4 },
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          bgcolor: 'rgba(7, 10, 18, 0.85)',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
+          bgcolor: theme === 'dark' ? 'rgba(7, 10, 18, 0.85)' : 'rgba(255, 255, 255, 0.88)',
           backdropFilter: 'blur(16px)',
           position: 'sticky',
           top: 0,
@@ -112,7 +130,7 @@ function MainContent() {
               width: 38,
               height: 38,
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #00c9ff 0%, #ff6ec7 100%)',
+              background: 'linear-gradient(135deg, #00c9ff 0%, #a78bfa 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -122,8 +140,8 @@ function MainContent() {
             <Scissors size={20} color="#ffffff" />
           </Box>
           <Box>
-            <Typography variant="h6" fontWeight={800} sx={{ letterSpacing: '-0.5px', lineHeight: 1.1, fontSize: { xs: '1rem', sm: '1.15rem' } }}>
-              LyZov <span style={{ color: '#00c9ff' }}>Cropper</span> Studio
+            <Typography variant="h6" fontWeight={800} sx={{ letterSpacing: '-0.5px', lineHeight: 1.1, fontSize: { xs: '1rem', sm: '1.15rem' }, color: 'text.primary' }}>
+              LyZov <span style={{ color: theme === 'dark' ? '#00c9ff' : '#0284c7' }}>Cropper</span> Studio
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
               Batch PDF Label Cropper &amp; Thermal Printer
@@ -197,8 +215,8 @@ function MainContent() {
                 label={user.name ? user.name.split(' ')[0] : 'Seller'}
                 size="small"
                 sx={{
-                  bgcolor: 'rgba(255,255,255,0.06)',
-                  color: '#f1f5f9',
+                  bgcolor: theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+                  color: 'text.primary',
                   fontWeight: 600,
                   display: { xs: 'none', md: 'inline-flex' },
                 }}
@@ -243,18 +261,18 @@ function MainContent() {
                   setAuthModalOpen(true);
                 }}
                 sx={{
-                  background: 'linear-gradient(135deg, #00c9ff 0%, #ff6ec7 100%)',
+                  background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
                   color: '#ffffff',
                   fontWeight: 800,
-                  fontSize: '0.8rem',
+                  fontSize: { xs: '0.72rem', sm: '0.8rem' },
                   borderRadius: 2,
                   textTransform: 'none',
-                  px: 1.8,
+                  px: { xs: 1.2, sm: 1.8 },
                   py: 0.5,
                   boxShadow: '0 4px 14px rgba(0, 201, 255, 0.35)',
                 }}
               >
-                Get 30-Day Free Trial
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Get 30-Day </Box>Free Trial
               </Button>
             </Box>
           )}
@@ -265,15 +283,15 @@ function MainContent() {
             variant="outlined"
             size="small"
             sx={{
-              color: '#94a3b8',
-              borderColor: 'rgba(255,255,255,0.15)',
+              color: 'text.secondary',
+              borderColor: 'divider',
               fontWeight: 700,
               fontSize: '0.78rem',
               borderRadius: '10px',
               textTransform: 'none',
               px: 1.5,
               py: 0.6,
-              '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
+              '&:hover': { borderColor: theme === 'dark' ? '#00c9ff' : '#0284c7', color: theme === 'dark' ? '#00c9ff' : '#0284c7' },
               display: { xs: 'none', sm: 'inline-flex' },
             }}
           >
@@ -295,10 +313,37 @@ function MainContent() {
               px: 1.8,
               py: 0.6,
               boxShadow: '0 4px 14px rgba(0, 214, 143, 0.4)',
+              display: { xs: 'none', sm: 'inline-flex' },
             }}
           >
             ✦ GST Tool
           </Button>
+
+          {/* Theme Toggle Button */}
+          <Tooltip title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
+            <IconButton
+              id="themeToggle"
+              type="button"
+              onClick={toggleTheme}
+              size="small"
+              aria-label="Toggle light and dark theme"
+              sx={{
+                color: 'text.primary',
+                bgcolor: theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: '10px',
+                p: 0.8,
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  bgcolor: theme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+                  borderColor: theme === 'dark' ? '#00c9ff' : '#0284c7',
+                },
+              }}
+            >
+              {theme === 'dark' ? <Sun size={17} color="#f5a623" /> : <Moon size={17} color="#0284c7" />}
+            </IconButton>
+          </Tooltip>
         </Box>
       </Box>
 
@@ -308,7 +353,8 @@ function MainContent() {
         <Box
           sx={{
             mb: 2,
-            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
             display: 'flex',
             flexWrap: 'wrap',
             justifyContent: 'space-between',
@@ -323,8 +369,8 @@ function MainContent() {
             variant="scrollable"
             scrollButtons="auto"
             allowScrollButtonsMobile
-            textColor="secondary"
-            indicatorColor="secondary"
+            textColor="primary"
+            indicatorColor="primary"
             sx={{
               minHeight: 44,
               '& .MuiTab-root': {
@@ -367,7 +413,7 @@ function MainContent() {
                   sx={{
                     fontSize: '0.78rem',
                     color: 'text.secondary',
-                    borderColor: 'rgba(255,255,255,0.15)',
+                    borderColor: 'divider',
                     textTransform: 'none',
                     display: { xs: 'none', md: 'inline-flex' },
                   }}
@@ -383,10 +429,10 @@ function MainContent() {
                 variant="outlined"
                 onClick={() => setActiveTab(1)}
                 sx={{
-                  color: '#00c9ff',
-                  borderColor: 'rgba(0, 201, 255, 0.4)',
+                  color: theme === 'dark' ? '#00c9ff' : '#0284c7',
+                  borderColor: theme === 'dark' ? 'rgba(0, 201, 255, 0.4)' : 'rgba(2, 132, 199, 0.4)',
                   textTransform: 'none',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   fontSize: '0.8rem',
                 }}
               >
@@ -447,6 +493,80 @@ function MainContent() {
         )}
       </Box>
 
+      {/* Mobile Sticky Quick Action Bar (360px - 640px) */}
+      {pdfFiles.length > 0 && (
+        <Box
+          sx={{
+            display: { xs: 'flex', md: 'none' },
+            position: 'sticky',
+            bottom: 0,
+            py: 1.2,
+            px: 2,
+            pb: 'calc(10px + env(safe-area-inset-bottom, 0px))',
+            bgcolor: theme === 'dark' ? 'rgba(7, 10, 18, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(16px)',
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            zIndex: 90,
+            gap: 1.5,
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 -4px 16px rgba(0,0,0,0.1)',
+            mt: 2,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="caption" fontWeight={700}>
+              {pdfFiles.length} {pdfFiles.length === 1 ? 'file' : 'files'}
+            </Typography>
+            {croppedBlobs.length > 0 && (
+              <Chip
+                size="small"
+                label={`${croppedBlobs.length} ready`}
+                sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700, bgcolor: 'rgba(0, 201, 255, 0.15)', color: theme === 'dark' ? '#00c9ff' : '#0284c7' }}
+              />
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            {activeTab === 0 && croppedBlobs.length > 0 ? (
+              <Button
+                size="small"
+                variant="contained"
+                onClick={() => setActiveTab(1)}
+                sx={{
+                  py: 0.8,
+                  px: 1.5,
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  textTransform: 'none',
+                  borderRadius: 2,
+                  background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
+                  color: '#ffffff',
+                }}
+              >
+                View Results →
+              </Button>
+            ) : activeTab === 1 ? (
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => setActiveTab(0)}
+                sx={{
+                  py: 0.8,
+                  px: 1.5,
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  textTransform: 'none',
+                  borderRadius: 2,
+                }}
+              >
+                ← Back to Editor
+              </Button>
+            ) : null}
+          </Box>
+        </Box>
+      )}
+
       {/* Cropper Auth & 30-Day Paywall Modal */}
       <CropperAuthModal
         open={authModalOpen}
@@ -466,28 +586,37 @@ function MainContent() {
   );
 }
 
+function ThemedApp() {
+  const { theme } = useContext(AppContext);
+  const muiTheme = useMemo(() => getAppTheme(theme || 'light'), [theme]);
+
+  return (
+    <ThemeProvider theme={muiTheme}>
+      <CssBaseline />
+      <Routes>
+        {/* Hub — shown when visiting the root URL */}
+        <Route path="/" element={<HubPage />} />
+        {/* Label Cropper — full tool, moved to /cropper */}
+        <Route path="/cropper" element={<MainContent />} />
+        {/* GST Tool — lives at /gst-tool/* */}
+        <Route path="/gst-tool/*" element={<GstApp />} />
+        {/* Informational pages */}
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/disclaimer" element={<DisclaimerPage />} />
+        <Route path="/how-to-use" element={<HowToUsePage />} />
+        <Route path="/faq" element={<FaqPage />} />
+      </Routes>
+    </ThemeProvider>
+  );
+}
+
 export default function App() {
   return (
-    <ThemeProvider theme={darkTheme}>
-      <CssBaseline />
-      <AppProvider>
-        <Routes>
-          {/* Hub — shown when visiting the root URL */}
-          <Route path="/" element={<HubPage />} />
-          {/* Label Cropper — full tool, moved to /cropper */}
-          <Route path="/cropper" element={<MainContent />} />
-          {/* GST Tool — lives at /gst-tool/* */}
-          <Route path="/gst-tool/*" element={<GstApp />} />
-          {/* Informational pages */}
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-          <Route path="/terms" element={<TermsPage />} />
-          <Route path="/disclaimer" element={<DisclaimerPage />} />
-          <Route path="/how-to-use" element={<HowToUsePage />} />
-          <Route path="/faq" element={<FaqPage />} />
-        </Routes>
-      </AppProvider>
-    </ThemeProvider>
+    <AppProvider>
+      <ThemedApp />
+    </AppProvider>
   );
 }

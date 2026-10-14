@@ -31,7 +31,7 @@ import { AppContext } from '../context/AppContext';
 import { mergePdfBlobs, printPdfBlob } from '../utils/pdfUtils';
 
 export default function DownloadPanel() {
-  const { croppedBlobs, setCroppedBlobs, user, setAuthModalMode, setAuthModalOpen } = useContext(AppContext);
+  const { croppedBlobs, setCroppedBlobs, user, setAuthModalMode, setAuthModalOpen, theme } = useContext(AppContext);
   const [previewItem, setPreviewItem] = useState(null);
   const [isZipping, setIsZipping] = useState(false);
   const [isMerging, setIsMerging] = useState(false);
@@ -43,12 +43,13 @@ export default function DownloadPanel() {
         sx={{
           p: 6,
           textAlign: 'center',
-          bgcolor: 'rgba(255, 255, 255, 0.02)',
+          bgcolor: theme === 'dark' ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)',
           borderRadius: 4,
-          border: '1px dashed rgba(255, 255, 255, 0.12)',
+          border: '1px dashed',
+          borderColor: 'divider',
         }}
       >
-        <Archive size={48} color="#00c9ff" style={{ marginBottom: 16, opacity: 0.7 }} />
+        <Archive size={48} color={theme === 'dark' ? '#00c9ff' : '#0284c7'} style={{ marginBottom: 16, opacity: 0.7 }} />
         <Typography variant="h6" fontWeight={600} gutterBottom>
           No Cropped Labels Yet
         </Typography>
@@ -202,11 +203,11 @@ export default function DownloadPanel() {
             onClick={handlePrintAll}
             disabled={isPrinting}
             sx={{
-              background: 'linear-gradient(135deg, #ff6ec7 0%, #7873f5 100%)',
-              color: '#ffffff',
+              background: 'linear-gradient(135deg, #00d68f 0%, #00b37a 100%)',
+              color: '#0a0f1e',
               fontWeight: 700,
               textTransform: 'none',
-              boxShadow: '0 4px 14px rgba(255, 110, 199, 0.35)',
+              boxShadow: '0 4px 14px rgba(0, 214, 143, 0.35)',
             }}
           >
             {isPrinting ? 'Preparing Print...' : 'Print All Labels'}
@@ -216,7 +217,7 @@ export default function DownloadPanel() {
             variant="outlined"
             startIcon={<RotateCcw size={16} />}
             onClick={() => setCroppedBlobs([])}
-            sx={{ color: 'text.secondary', borderColor: 'rgba(255,255,255,0.2)', textTransform: 'none' }}
+            sx={{ color: 'text.secondary', borderColor: 'divider', textTransform: 'none' }}
           >
             Clear
           </Button>
@@ -258,7 +259,7 @@ export default function DownloadPanel() {
               setAuthModalOpen(true);
             }}
             sx={{
-              background: 'linear-gradient(135deg, #00c9ff 0%, #ff6ec7 100%)',
+              background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
               color: '#ffffff',
               fontWeight: 800,
               fontSize: '0.8rem',
@@ -276,7 +277,7 @@ export default function DownloadPanel() {
 
       {/* Individual Cropped Cards */}
       <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <FileText size={18} color="#ff6ec7" /> Individual Files ({croppedBlobs.length})
+        <FileText size={18} color="#00c9ff" /> Individual Files ({croppedBlobs.length})
       </Typography>
 
       <Box
@@ -298,14 +299,14 @@ export default function DownloadPanel() {
             <Card
               key={index}
               sx={{
-                bgcolor: 'rgba(255, 255, 255, 0.03)',
-                backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                bgcolor: theme === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'background.paper',
+                border: '1px solid',
+                borderColor: 'divider',
                 borderRadius: 3,
                 transition: 'all 0.2s ease',
                 '&:hover': {
                   borderColor: 'rgba(0, 201, 255, 0.4)',
-                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.3)',
+                  boxShadow: theme === 'dark' ? '0 8px 24px rgba(0, 0, 0, 0.3)' : '0 8px 24px rgba(0, 0, 0, 0.08)',
                   transform: 'translateY(-2px)',
                 },
               }}
@@ -335,7 +336,7 @@ export default function DownloadPanel() {
                   </Box>
                 </Box>
 
-                <Divider sx={{ my: 1.5, borderColor: 'rgba(255, 255, 255, 0.06)' }} />
+                <Divider sx={{ my: 1.5, borderColor: 'divider' }} />
 
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
                   <Tooltip title="Preview Cropped PDF">
@@ -343,9 +344,9 @@ export default function DownloadPanel() {
                       size="small"
                       onClick={() => setPreviewItem(item)}
                       sx={{
-                        color: '#00c9ff',
-                        bgcolor: 'rgba(0, 201, 255, 0.08)',
-                        '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.2)' },
+                        color: theme === 'dark' ? '#00c9ff' : '#0284c7',
+                        bgcolor: theme === 'dark' ? 'rgba(0, 201, 255, 0.08)' : 'rgba(2, 132, 199, 0.08)',
+                        '&:hover': { bgcolor: theme === 'dark' ? 'rgba(0, 201, 255, 0.2)' : 'rgba(2, 132, 199, 0.18)' },
                       }}
                     >
                       <Eye size={16} />
@@ -357,9 +358,9 @@ export default function DownloadPanel() {
                       size="small"
                       onClick={() => handlePrintSingle(item)}
                       sx={{
-                        color: '#ff6ec7',
-                        bgcolor: 'rgba(255, 110, 199, 0.08)',
-                        '&:hover': { bgcolor: 'rgba(255, 110, 199, 0.2)' },
+                        color: 'var(--gst-emerald, #00d68f)',
+                        bgcolor: 'rgba(0, 214, 143, 0.08)',
+                        '&:hover': { bgcolor: 'rgba(0, 214, 143, 0.2)' },
                       }}
                     >
                       <Printer size={16} />
@@ -374,7 +375,7 @@ export default function DownloadPanel() {
                     sx={{
                       fontSize: '0.75rem',
                       textTransform: 'none',
-                      borderColor: 'rgba(255,255,255,0.18)',
+                      borderColor: 'divider',
                       '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
                     }}
                   >
@@ -396,8 +397,9 @@ export default function DownloadPanel() {
         slotProps={{
           paper: {
             sx: {
-              bgcolor: '#0d131f',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
               borderRadius: 3,
             },
           },
@@ -415,7 +417,7 @@ export default function DownloadPanel() {
                   startIcon={<Printer size={16} />}
                   onClick={() => handlePrintSingle(previewItem)}
                   variant="outlined"
-                  sx={{ color: '#ff6ec7', borderColor: '#ff6ec7', textTransform: 'none' }}
+                  sx={{ color: '#00d68f', borderColor: '#00d68f', textTransform: 'none' }}
                 >
                   Print
                 </Button>
@@ -424,7 +426,7 @@ export default function DownloadPanel() {
                   startIcon={<Download size={16} />}
                   onClick={() => handleDownloadSingle(previewItem)}
                   variant="contained"
-                  sx={{ bgcolor: '#00c9ff', color: '#000', fontWeight: 600, textTransform: 'none' }}
+                  sx={{ bgcolor: theme === 'dark' ? '#00c9ff' : '#0284c7', color: '#ffffff', fontWeight: 600, textTransform: 'none' }}
                 >
                   Download
                 </Button>
@@ -432,7 +434,7 @@ export default function DownloadPanel() {
             )}
           </Box>
         </DialogTitle>
-        <DialogContent dividers sx={{ p: 0, height: '70vh', bgcolor: '#070b12' }}>
+        <DialogContent dividers sx={{ p: 0, height: '70vh', bgcolor: 'var(--canvas-bg)' }}>
           {previewItem && (
             <iframe
               src={URL.createObjectURL(previewItem.blob)}

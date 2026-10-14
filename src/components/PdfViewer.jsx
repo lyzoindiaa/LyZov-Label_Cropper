@@ -69,6 +69,7 @@ export default function PdfViewer() {
     setZoom,
     currentPage,
     setCurrentPage,
+    theme,
   } = useContext(AppContext);
 
   const [numPages, setNumPages] = useState(null);
@@ -130,8 +131,8 @@ export default function PdfViewer() {
   const getRelativeCoords = (e) => {
     if (!pageWrapperRef.current) return { x: 0, y: 0 };
     const rect = pageWrapperRef.current.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const clientX = e.clientX !== undefined ? e.clientX : (e.touches ? e.touches[0].clientX : 0);
+    const clientY = e.clientY !== undefined ? e.clientY : (e.touches ? e.touches[0].clientY : 0);
     const rawX = (clientX - rect.left) / rect.width;
     const rawY = (clientY - rect.top) / rect.height;
     return {
@@ -140,9 +141,7 @@ export default function PdfViewer() {
     };
   };
 
-  const handleWrapperMouseDown = (e) => {
-    // Prevent default scroll on touch so drawing doesn't scroll the page
-    if (e.touches) e.preventDefault();
+  const handleWrapperPointerDown = (e) => {
     if (e.target.dataset.handle || e.target.dataset.role === 'selection-box') {
       return;
     }
@@ -160,6 +159,9 @@ export default function PdfViewer() {
     }
 
     // In 'other' (Adjustable) mode, start drawing new custom box
+    try {
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    } catch {}
     setInteractionMode('draw');
     setDragStart(coords);
     setSelection({
@@ -170,26 +172,30 @@ export default function PdfViewer() {
     });
   };
 
-  const handleBoxMouseDown = (e) => {
+  const handleBoxPointerDown = (e) => {
     e.stopPropagation();
+    try {
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    } catch {}
     const coords = getRelativeCoords(e);
     setInteractionMode('move');
     setDragStart(coords);
     setInitialBox({ ...selection });
   };
 
-  const handleResizeStart = (e, handleType) => {
+  const handleResizePointerStart = (e, handleType) => {
     e.stopPropagation();
+    try {
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    } catch {}
     const coords = getRelativeCoords(e);
     setInteractionMode(`resize-${handleType}`);
     setDragStart(coords);
     setInitialBox({ ...selection });
   };
 
-  const handleMouseMove = useCallback((e) => {
+  const handlePointerMove = useCallback((e) => {
     if (!interactionMode || !dragStart) return;
-    // Prevent page scroll while dragging a crop region on touch devices
-    if (e.touches) e.preventDefault();
     const current = getRelativeCoords(e);
 
     if (interactionMode === 'draw') {
@@ -245,7 +251,7 @@ export default function PdfViewer() {
     }
   }, [interactionMode, dragStart, initialBox, setSelection]);
 
-  const handleMouseUp = useCallback(() => {
+  const handlePointerUp = useCallback(() => {
     setInteractionMode(null);
     setDragStart(null);
     setInitialBox(null);
@@ -279,19 +285,17 @@ export default function PdfViewer() {
   }, [selection, setSelection, clearSelection]);
 
   useEffect(() => {
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    window.addEventListener('touchmove', handleMouseMove, { passive: false });
-    window.addEventListener('touchend', handleMouseUp);
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
     window.addEventListener('keydown', handleKeyDown);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      window.removeEventListener('touchmove', handleMouseMove);
-      window.removeEventListener('touchend', handleMouseUp);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [handleMouseMove, handleMouseUp, handleKeyDown]);
+  }, [handlePointerMove, handlePointerUp, handleKeyDown]);
 
   const handleSavePreset = () => {
     if (presetNameInput.trim()) {
@@ -365,8 +369,8 @@ export default function PdfViewer() {
                 textTransform: 'none',
                 fontWeight: 600,
                 ...(selectionMode === 'inspect'
-                  ? { bgcolor: 'rgba(255,255,255,0.15)', color: '#fff' }
-                  : { color: 'text.secondary', borderColor: 'rgba(255,255,255,0.15)' }),
+                  ? { bgcolor: theme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)', color: 'text.primary' }
+                  : { color: 'text.secondary', borderColor: 'divider' }),
               }}
             >
               Inspect Mode
@@ -398,7 +402,7 @@ export default function PdfViewer() {
               fontSize: '0.75rem',
               fontWeight: 700,
               textTransform: 'none',
-              background: 'linear-gradient(135deg, #00c9ff 0%, #ff6ec7 100%)',
+              background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
               color: '#ffffff',
               boxShadow: '0 2px 10px rgba(0, 201, 255, 0.3)',
             }}
@@ -484,12 +488,12 @@ export default function PdfViewer() {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}>
           <ButtonGroup size="small" variant="outlined">
             <Tooltip title="Rotate Left 90°">
-              <IconButton size="small" onClick={rotateCounterClockwise} sx={{ borderColor: 'rgba(255,255,255,0.15)' }}>
+              <IconButton size="small" onClick={rotateCounterClockwise} sx={{ borderColor: 'divider' }}>
                 <RotateCcw size={15} />
               </IconButton>
             </Tooltip>
             <Tooltip title="Rotate Right 90°">
-              <IconButton size="small" onClick={rotateClockwise} sx={{ borderColor: 'rgba(255,255,255,0.15)' }}>
+              <IconButton size="small" onClick={rotateClockwise} sx={{ borderColor: 'divider' }}>
                 <RotateCw size={15} />
               </IconButton>
             </Tooltip>
@@ -533,7 +537,7 @@ export default function PdfViewer() {
               <IconButton
                 size="small"
                 onClick={() => setZoom((z) => Math.max(0.5, z - 0.15))}
-                sx={{ borderColor: 'rgba(255,255,255,0.15)' }}
+                sx={{ borderColor: 'divider' }}
               >
                 <ZoomOut size={15} />
               </IconButton>
@@ -545,7 +549,7 @@ export default function PdfViewer() {
                 onClick={handleFitWidth}
                 sx={{
                   fontSize: '0.72rem',
-                  borderColor: 'rgba(255,255,255,0.15)',
+                  borderColor: 'divider',
                   color: 'text.secondary',
                   textTransform: 'none',
                   px: 1,
@@ -560,7 +564,7 @@ export default function PdfViewer() {
               sx={{
                 fontSize: '0.72rem',
                 minWidth: 44,
-                borderColor: 'rgba(255,255,255,0.15)',
+                borderColor: 'divider',
                 color: 'text.secondary',
               }}
             >
@@ -570,7 +574,7 @@ export default function PdfViewer() {
               <IconButton
                 size="small"
                 onClick={() => setZoom((z) => Math.min(2.5, z + 0.15))}
-                sx={{ borderColor: 'rgba(255,255,255,0.15)' }}
+                sx={{ borderColor: 'divider' }}
               >
                 <ZoomIn size={15} />
               </IconButton>
@@ -649,6 +653,7 @@ export default function PdfViewer() {
       {/* Interactive Full-Width PDF Canvas Container */}
       <Box
         ref={containerRef}
+        className="crop-surface"
         sx={{
           position: 'relative',
           display: 'flex',
@@ -658,9 +663,10 @@ export default function PdfViewer() {
           flex: 1,
           minHeight: { xs: '50vh', md: '75vh' },
           p: { xs: 1.5, sm: 3 },
-          bgcolor: '#090d16',
+          bgcolor: 'var(--canvas-bg)',
           borderRadius: 3,
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid',
+          borderColor: 'divider',
           overflow: 'auto',
           userSelect: 'none',
           touchAction: 'none',
@@ -668,14 +674,15 @@ export default function PdfViewer() {
       >
         <Box
           ref={pageWrapperRef}
-          onMouseDown={handleWrapperMouseDown}
-          onTouchStart={handleWrapperMouseDown}
+          className="crop-surface"
+          onPointerDown={handleWrapperPointerDown}
           sx={{
             position: 'relative',
-            boxShadow: '0 16px 40px rgba(0,0,0,0.6)',
+            boxShadow: theme === 'dark' ? '0 16px 40px rgba(0,0,0,0.6)' : '0 12px 30px rgba(0,0,0,0.15)',
             cursor: selectionMode === 'select' ? 'crosshair' : 'default',
             lineHeight: 0,
             touchAction: 'none',
+            userSelect: 'none',
           }}
         >
           <Document
@@ -716,8 +723,7 @@ export default function PdfViewer() {
           {selection && (
             <Box
               data-role="selection-box"
-              onMouseDown={handleBoxMouseDown}
-              onTouchStart={handleBoxMouseDown}
+              onPointerDown={handleBoxPointerDown}
               sx={{
                 position: 'absolute',
                 left: `${selection.xRatio * 100}%`,
@@ -729,6 +735,7 @@ export default function PdfViewer() {
                 cursor: 'move',
                 zIndex: 10,
                 boxSizing: 'border-box',
+                touchAction: 'none',
                 transition: interactionMode ? 'none' : 'border-color 0.15s ease',
               }}
             >
@@ -739,7 +746,7 @@ export default function PdfViewer() {
                   top: -24,
                   left: 0,
                   bgcolor: cropMode !== 'other' ? MARKETPLACE_PRESETS[cropMode]?.color || '#00c9ff' : '#00c9ff',
-                  color: '#081420',
+                  color: '#ffffff',
                   px: 1,
                   py: 0.2,
                   borderRadius: '4px 4px 0 0',
@@ -750,6 +757,7 @@ export default function PdfViewer() {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 0.5,
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
                 }}
               >
                 <span>{cropMode !== 'other' ? `🔒 ${MARKETPLACE_PRESETS[cropMode]?.name}` : '📐 Custom'}</span>
@@ -757,29 +765,30 @@ export default function PdfViewer() {
                 <span>{inchWidth}" × {inchHeight}"</span>
               </Box>
 
-              {/* 4 Corner Handles – only available in 'other' (Adjustable) mode */}
+              {/* 4 Corner Handles – only available in 'other' (Adjustable) mode (min 24px for touch) */}
               {cropMode === 'other' && ['nw', 'ne', 'se', 'sw'].map((h) => (
                 <Box
                   key={h}
                   data-handle={h}
-                  onMouseDown={(e) => handleResizeStart(e, h)}
-                  onTouchStart={(e) => handleResizeStart(e, h)}
+                  onPointerDown={(e) => handleResizePointerStart(e, h)}
                   sx={{
                     position: 'absolute',
-                    width: { xs: 20, sm: 12 },
-                    height: { xs: 20, sm: 12 },
+                    width: 24,
+                    height: 24,
                     bgcolor: '#ffffff',
-                    border: '2px solid #00c9ff',
+                    border: '2.5px solid #00c9ff',
                     borderRadius: '50%',
-                    top: h.includes('n') ? { xs: -10, sm: -6 } : { xs: 'calc(100% - 10px)', sm: 'calc(100% - 6px)' },
-                    left: h.includes('w') ? { xs: -10, sm: -6 } : { xs: 'calc(100% - 10px)', sm: 'calc(100% - 6px)' },
+                    top: h.includes('n') ? -12 : 'calc(100% - 12px)',
+                    left: h.includes('w') ? -12 : 'calc(100% - 12px)',
                     cursor: `${h}-resize`,
                     zIndex: 20,
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
                     touchAction: 'none',
+                    userSelect: 'none',
+                    transition: 'transform 0.1s ease',
                     '&:hover': {
-                      transform: 'scale(1.25)',
-                      bgcolor: '#ff6ec7',
+                      transform: 'scale(1.15)',
+                      bgcolor: '#e6f9ff',
                     },
                   }}
                 />
@@ -798,8 +807,9 @@ export default function PdfViewer() {
         slotProps={{
           paper: {
             sx: {
-              bgcolor: '#0d131f',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
               borderRadius: 3,
             },
           },

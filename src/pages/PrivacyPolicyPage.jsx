@@ -1,196 +1,613 @@
-import React from 'react';
-import { Box, Typography, Divider } from '@mui/material';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Box, Typography, Chip, Button } from '@mui/material';
+import {
+  ShieldCheck,
+  Lock,
+  Trash2,
+  UserX,
+  ExternalLink,
+  Sparkles,
+  ArrowRight,
+  FileCheck2,
+} from 'lucide-react';
 import PageLayout from '../components/PageLayout';
 
 const EFFECTIVE_DATE = 'September 23, 2026';
 
-function Section({ title, children }) {
-  return (
-    <Box sx={{ mb: 4 }}>
-      <Typography
-        variant="h6"
-        fontWeight={700}
-        sx={{ color: '#f1f5f9', mb: 1.25 }}
-      >
-        {title}
-      </Typography>
-      {children}
-    </Box>
-  );
-}
-
-function P({ children }) {
-  return (
-    <Typography color="text.secondary" sx={{ lineHeight: 1.8, mb: 1.5 }}>
-      {children}
-    </Typography>
-  );
-}
+const SECTIONS = [
+  { id: 'overview', number: '01', title: 'Overview' },
+  { id: 'uploads', number: '02', title: 'File Uploads & Image Processing' },
+  { id: 'no-collect', number: '03', title: 'Data We Do Not Collect' },
+  { id: 'cookies', number: '04', title: 'Cookies & Storage' },
+  { id: 'analytics', number: '05', title: 'Analytics Usage' },
+  { id: 'advertising', number: '06', title: 'Advertising (Google AdSense)' },
+  { id: 'third-party', number: '07', title: 'Third-Party Links' },
+  { id: 'children', number: '08', title: "Children's Privacy" },
+  { id: 'changes', number: '09', title: 'Changes to This Policy' },
+  { id: 'contact', number: '10', title: 'Contact & Inquiries' },
+];
 
 export default function PrivacyPolicyPage() {
+  const [activeSection, setActiveSection] = useState('overview');
+
+  const scrollToSection = (id) => {
+    setActiveSection(id);
+    const el = document.getElementById(id);
+    if (el) {
+      const yOffset = -90;
+      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+  };
+
   return (
     <PageLayout
       title="Privacy Policy"
-      description="Read the LyZov Cropper Studio Privacy Policy to understand how your data is handled. All PDF processing is 100% client-side — no files are ever uploaded to any server."
+      description="Read the LyZov Cropper Studio Privacy Policy. All PDF processing is 100% client-side — zero files are uploaded to any server."
+      maxWidth={1240}
     >
-      <Box sx={{ mb: 5 }}>
-        <Typography
-          component="h1"
-          variant="h4"
-          fontWeight={800}
-          sx={{
-            letterSpacing: '-0.5px',
-            background: 'linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            mb: 1,
-          }}
-        >
-          Privacy Policy
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Effective date: {EFFECTIVE_DATE}
-        </Typography>
+      {/* Hero Header */}
+      <Box
+        sx={{
+          position: 'relative',
+          borderRadius: { xs: 3, md: 4 },
+          p: { xs: 3, sm: 4, md: 5 },
+          mb: 4,
+          background: 'radial-gradient(ellipse at top left, rgba(16,185,129,0.12) 0%, rgba(0,201,255,0.06) 50%, rgba(0,0,0,0) 80%), rgba(255,255,255,0.02)',
+          border: '1px solid',
+          borderColor: 'rgba(16,185,129,0.25)',
+        }}
+      >
+        <Box sx={{ maxWidth: 840 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2, flexWrap: 'wrap' }}>
+            <Chip
+              icon={<ShieldCheck size={14} color="#10b981" />}
+              label="100% Client-Side Architecture"
+              size="small"
+              sx={{
+                bgcolor: 'rgba(16,185,129,0.12)',
+                color: '#10b981',
+                fontWeight: 700,
+                border: '1px solid rgba(16,185,129,0.3)',
+              }}
+            />
+            <Chip
+              label={`Effective: ${EFFECTIVE_DATE}`}
+              size="small"
+              sx={{
+                bgcolor: 'action.hover',
+                fontWeight: 600,
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            />
+          </Box>
+
+          <Typography
+            component="h1"
+            variant="h3"
+            fontWeight={900}
+            sx={{
+              letterSpacing: '-1px',
+              color: 'text.primary',
+              fontSize: { xs: '1.85rem', sm: '2.4rem', md: '2.8rem' },
+              lineHeight: 1.2,
+              mb: 1.5,
+            }}
+          >
+            Privacy Policy &amp;{' '}
+            <span
+              style={{
+                background: 'linear-gradient(135deg, #10b981 0%, #00c9ff 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              Data Protection
+            </span>
+          </Typography>
+
+          <Typography color="text.secondary" sx={{ fontSize: '1.05rem', lineHeight: 1.7 }}>
+            We believe your shipping documents and customer addresses belong exclusively to you.
+            LyZov Cropper Studio executes entirely in your browser sandbox without ever transmitting
+            document contents to any external server.
+          </Typography>
+        </Box>
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.07)', mb: 4 }} />
-
-      <Section title="1. Overview">
-        <P>
-          LyZov Cropper Studio ("the Tool", "we", "our") is a free, browser-based PDF label
-          cropping utility. This Privacy Policy explains what information is processed when you
-          use the Tool and how we handle it. We are committed to your privacy and have designed
-          the Tool from the ground up to minimise any data collection.
-        </P>
-      </Section>
-
-      <Section title="2. File Uploads & Image Processing">
-        <P>
-          <strong style={{ color: '#f1f5f9' }}>All file processing is entirely client-side.</strong>{' '}
-          When you upload a PDF or image file to LyZov Cropper Studio, that file is loaded
-          directly into your browser's memory using JavaScript. It is processed locally on
-          your device using the PDF-lib and React-PDF libraries.
-        </P>
-        <P>
-          No file content — including PDF pages, images, text, or metadata — is ever
-          transmitted to any external server operated by us or any third party as part of the
-          cropping process. Your files stay on your device at all times.
-        </P>
-        <P>
-          When you close the browser tab or navigate away, any files you uploaded are
-          automatically discarded from browser memory. We retain no copies, logs, or records
-          of any uploaded files.
-        </P>
-      </Section>
-
-      <Section title="3. Data We Do Not Collect">
-        <P>We do not collect, store, or process:</P>
+      {/* 3 Key Privacy Pillars Highlights */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+          gap: 2.5,
+          mb: 5,
+        }}
+      >
         <Box
-          component="ul"
-          sx={{ pl: 2.5, color: 'text.secondary', '& li': { mb: 0.75, lineHeight: 1.75 } }}
+          sx={{
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'rgba(16,185,129,0.2)',
+            borderRadius: 3,
+            p: 2.5,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+          }}
         >
-          <li>The content of any files you upload</li>
-          <li>Personally identifiable information (name, email, address)</li>
-          <li>Payment or financial information of any kind</li>
-          <li>Account or login credentials (no account system exists)</li>
-          <li>Device fingerprinting data</li>
-          <li>The output files or cropped PDFs you download</li>
+          <Box
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: 2.5,
+              bgcolor: 'rgba(16,185,129,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#10b981',
+              flexShrink: 0,
+            }}
+          >
+            <Lock size={22} />
+          </Box>
+          <Box>
+            <Typography fontWeight={800} sx={{ color: 'text.primary', fontSize: '0.95rem' }}>
+              Zero Server Uploads
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Files are processed in local JavaScript memory only
+            </Typography>
+          </Box>
         </Box>
-      </Section>
 
-      <Section title="4. Cookies">
-        <P>
-          LyZov Cropper Studio does not use first-party cookies for tracking, personalisation,
-          or session management purposes. The Tool functions without any login session and does
-          not store persistent user-specific data in cookies.
-        </P>
-        <P>
-          Third-party services embedded on the site (such as Google AdSense and Google
-          Analytics, described below) may set their own cookies on your browser. These cookies
-          are governed by the respective third parties' privacy policies and are outside our
-          direct control.
-        </P>
-      </Section>
-
-      <Section title="5. Analytics">
-        <P>
-          We may use Google Analytics to understand aggregate usage patterns — for example,
-          which pages are visited most frequently, approximate geographic distribution of
-          visitors, and what browsers or devices are used. This data is collected in anonymised,
-          aggregated form and is used solely to improve the Tool.
-        </P>
-        <P>
-          Google Analytics may use cookies and similar technologies to collect this data.
-          You can opt out of Google Analytics tracking by installing the{' '}
-          <a
-            href="https://tools.google.com/dlpage/gaoptout"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: '#00c9ff' }}
+        <Box
+          sx={{
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'rgba(0,201,255,0.2)',
+            borderRadius: 3,
+            p: 2.5,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+          }}
+        >
+          <Box
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: 2.5,
+              bgcolor: 'rgba(0,201,255,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#00c9ff',
+              flexShrink: 0,
+            }}
           >
-            Google Analytics Opt-out Browser Add-on
-          </a>
-          .
-        </P>
-      </Section>
+            <Trash2 size={22} />
+          </Box>
+          <Box>
+            <Typography fontWeight={800} sx={{ color: 'text.primary', fontSize: '0.95rem' }}>
+              Instant Memory Wipe
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              All data is instantly wiped when tab closes
+            </Typography>
+          </Box>
+        </Box>
 
-      <Section title="6. Advertising (Google AdSense)">
-        <P>
-          LyZov Cropper Studio displays advertisements served by Google AdSense to help
-          support the cost of hosting and ongoing development. Google AdSense uses cookies
-          and similar tracking technologies to serve ads that may be relevant to your
-          interests based on your browsing activity across websites.
-        </P>
-        <P>
-          We do not control the specific advertisements shown or the data collected by
-          Google for ad personalisation. To learn more about how Google uses your data for
-          advertising, or to opt out of personalised ads, please visit:{' '}
-          <a
-            href="https://adssettings.google.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: '#00c9ff' }}
+        <Box
+          sx={{
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'rgba(168,85,247,0.2)',
+            borderRadius: 3,
+            p: 2.5,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+          }}
+        >
+          <Box
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: 2.5,
+              bgcolor: 'rgba(168,85,247,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#a855f7',
+              flexShrink: 0,
+            }}
           >
-            Google Ad Settings
-          </a>
-          .
-        </P>
-      </Section>
+            <UserX size={22} />
+          </Box>
+          <Box>
+            <Typography fontWeight={800} sx={{ color: 'text.primary', fontSize: '0.95rem' }}>
+              No Account or Login
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Zero storage of names, emails, or credentials
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
 
-      <Section title="7. Third-Party Links">
-        <P>
-          Pages on this site may contain links to external websites (for example, GitHub).
-          We are not responsible for the privacy practices of those external sites and
-          encourage you to review their respective privacy policies before providing any
-          personal information.
-        </P>
-      </Section>
+      {/* 2-Column Responsive Layout */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', lg: '300px 1fr' },
+          gap: 4,
+          alignItems: 'start',
+          mb: 6,
+        }}
+      >
+        {/* Left Column: Sticky Table of Contents */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, position: { lg: 'sticky' }, top: { lg: 90 } }}>
+          <Box
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3,
+              p: 2.5,
+            }}
+          >
+            <Typography variant="caption" fontWeight={800} color="text.secondary" sx={{ textTransform: 'uppercase', px: 1, mb: 1.5, display: 'block' }}>
+              Table of Contents
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              {SECTIONS.map((sec) => {
+                const isActive = activeSection === sec.id;
+                return (
+                  <Box
+                    key={sec.id}
+                    component="button"
+                    onClick={() => scrollToSection(sec.id)}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      px: 1.5,
+                      py: 1,
+                      borderRadius: 2,
+                      border: 'none',
+                      bgcolor: isActive ? 'rgba(16,185,129,0.1)' : 'transparent',
+                      color: isActive ? '#10b981' : 'text.primary',
+                      fontWeight: isActive ? 700 : 500,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      fontSize: '0.85rem',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        bgcolor: isActive ? 'rgba(16,185,129,0.15)' : 'action.hover',
+                      },
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ fontFamily: 'monospace', opacity: 0.6 }}>
+                      {sec.number}
+                    </Typography>
+                    <Typography variant="inherit" sx={{ lineHeight: 1.3 }}>
+                      {sec.title}
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+          </Box>
 
-      <Section title="8. Children's Privacy">
-        <P>
-          LyZov Cropper Studio is not directed at children under the age of 13, and we do
-          not knowingly collect personal information from children. If you believe a child
-          has provided personal information through this site, please contact us so we can
-          take appropriate action.
-        </P>
-      </Section>
+          {/* Quick Help Card */}
+          <Box
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3,
+              p: 2.5,
+            }}
+          >
+            <Typography variant="subtitle2" fontWeight={800} sx={{ color: 'text.primary', mb: 1 }}>
+              Questions about our privacy?
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem', mb: 2 }}>
+              If you have regulatory or enterprise compliance questions, reach our team directly.
+            </Typography>
+            <Button
+              component={Link}
+              to="/contact"
+              variant="outlined"
+              size="small"
+              fullWidth
+              endIcon={<ArrowRight size={14} />}
+              sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+            >
+              Contact Privacy Team
+            </Button>
+          </Box>
+        </Box>
 
-      <Section title="9. Changes to This Policy">
-        <P>
-          We may update this Privacy Policy from time to time to reflect changes in our
-          practices or applicable law. When we do, we will update the effective date at the
-          top of this page. Continued use of the Tool after any changes constitutes your
-          acceptance of the updated policy.
-        </P>
-      </Section>
+        {/* Right Column: Structured Policy Cards */}
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          {/* 1. Overview */}
+          <Box
+            id="overview"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="01" size="small" sx={{ fontWeight: 800, bgcolor: 'action.hover', color: '#10b981' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                1. Overview
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+              LyZov Cropper Studio ("the Tool", "we", "our") is a free, browser-based PDF label cropping utility. This Privacy Policy explains what information is processed when you use the Tool and how we handle it. We are committed to your privacy and have designed the Tool from the ground up to eliminate any server-side data collection.
+            </Typography>
+          </Box>
 
-      <Section title="10. Contact">
-        <P>
-          If you have any questions or concerns about this Privacy Policy or our data
-          practices, please open an issue or discussion on our GitHub repository. See
-          our Contact Us page for details.
-        </P>
-      </Section>
+          {/* 2. File Uploads */}
+          <Box
+            id="uploads"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'rgba(16,185,129,0.3)',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="02" size="small" sx={{ fontWeight: 800, bgcolor: 'rgba(16,185,129,0.1)', color: '#10b981' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                2. File Uploads &amp; Image Processing
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8, mb: 2 }}>
+              <strong style={{ color: '#10b981' }}>All file processing is 100% client-side.</strong> When you upload a PDF file to LyZov Cropper Studio, that file is loaded directly into your browser's local memory using JavaScript. It is processed locally on your device using the PDF-lib and React-PDF libraries.
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8, mb: 2 }}>
+              No file content — including PDF pages, barcodes, buyer addresses, invoice amounts, or embedded metadata — is ever transmitted to any external server operated by us or any third party as part of the cropping process.
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+              When you close the browser tab or navigate away, any files you uploaded are automatically discarded from browser memory. We retain zero copies, logs, or records of any uploaded documents.
+            </Typography>
+          </Box>
+
+          {/* 3. Data We Do Not Collect */}
+          <Box
+            id="no-collect"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="03" size="small" sx={{ fontWeight: 800, bgcolor: 'action.hover', color: '#10b981' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                3. Data We Do Not Collect
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8, mb: 2 }}>
+              We explicitly do not collect, store, or process:
+            </Typography>
+            <Box
+              component="ul"
+              sx={{ pl: 2.5, m: 0, color: 'text.secondary', fontSize: '0.9rem', lineHeight: 1.8 }}
+            >
+              <li>The content or images of any files you upload</li>
+              <li>Customer personally identifiable information (PII) like names or phone numbers</li>
+              <li>Payment or financial credentials</li>
+              <li>User accounts, passwords, or emails</li>
+              <li>Device fingerprinting or hardware identifiers</li>
+              <li>The cropped output labels you download</li>
+            </Box>
+          </Box>
+
+          {/* 4. Cookies */}
+          <Box
+            id="cookies"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="04" size="small" sx={{ fontWeight: 800, bgcolor: 'action.hover', color: '#10b981' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                4. Cookies &amp; Storage
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8, mb: 1.5 }}>
+              LyZov Cropper Studio does not use first-party tracking cookies or session identifiers. Only UI preferences (such as your chosen Dark or Light mode) are saved in your browser's local storage so your theme persists between visits.
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+              Third-party services embedded on the site (such as Google AdSense and Google Analytics, described below) may set their own cookies on your browser according to their respective policies.
+            </Typography>
+          </Box>
+
+          {/* 5. Analytics */}
+          <Box
+            id="analytics"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="05" size="small" sx={{ fontWeight: 800, bgcolor: 'action.hover', color: '#10b981' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                5. Analytics Usage
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8, mb: 1.5 }}>
+              We may use Google Analytics to understand aggregate usage trends — such as high-traffic hours, approximate visitor geographic regions, and browser versions. This data is collected in anonymised form and is used exclusively to optimize performance.
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+              You can opt out of Google Analytics at any time using the{' '}
+              <a
+                href="https://tools.google.com/dlpage/gaoptout"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#00c9ff', textDecoration: 'underline' }}
+              >
+                Google Analytics Opt-out Browser Add-on
+              </a>
+              .
+            </Typography>
+          </Box>
+
+          {/* 6. Advertising */}
+          <Box
+            id="advertising"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="06" size="small" sx={{ fontWeight: 800, bgcolor: 'action.hover', color: '#10b981' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                6. Advertising (Google AdSense)
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8, mb: 1.5 }}>
+              LyZov Cropper Studio displays advertisements served by Google AdSense to help support the cost of hosting and ongoing open-source development. Google AdSense uses cookies to serve ads based on your visits to this and other websites.
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+              To adjust or opt out of personalized advertising preferences, visit{' '}
+              <a
+                href="https://adssettings.google.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#00c9ff', textDecoration: 'underline' }}
+              >
+                Google Ad Settings
+              </a>
+              .
+            </Typography>
+          </Box>
+
+          {/* 7. Third-Party Links */}
+          <Box
+            id="third-party"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="07" size="small" sx={{ fontWeight: 800, bgcolor: 'action.hover', color: '#10b981' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                7. Third-Party Links
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+              Pages on this site may contain external links (for example, to GitHub or vendor documentation). We are not responsible for the privacy practices of external websites and recommend reviewing their independent policies.
+            </Typography>
+          </Box>
+
+          {/* 8. Children's Privacy */}
+          <Box
+            id="children"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="08" size="small" sx={{ fontWeight: 800, bgcolor: 'action.hover', color: '#10b981' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                8. Children's Privacy
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+              LyZov Cropper Studio is a tool intended for business and logistics operators and is not directed at children under 13. We do not knowingly collect personal information from minors.
+            </Typography>
+          </Box>
+
+          {/* 9. Changes */}
+          <Box
+            id="changes"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="09" size="small" sx={{ fontWeight: 800, bgcolor: 'action.hover', color: '#10b981' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                9. Changes to This Policy
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
+              We may update this Privacy Policy periodically to reflect technological adjustments or legal requirements. Any modifications will be posted here with an updated effective date.
+            </Typography>
+          </Box>
+
+          {/* 10. Contact */}
+          <Box
+            id="contact"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 3.5,
+              p: { xs: 2.5, sm: 3.5 },
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+              <Chip label="10" size="small" sx={{ fontWeight: 800, bgcolor: 'action.hover', color: '#10b981' }} />
+              <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
+                10. Contact
+              </Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8, mb: 2 }}>
+              If you have questions or concerns about this policy or our data practices, reach us via our Contact Us page or open an issue on GitHub.
+            </Typography>
+            <Button
+              component={Link}
+              to="/contact"
+              variant="outlined"
+              size="small"
+              endIcon={<ArrowRight size={14} />}
+              sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+            >
+              Visit Contact Desk
+            </Button>
+          </Box>
+        </Box>
+      </Box>
     </PageLayout>
   );
 }

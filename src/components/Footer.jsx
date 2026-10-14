@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Box, Typography, Divider, Chip } from '@mui/material';
 import { Scissors, ShieldCheck } from 'lucide-react';
+import { AppContext } from '../context/AppContext';
 
 const footerLinks = [
   { label: 'About Us', to: '/about' },
@@ -16,14 +17,20 @@ const footerLinks = [
 
 export default function Footer() {
   const location = useLocation();
+  const { theme } = useContext(AppContext);
+
+  const accentColor = theme === 'dark' ? '#00c9ff' : '#0284c7';
+  const inactiveTextColor = theme === 'dark' ? '#94a3b8' : '#64748b';
+  const hoverTextColor = theme === 'dark' ? '#f1f5f9' : '#0f172a';
 
   return (
     <Box
       component="footer"
       sx={{
         mt: 'auto',
-        borderTop: '1px solid rgba(255,255,255,0.08)',
-        bgcolor: 'rgba(7,10,18,0.9)',
+        borderTop: '1px solid',
+        borderColor: 'divider',
+        bgcolor: theme === 'dark' ? 'rgba(7,10,18,0.95)' : 'rgba(255,255,255,0.95)',
         backdropFilter: 'blur(16px)',
         px: { xs: 2, sm: 4, md: 6 },
         py: { xs: 4, md: 5 },
@@ -46,7 +53,7 @@ export default function Footer() {
               width: 32,
               height: 32,
               borderRadius: '8px',
-              background: 'linear-gradient(135deg, #00c9ff 0%, #ff6ec7 100%)',
+              background: 'linear-gradient(135deg, #00c9ff 0%, #a78bfa 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -59,9 +66,9 @@ export default function Footer() {
             <Typography
               variant="body1"
               fontWeight={800}
-              sx={{ letterSpacing: '-0.4px', lineHeight: 1.1 }}
+              sx={{ letterSpacing: '-0.4px', lineHeight: 1.1, color: 'text.primary' }}
             >
-              LyZov <span style={{ color: '#00c9ff' }}>Cropper</span> Studio
+              LyZov <span style={{ color: accentColor }}>Cropper</span> Studio
             </Typography>
             <Typography variant="caption" color="text.secondary">
               Batch PDF Label Cropper &amp; Thermal Printer
@@ -70,20 +77,21 @@ export default function Footer() {
         </Box>
 
         <Chip
-          icon={<ShieldCheck size={13} color="#00c9ff" />}
+          icon={<ShieldCheck size={13} color={accentColor} />}
           label="100% Client-Side · No Server Uploads"
           size="small"
           sx={{
-            bgcolor: 'rgba(0,201,255,0.08)',
-            color: '#00c9ff',
-            border: '1px solid rgba(0,201,255,0.2)',
+            bgcolor: theme === 'dark' ? 'rgba(0,201,255,0.08)' : 'rgba(2,132,199,0.08)',
+            color: accentColor,
+            border: '1px solid',
+            borderColor: theme === 'dark' ? 'rgba(0,201,255,0.2)' : 'rgba(2,132,199,0.2)',
             fontWeight: 600,
             fontSize: '0.7rem',
           }}
         />
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.07)', mb: 3 }} />
+      <Divider sx={{ borderColor: 'divider', mb: 3 }} />
 
       {/* Navigation links */}
       <Box
@@ -104,17 +112,17 @@ export default function Footer() {
               key={to}
               to={to}
               style={{
-                color: isActive ? '#00c9ff' : '#94a3b8',
+                color: isActive ? accentColor : inactiveTextColor,
                 textDecoration: 'none',
                 fontSize: '0.82rem',
                 fontWeight: isActive ? 700 : 500,
                 fontFamily: '"Plus Jakarta Sans", sans-serif',
                 transition: 'color 0.2s',
-                borderBottom: isActive ? '1px solid rgba(0,201,255,0.5)' : '1px solid transparent',
+                borderBottom: isActive ? `1px solid ${accentColor}` : '1px solid transparent',
                 paddingBottom: '1px',
               }}
-              onMouseEnter={e => { if (!isActive) e.target.style.color = '#f1f5f9'; }}
-              onMouseLeave={e => { if (!isActive) e.target.style.color = '#94a3b8'; }}
+              onMouseEnter={e => { if (!isActive) e.target.style.color = hoverTextColor; }}
+              onMouseLeave={e => { if (!isActive) e.target.style.color = inactiveTextColor; }}
             >
               {label}
             </Link>
@@ -122,13 +130,13 @@ export default function Footer() {
         })}
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.05)', mb: 2.5 }} />
+      <Divider sx={{ borderColor: 'divider', mb: 2.5 }} />
 
       {/* Copyright */}
       <Typography
         variant="caption"
         color="text.secondary"
-        sx={{ display: 'block', textAlign: 'center', opacity: 0.7 }}
+        sx={{ display: 'block', textAlign: 'center', opacity: 0.8 }}
       >
         © {new Date().getFullYear()} LyZov Cropper Studio. All rights reserved. &nbsp;·&nbsp; Built for label professionals worldwide.
       </Typography>

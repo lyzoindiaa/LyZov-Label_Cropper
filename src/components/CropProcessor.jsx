@@ -49,6 +49,7 @@ export default function CropProcessor() {
     setActiveTab,
     requireCropperAccess,
     recordCropUsage,
+    theme,
   } = useContext(AppContext);
 
   const previewCanvasRef = useRef(null);
@@ -152,9 +153,10 @@ export default function CropProcessor() {
     <Paper
       sx={{
         p: 2.5,
-        bgcolor: 'rgba(255, 255, 255, 0.03)',
+        bgcolor: theme === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
         borderRadius: 3,
-        border: '1px solid rgba(255, 255, 255, 0.08)',
+        border: '1px solid',
+        borderColor: 'divider',
         display: 'flex',
         flexDirection: 'column',
         gap: 2,
@@ -219,10 +221,11 @@ export default function CropProcessor() {
                   cursor: 'pointer',
                   border: isSelected
                     ? `1.5px solid ${p.color}`
-                    : '1px solid rgba(255, 255, 255, 0.08)',
+                    : '1px solid',
+                  borderColor: isSelected ? p.color : 'divider',
                   bgcolor: isSelected
                     ? `${p.color}15`
-                    : 'rgba(255, 255, 255, 0.02)',
+                    : (theme === 'dark' ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)'),
                   transition: 'all 0.18s ease',
                   '&:hover': {
                     borderColor: p.color,
@@ -245,7 +248,7 @@ export default function CropProcessor() {
                     <Typography
                       variant="body2"
                       fontWeight={isSelected ? 800 : 600}
-                      sx={{ color: isSelected ? '#ffffff' : 'text.primary', fontSize: '0.85rem' }}
+                      sx={{ color: isSelected ? (theme === 'dark' ? '#ffffff' : '#0f172a') : 'text.primary', fontSize: '0.85rem' }}
                     >
                       {p.name}
                     </Typography>
@@ -288,8 +291,9 @@ export default function CropProcessor() {
           sx={{
             p: 1.2,
             borderRadius: 1.8,
-            bgcolor: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 255, 255, 0.06)',
+            bgcolor: theme === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+            border: '1px solid',
+            borderColor: 'divider',
             display: 'flex',
             alignItems: 'center',
             gap: 1,
@@ -301,7 +305,7 @@ export default function CropProcessor() {
           <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.72rem', lineHeight: 1.3 }}>
             {cropMode === 'other' ? (
               <>
-                <b style={{ color: '#00c9ff' }}>Custom Adjust Mode:</b> Drag corner dots on the viewer to resize width &amp; height. Drag inside the box to reposition.
+                <b style={{ color: theme === 'dark' ? '#00c9ff' : '#0284c7' }}>Custom Adjust Mode:</b> Drag corner dots on the viewer to resize width &amp; height. Drag inside the box to reposition.
               </>
             ) : cropMode === 'amazon' ? (
               <>
@@ -316,7 +320,7 @@ export default function CropProcessor() {
         </Box>
       </Box>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)' }} />
+      <Divider sx={{ borderColor: 'divider' }} />
 
       {/* Pages to crop */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -331,21 +335,21 @@ export default function CropProcessor() {
         >
           <FormControlLabel
             value="first"
-            control={<Radio size="small" sx={{ color: '#00c9ff', '&.Mui-checked': { color: '#00c9ff' } }} />}
+            control={<Radio size="small" sx={{ color: theme === 'dark' ? '#00c9ff' : '#0284c7', '&.Mui-checked': { color: theme === 'dark' ? '#00c9ff' : '#0284c7' } }} />}
             label={
-              <Typography variant="caption" sx={{ fontWeight: cropOptions.pagesToCrop === 'first' ? 700 : 500, color: cropOptions.pagesToCrop === 'first' ? '#00c9ff' : 'text.primary' }}>
+              <Typography variant="caption" sx={{ fontWeight: cropOptions.pagesToCrop === 'first' ? 700 : 500, color: cropOptions.pagesToCrop === 'first' ? (theme === 'dark' ? '#00c9ff' : '#0284c7') : 'text.primary' }}>
                 Page 1 Only {cropMode === 'amazon' ? '(Amazon Label)' : ''}
               </Typography>
             }
           />
           <FormControlLabel
             value="all"
-            control={<Radio size="small" sx={{ color: '#00c9ff', '&.Mui-checked': { color: '#00c9ff' } }} />}
+            control={<Radio size="small" sx={{ color: theme === 'dark' ? '#00c9ff' : '#0284c7', '&.Mui-checked': { color: theme === 'dark' ? '#00c9ff' : '#0284c7' } }} />}
             label={<Typography variant="caption">All Pages</Typography>}
           />
           <FormControlLabel
             value="page2"
-            control={<Radio size="small" sx={{ color: '#00c9ff', '&.Mui-checked': { color: '#00c9ff' } }} />}
+            control={<Radio size="small" sx={{ color: theme === 'dark' ? '#00c9ff' : '#0284c7', '&.Mui-checked': { color: theme === 'dark' ? '#00c9ff' : '#0284c7' } }} />}
             label={<Typography variant="caption">Page 2 Only</Typography>}
           />
         </RadioGroup>
@@ -357,8 +361,9 @@ export default function CropProcessor() {
           sx={{
             p: 1.8,
             borderRadius: 2.5,
-            bgcolor: 'rgba(0, 0, 0, 0.35)',
-            border: '1px solid rgba(0, 201, 255, 0.25)',
+            bgcolor: theme === 'dark' ? 'rgba(0, 0, 0, 0.35)' : 'rgba(0, 0, 0, 0.02)',
+            border: '1px solid',
+            borderColor: theme === 'dark' ? 'rgba(0, 201, 255, 0.25)' : 'rgba(2, 132, 199, 0.25)',
             display: 'flex',
             flexDirection: 'column',
             gap: 1.5,
@@ -366,8 +371,8 @@ export default function CropProcessor() {
         >
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-              <Eye size={15} color="#00c9ff" />
-              <Typography variant="caption" fontWeight={700} color="#00c9ff">
+              <Eye size={15} color={theme === 'dark' ? '#00c9ff' : '#0284c7'} />
+              <Typography variant="caption" fontWeight={700} color={theme === 'dark' ? '#00c9ff' : '#0284c7'}>
                 LIVE CROP PREVIEW
               </Typography>
             </Box>
@@ -377,8 +382,8 @@ export default function CropProcessor() {
               sx={{
                 height: 20,
                 fontSize: '0.7rem',
-                bgcolor: 'rgba(0, 201, 255, 0.15)',
-                color: '#00c9ff',
+                bgcolor: theme === 'dark' ? 'rgba(0, 201, 255, 0.15)' : 'rgba(2, 132, 199, 0.12)',
+                color: theme === 'dark' ? '#00c9ff' : '#0284c7',
                 fontWeight: 700,
               }}
             />
@@ -389,10 +394,11 @@ export default function CropProcessor() {
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              bgcolor: '#06090e',
+              bgcolor: 'var(--canvas-bg)',
               p: 1.5,
               borderRadius: 2,
-              border: '1px dashed rgba(255, 255, 255, 0.1)',
+              border: '1px dashed',
+              borderColor: 'divider',
               minHeight: 140,
               maxHeight: 180,
               overflow: 'hidden',
@@ -404,7 +410,7 @@ export default function CropProcessor() {
                 maxWidth: '100%',
                 maxHeight: '160px',
                 borderRadius: '4px',
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
               }}
             />
           </Box>
@@ -412,10 +418,10 @@ export default function CropProcessor() {
       ) : (
         <Alert
           severity="info"
-          icon={<Crosshair size={18} color="#00c9ff" />}
+          icon={<Crosshair size={18} color={theme === 'dark' ? '#00c9ff' : '#0284c7'} />}
           sx={{
-            bgcolor: 'rgba(0, 201, 255, 0.08)',
-            color: '#00c9ff',
+            bgcolor: theme === 'dark' ? 'rgba(0, 201, 255, 0.08)' : 'rgba(2, 132, 199, 0.08)',
+            color: theme === 'dark' ? '#00c9ff' : '#0284c7',
             py: 0.8,
             fontSize: '0.8rem',
             alignItems: 'center',
@@ -448,9 +454,9 @@ export default function CropProcessor() {
           sx={{
             fontSize: '0.75rem',
             height: 30,
-            bgcolor: 'rgba(255, 255, 255, 0.04)',
+            bgcolor: theme === 'dark' ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.02)',
             color: 'text.primary',
-            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.12)' },
+            '& .MuiOutlinedInput-notchedOutline': { borderColor: 'divider' },
           }}
         >
           <MenuItem value="original_label" sx={{ fontSize: '0.75rem' }}>
@@ -479,9 +485,9 @@ export default function CropProcessor() {
             sx={{
               height: 8,
               borderRadius: 4,
-              bgcolor: 'rgba(255, 255, 255, 0.1)',
+              bgcolor: theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
               '& .MuiLinearProgress-bar': {
-                background: 'linear-gradient(90deg, #00c9ff 0%, #ff6ec7 100%)',
+                background: 'linear-gradient(90deg, #00c9ff 0%, #00d68f 100%)',
               },
             }}
           />
@@ -499,14 +505,15 @@ export default function CropProcessor() {
           py: 1.5,
           fontWeight: 700,
           letterSpacing: '0.5px',
-          background: 'linear-gradient(135deg, #ff6ec7 0%, #7873f5 100%)',
-          boxShadow: '0 6px 20px rgba(255, 110, 199, 0.35)',
+          background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
+          boxShadow: '0 6px 20px rgba(0, 201, 255, 0.35)',
+          color: '#ffffff',
           '&:hover': {
-            background: 'linear-gradient(135deg, #ff5ebc 0%, #6964eb 100%)',
+            background: 'linear-gradient(135deg, #00b8e6 0%, #0066dd 100%)',
           },
           '&.Mui-disabled': {
-            background: 'rgba(255, 255, 255, 0.08)',
-            color: 'rgba(255, 255, 255, 0.3)',
+            background: theme === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
+            color: theme === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.35)',
           },
         }}
       >

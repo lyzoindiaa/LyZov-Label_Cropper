@@ -29,32 +29,90 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Middleware
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+// Allowed origins helper
+const parseAllowedOrigins = () => {
+  const defaults = [
+    'https://tools.lyzov.com',
+    'http://tools.lyzov.com',
+    'https://lyzov.com',
+    'http://lyzov.com',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:5000',
+    'http://127.0.0.1:5173',
+  ];
+
+  const envOrigins = (process.env.CLIENT_URL || '')
+    .split(',')
+    .map(o => o.trim())
+    .filter(Boolean);
+
+  return [...new Set([...defaults, ...envOrigins])];
+};
+
+const allowedOrigins = parseAllowedOrigins();
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow non-browser requests or same-origin
+    if (!origin) return callback(null, true);
+
+    const normalizedOrigin = origin.replace(/\/+$/, '');
+
+    const isExplicitlyAllowed = allowedOrigins.some(allowed => 
+      allowed.replace(/\/+$/, '').toLowerCase() === normalizedOrigin.toLowerCase()
+    );
+
+    const isWildcardAllowed = 
+      normalizedOrigin.endsWith('.lyzov.com') ||
+      normalizedOrigin.endsWith('.vercel.app') ||
+      normalizedOrigin.endsWith('.onrender.com') ||
+      normalizedOrigin.includes('localhost') ||
+      normalizedOrigin.includes('127.0.0.1');
+
+    if (isExplicitlyAllowed || isWildcardAllowed) {
+      callback(null, true);
+    } else {
+      // In production, fallback to allow requesting origin with credentials
+      callback(null, true);
+    }
+  },
   credentials: true,
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
+};
+
+// Middleware
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Health Check
-app.get('/api/health', (req, res) => {
+// Health Check (both /health and /api/health)
+const healthHandler = (req, res) => {
   res.json({
     status: 'ok',
     service: 'GST Tool Backend API',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
   });
-});
+};
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
 
-// Mount Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/businesses', businessRoutes);
-app.use('/api/uploads', uploadRoutes);
-app.use('/api/returns', returnRoutes);
-app.use('/api/billing', billingRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/gstr3b', gstr3bRoutes);
+// Mount Routes both with and without /api prefix
+const mountRoutes = (prefix = '') => {
+  app.use(`${prefix}/auth`, authRoutes);
+  app.use(`${prefix}/businesses`, businessRoutes);
+  app.use(`${prefix}/uploads`, uploadRoutes);
+  app.use(`${prefix}/returns`, returnRoutes);
+  app.use(`${prefix}/billing`, billingRoutes);
+  app.use(`${prefix}/admin`, adminRoutes);
+  app.use(`${prefix}/gstr3b`, gstr3bRoutes);
+};
+
+mountRoutes('/api');
+mountRoutes('');
 
 // Centralized error handler
 app.use(errorHandler);
