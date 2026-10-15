@@ -7,14 +7,31 @@ function getToken() {
 
 export function setAuthSession(token, user, business) {
   if (token) localStorage.setItem('gst_token', token);
-  if (user) localStorage.setItem('gst_user', JSON.stringify(user));
+  if (user) {
+    localStorage.setItem('gst_user', JSON.stringify(user));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('gst_user_updated', { detail: user }));
+    }
+  }
   if (business) localStorage.setItem('gst_active_business', JSON.stringify(business));
+}
+
+export function setActiveUser(user) {
+  if (user) {
+    localStorage.setItem('gst_user', JSON.stringify(user));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('gst_user_updated', { detail: user }));
+    }
+  }
 }
 
 export function clearAuthSession() {
   localStorage.removeItem('gst_token');
   localStorage.removeItem('gst_user');
   localStorage.removeItem('gst_active_business');
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('gst_user_updated', { detail: null }));
+  }
 }
 
 export function getActiveUser() {

@@ -5,24 +5,45 @@ import {
   ArrowRight, FileText, AlertTriangle, CheckCircle2,
   Clock, TrendingUp, Upload, Download, Building2
 } from 'lucide-react';
-import { gstApi, getActiveUser } from '../api/client';
+import { gstApi, getActiveUser, setActiveUser } from '../api/client';
 
 export default function GstDashboard() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => getActiveUser());
   const [businessCount, setBusinessCount] = useState(0);
   const [recentReturns, setRecentReturns] = useState([]);
   const [trialDaysLeft, setTrialDaysLeft] = useState(30);
 
   useEffect(() => {
-    const active = getActiveUser();
-    if (active) {
-      setUser(active);
-      if (active.trialEndsAt) {
-        const diff = Math.ceil((new Date(active.trialEndsAt) - new Date()) / (1000 * 60 * 60 * 24));
-        setTrialDaysLeft(Math.max(0, diff));
+    const updateUserState = (active) => {
+      const u = active || getActiveUser();
+      if (u) {
+        setUser(u);
+        if (u.trialEndsAt) {
+          const diff = Math.ceil((new Date(u.trialEndsAt) - new Date()) / (1000 * 60 * 60 * 24));
+          setTrialDaysLeft(Math.max(0, diff));
+        }
+      }
+    };
+
+    updateUserState();
+
+    const handleUserUpdate = (e) => updateUserState(e.detail);
+    window.addEventListener('gst_user_updated', handleUserUpdate);
+    window.addEventListener('storage', updateUserState);
+
+    async function syncMe() {
+      try {
+        const res = await gstApi.getMe();
+        if (res?.user) {
+          setActiveUser(res.user);
+          updateUserState(res.user);
+        }
+      } catch {
+        // fallback
       }
     }
+    syncMe();
 
     async function loadData() {
       try {
@@ -45,6 +66,11 @@ export default function GstDashboard() {
       }
     }
     loadData();
+
+    return () => {
+      window.removeEventListener('gst_user_updated', handleUserUpdate);
+      window.removeEventListener('storage', updateUserState);
+    };
   }, []);
 
   const userName = user?.name ? user.name.split(' ')[0] : 'Seller';
