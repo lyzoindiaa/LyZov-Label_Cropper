@@ -493,7 +493,7 @@ export default function PrivacyPolicyPage() {
               </Typography>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8, mb: 1.5 }}>
-              LyZov Cropper Studio displays advertisements served by Google AdSense to help support the cost of hosting and ongoing open-source development. Google AdSense uses cookies to serve ads based on your visits to this and other websites.
+              LyZov Cropper Studio displays advertisements served by Google AdSense to help support the cost of hosting and ongoing platform maintenance and improvements. Google AdSense uses cookies to serve ads based on your visits to this and other websites.
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
               To adjust or opt out of personalized advertising preferences, visit{' '}
@@ -527,7 +527,7 @@ export default function PrivacyPolicyPage() {
               </Typography>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
-              Pages on this site may contain external links (for example, to GitHub or vendor documentation). We are not responsible for the privacy practices of external websites and recommend reviewing their independent policies.
+              Pages on this site may contain external links (for example, to courier or vendor documentation). We are not responsible for the privacy practices of external websites and recommend reviewing their independent policies.
             </Typography>
           </Box>
 
@@ -593,7 +593,7 @@ export default function PrivacyPolicyPage() {
               </Typography>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8, mb: 2 }}>
-              If you have questions or concerns about this policy or our data practices, reach us via our Contact Us page or open an issue on GitHub.
+              If you have questions or concerns about this policy or our data practices, reach us directly via our Contact Us page or support email.
             </Typography>
             <Button
               component={Link}

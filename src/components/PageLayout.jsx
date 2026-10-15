@@ -6,6 +6,7 @@ import { AppContext } from '../context/AppContext';
 import Footer from './Footer';
 
 const NAV_PAGES = [
+  { label: 'Blog & Guides', path: '/blog' },
   { label: 'How to Use', path: '/how-to-use' },
   { label: 'FAQ', path: '/faq' },
   { label: 'About Us', path: '/about' },

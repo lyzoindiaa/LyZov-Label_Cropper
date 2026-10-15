@@ -373,4 +373,44 @@ export const gstApi = {
       body: JSON.stringify(payload),
     });
   },
+
+  // --- Blog Endpoints ---
+  async getBlogPosts(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return request(`/blogs${query ? `?${query}` : ''}`);
+  },
+
+  async getBlogPostBySlug(slug) {
+    return request(`/blogs/${slug}`);
+  },
+
+  async getAdminBlogPosts() {
+    return request('/blogs/admin/all');
+  },
+
+  async createBlogPost(payload) {
+    return request('/blogs', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async updateBlogPost(id, payload) {
+    return request(`/blogs/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async deleteBlogPost(id) {
+    return request(`/blogs/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  async seedBlogPosts() {
+    return request('/blogs/admin/seed', {
+      method: 'POST',
+    });
+  },
 };

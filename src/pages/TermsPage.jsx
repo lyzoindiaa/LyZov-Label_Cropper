@@ -189,10 +189,10 @@ export default function TermsPage() {
           </Box>
           <Box>
             <Typography fontWeight={800} sx={{ color: 'text.primary', fontSize: '0.95rem' }}>
-              Open-Source Project
+              Independent Platform
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Community transparent, no vendor lock-in
+              Direct in-browser execution, no vendor lock-in
             </Typography>
           </Box>
         </Box>
@@ -313,7 +313,7 @@ export default function TermsPage() {
               Questions about our terms?
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.85rem', mb: 2 }}>
-              If you need an enterprise evaluation or clarification on open-source licensing, get in touch.
+              If you need an enterprise evaluation or commercial assistance, get in touch.
             </Typography>
             <Button
               component={Link}
@@ -421,7 +421,7 @@ export default function TermsPage() {
               </Typography>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8, mb: 1.5 }}>
-              The LyZov Cropper Studio source code, branding, and user interface are the intellectual property of their respective authors. The Tool is made available as an open-source project under community guidelines.
+              The LyZov Cropper Studio software, branding, and user interface are the proprietary intellectual property of LyZov India. All rights reserved.
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8 }}>
               <strong style={{ color: '#00c9ff' }}>You retain 100% full ownership</strong> of all files you upload and all cropped label PDFs you export. We make zero claims of ownership, royalty, or rights over your files or their contents.

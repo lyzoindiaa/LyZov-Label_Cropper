@@ -47,6 +47,8 @@ import DisclaimerPage from './pages/DisclaimerPage';
 import HowToUsePage from './pages/HowToUsePage';
 import FaqPage from './pages/FaqPage';
 import HubPage from './pages/HubPage';
+import BlogListPage from './pages/BlogListPage';
+import BlogPostPage from './pages/BlogPostPage';
 
 const getAppTheme = (mode = 'dark') =>
   createTheme({
@@ -345,6 +347,26 @@ function MainContent() {
               </Button>
             </Box>
           )}
+
+          <Button
+            component={Link}
+            to="/blog"
+            variant="text"
+            size="small"
+            sx={{
+              color: 'text.secondary',
+              fontWeight: 700,
+              fontSize: '0.78rem',
+              borderRadius: '10px',
+              textTransform: 'none',
+              px: 1.2,
+              py: 0.6,
+              '&:hover': { color: theme === 'dark' ? '#00c9ff' : '#0284c7' },
+              display: { xs: 'none', md: 'inline-flex' },
+            }}
+          >
+            Guides
+          </Button>
 
           <Button
             component={Link}
@@ -691,6 +713,9 @@ function ThemedApp() {
         <Route path="/disclaimer" element={<DisclaimerPage />} />
         <Route path="/how-to-use" element={<HowToUsePage />} />
         <Route path="/faq" element={<FaqPage />} />
+        {/* Blog & Guides */}
+        <Route path="/blog" element={<BlogListPage />} />
+        <Route path="/blog/:slug" element={<BlogPostPage />} />
       </Routes>
     </ThemeProvider>
   );

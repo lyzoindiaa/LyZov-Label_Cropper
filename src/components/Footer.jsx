@@ -6,6 +6,7 @@ import { AppContext } from '../context/AppContext';
 
 const footerLinks = [
   { label: 'About Us', to: '/about' },
+  { label: 'Blog & Guides', to: '/blog' },
   { label: 'How to Use', to: '/how-to-use' },
   { label: 'FAQ', to: '/faq' },
   { label: 'GST Tool ✦', to: '/gst-tool' },
