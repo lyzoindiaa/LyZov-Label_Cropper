@@ -166,6 +166,8 @@ export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(() => getActiveUser());
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState('auth'); // 'auth' | 'paywall'
+  const [authModalDefaultTab, setAuthModalDefaultTab] = useState(0); // 0 = Login, 1 = Signup
+  const [invoicesModalOpen, setInvoicesModalOpen] = useState(false);
 
   // ─────────────────────────────────────────────────────────────────────────
   // SECURITY PATCH: Validate localStorage session against the server on boot.
@@ -542,6 +544,10 @@ export const AppProvider = ({ children }) => {
     setAuthModalOpen,
     authModalMode,
     setAuthModalMode,
+    authModalDefaultTab,
+    setAuthModalDefaultTab,
+    invoicesModalOpen,
+    setInvoicesModalOpen,
     requireCropperAccess,
     logoutUser,
     GUEST_DAILY_LIMIT,
