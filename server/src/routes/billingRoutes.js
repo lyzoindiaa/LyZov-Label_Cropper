@@ -153,7 +153,8 @@ router.post('/create-order', async (req, res, next) => {
     if (!rzpResponse.ok) {
       const rzpErr = await rzpResponse.json().catch(() => ({}));
       console.error('Razorpay order creation failed:', rzpErr);
-      return res.status(502).json({ error: 'Failed to create payment order. Please try again.' });
+      const detail = rzpErr?.error?.description || rzpErr?.error?.code || 'Please try again.';
+      return res.status(502).json({ error: `Razorpay error: ${detail}` });
     }
 
     const rzpOrder = await rzpResponse.json();
