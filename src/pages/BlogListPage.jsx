@@ -62,7 +62,7 @@ export default function BlogListPage() {
     <PageLayout
       title="E-Commerce Seller Blog & Guides"
       description="Practical guides, thermal printer setup tutorials, batch shipping label cropping tips, and GST return compliance guides for Amazon, Flipkart, and Meesho sellers."
-      maxWidth={1000}
+      maxWidth={{ xs: '100%', sm: 840, md: 1040, lg: 1240 }}
     >
       {/* Simple, Elegant Header */}
       <Box sx={{ pt: 2, pb: 4, mb: 4, borderBottom: '1px solid', borderColor: 'divider' }}>

@@ -101,7 +101,7 @@ export default function BlogPostPage() {
 
   if (loading) {
     return (
-      <PageLayout title="Loading Guide..." maxWidth={780}>
+      <PageLayout title="Loading Guide..." maxWidth={{ xs: '100%', sm: 780, md: 960, lg: 1150, xl: 1240 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 14 }}>
           <CircularProgress size={36} sx={{ color: '#00c9ff', mb: 2 }} />
           <Typography color="text.secondary" sx={{ fontSize: '1.05rem' }}>
@@ -114,7 +114,7 @@ export default function BlogPostPage() {
 
   if (!post) {
     return (
-      <PageLayout title="Article Not Found" maxWidth={780}>
+      <PageLayout title="Article Not Found" maxWidth={{ xs: '100%', sm: 780, md: 960, lg: 1150, xl: 1240 }}>
         <Box sx={{ textAlign: 'center', py: 12 }}>
           <Typography variant="h4" fontWeight={800} sx={{ mb: 2 }}>
             Article Not Found
@@ -175,7 +175,7 @@ export default function BlogPostPage() {
     <PageLayout
       title={`${post.title} | LyZov Guides`}
       description={post.excerpt}
-      maxWidth={780}
+      maxWidth={{ xs: '100%', sm: 780, md: 960, lg: 1150, xl: 1240 }}
     >
       {/* Inject JSON-LD Structured Data */}
       <script
