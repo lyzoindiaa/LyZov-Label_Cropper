@@ -62,9 +62,12 @@ router.post('/auth/register', async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    // Make the first user an admin by default for smooth management
+    // Security patch: Only first user or designated ADMIN_EMAIL gets admin role
     const userCount = await PnlUser.countDocuments();
-    const role = userCount === 0 || email.includes('admin') ? 'admin' : 'seller';
+    const adminEmail = (process.env.ADMIN_EMAIL || '').toLowerCase();
+    const isFirstUser = userCount === 0;
+    const isDesignatedAdmin = adminEmail && email.toLowerCase() === adminEmail;
+    const role = isFirstUser || isDesignatedAdmin ? 'admin' : 'seller';
 
     const user = await PnlUser.create({
       email: email.toLowerCase(),
@@ -233,7 +236,10 @@ router.post('/billing/verify-payment', authenticatePnlUser, async (req, res) => 
     if (!plan) return res.status(400).json({ error: 'Invalid plan' });
 
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
-    if (keySecret && razorpaySignature && !keySecret.includes('placeholder')) {
+    if (keySecret && !keySecret.includes('placeholder')) {
+      if (!razorpaySignature || !razorpayOrderId || !razorpayPaymentId) {
+        return res.status(400).json({ error: 'Missing Razorpay signature or payment details' });
+      }
       const body = razorpayOrderId + '|' + razorpayPaymentId;
       const expectedSignature = crypto.createHmac('sha256', keySecret).update(body).digest('hex');
       if (expectedSignature !== razorpaySignature) {
