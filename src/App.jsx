@@ -26,9 +26,11 @@ import {
   Sparkles,
   Sun,
   Moon,
+  Receipt,
 } from 'lucide-react';
 import { AppProvider, AppContext } from './context/AppContext';
 import CropperAuthModal from './components/CropperAuthModal';
+import CropperInvoicesModal from './components/CropperInvoicesModal';
 import GstApp from './gst-tool/GstApp';
 import PdfUploader from './components/PdfUploader';
 import PdfViewer from './components/PdfViewer';
@@ -93,6 +95,10 @@ function MainContent() {
     setAuthModalOpen,
     authModalMode,
     setAuthModalMode,
+    authModalDefaultTab,
+    setAuthModalDefaultTab,
+    invoicesModalOpen,
+    setInvoicesModalOpen,
     logoutUser,
     GUEST_DAILY_LIMIT,
     guestUsage,
@@ -154,7 +160,7 @@ function MainContent() {
           {user ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
               {user.plan === 'trial' ? (
-                <Tooltip title={isTrialExpired ? 'Your 30-day trial has expired. Subscribe to continue!' : `${daysLeftInTrial} days remaining in your free trial`}>
+                <Tooltip title={isTrialExpired ? 'Your 30-day trial has expired. Subscribe to continue!' : `${daysLeftInTrial} days remaining in your free trial. Click to view subscription.`}>
                   <Chip
                     icon={<Sparkles size={13} color={isTrialExpired ? '#ff4d6d' : '#00c9ff'} />}
                     label={isTrialExpired ? 'Trial Expired' : `Trial: ${daysLeftInTrial}d left`}
@@ -173,17 +179,21 @@ function MainContent() {
                   />
                 </Tooltip>
               ) : (
-                <Chip
-                  icon={<Crown size={13} color="#00d68f" />}
-                  label="Pro Active"
-                  size="small"
-                  sx={{
-                    bgcolor: 'rgba(0, 214, 143, 0.12)',
-                    color: '#00d68f',
-                    border: '1px solid rgba(0, 214, 143, 0.3)',
-                    fontWeight: 700,
-                  }}
-                />
+                <Tooltip title="View your active subscription & payment receipts">
+                  <Chip
+                    icon={<Crown size={13} color="#00d68f" />}
+                    label={user.plan === 'cropper_yearly' ? 'Pro Annual' : user.plan === 'cropper_monthly' ? 'Pro Monthly' : 'Pro Active'}
+                    size="small"
+                    onClick={() => setInvoicesModalOpen(true)}
+                    sx={{
+                      bgcolor: 'rgba(0, 214, 143, 0.12)',
+                      color: '#00d68f',
+                      border: '1px solid rgba(0, 214, 143, 0.3)',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  />
+                </Tooltip>
               )}
 
               {user.plan === 'trial' && (
@@ -210,17 +220,48 @@ function MainContent() {
                 </Button>
               )}
 
-              <Chip
-                avatar={<UserIcon size={13} color="#94a3b8" />}
-                label={user.name ? user.name.split(' ')[0] : 'Seller'}
-                size="small"
-                sx={{
-                  bgcolor: theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
-                  color: 'text.primary',
-                  fontWeight: 600,
-                  display: { xs: 'none', md: 'inline-flex' },
-                }}
-              />
+              {/* Direct Invoices & Payment History Button for Label Cropper */}
+              <Tooltip title="View payment receipts & subscription history">
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<Receipt size={14} />}
+                  onClick={() => setInvoicesModalOpen(true)}
+                  sx={{
+                    color: theme === 'dark' ? '#00c9ff' : '#0284c7',
+                    borderColor: theme === 'dark' ? 'rgba(0, 201, 255, 0.4)' : 'rgba(2, 132, 199, 0.4)',
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
+                    borderRadius: 2,
+                    py: 0.4,
+                    px: 1.2,
+                    textTransform: 'none',
+                    display: { xs: 'none', sm: 'inline-flex' },
+                    '&:hover': {
+                      bgcolor: theme === 'dark' ? 'rgba(0, 201, 255, 0.1)' : 'rgba(2, 132, 199, 0.1)',
+                      borderColor: theme === 'dark' ? '#00c9ff' : '#0284c7',
+                    },
+                  }}
+                >
+                  Invoices
+                </Button>
+              </Tooltip>
+
+              <Tooltip title="Account settings & invoices">
+                <Chip
+                  avatar={<UserIcon size={13} color="#94a3b8" />}
+                  label={user.name ? user.name.split(' ')[0] : 'Seller'}
+                  size="small"
+                  onClick={() => setInvoicesModalOpen(true)}
+                  sx={{
+                    bgcolor: theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)',
+                    color: 'text.primary',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: { xs: 'none', md: 'inline-flex' },
+                  }}
+                />
+              </Tooltip>
 
               <Tooltip title="Log Out">
                 <Button
@@ -253,11 +294,39 @@ function MainContent() {
                 />
               </Tooltip>
 
+              {/* Direct Sign In button for returning users */}
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  setAuthModalMode('auth');
+                  setAuthModalDefaultTab(0);
+                  setAuthModalOpen(true);
+                }}
+                sx={{
+                  color: 'text.primary',
+                  borderColor: 'divider',
+                  fontWeight: 700,
+                  fontSize: { xs: '0.72rem', sm: '0.8rem' },
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  px: { xs: 1.2, sm: 1.5 },
+                  py: 0.5,
+                  '&:hover': {
+                    borderColor: theme === 'dark' ? '#00c9ff' : '#0284c7',
+                    bgcolor: theme === 'dark' ? 'rgba(0, 201, 255, 0.08)' : 'rgba(2, 132, 199, 0.08)',
+                  },
+                }}
+              >
+                Sign In
+              </Button>
+
               <Button
                 variant="contained"
                 size="small"
                 onClick={() => {
                   setAuthModalMode('auth');
+                  setAuthModalDefaultTab(1);
                   setAuthModalOpen(true);
                 }}
                 sx={{
@@ -567,10 +636,24 @@ function MainContent() {
         </Box>
       )}
 
+      {/* Cropper Invoices & Subscription Management Modal */}
+      <CropperInvoicesModal
+        open={invoicesModalOpen}
+        onClose={() => setInvoicesModalOpen(false)}
+        user={user}
+        theme={theme}
+        onUpgradeClick={(plan) => {
+          setInvoicesModalOpen(false);
+          setAuthModalMode('paywall');
+          setAuthModalOpen(true);
+        }}
+      />
+
       {/* Cropper Auth & 30-Day Paywall Modal */}
       <CropperAuthModal
         open={authModalOpen}
         mode={authModalMode}
+        defaultTab={authModalDefaultTab}
         user={user}
         onAuthSuccess={(u) => {
           setUser(u);

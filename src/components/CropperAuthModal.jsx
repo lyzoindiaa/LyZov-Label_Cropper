@@ -30,12 +30,13 @@ import { gstApi, setAuthSession } from '../gst-tool/api/client';
 export default function CropperAuthModal({
   open,
   mode = 'auth', // 'auth' | 'paywall'
+  defaultTab = 0, // 0 = Login, 1 = Signup
   user,
   onAuthSuccess,
   onClose,
   canDismiss = false,
 }) {
-  const [tab, setTab] = useState(0); // 0 = Login, 1 = Signup
+  const [tab, setTab] = useState(defaultTab); // 0 = Login, 1 = Signup
   const [selectedPlan, setSelectedPlan] = useState('cropper_monthly'); // 'cropper_monthly' | 'cropper_yearly'
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -44,6 +45,13 @@ export default function CropperAuthModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [paying, setPaying] = useState(false);
+
+  React.useEffect(() => {
+    if (open) {
+      setTab(defaultTab);
+      setError('');
+    }
+  }, [open, defaultTab]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
