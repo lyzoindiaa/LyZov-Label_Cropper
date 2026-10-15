@@ -63,30 +63,78 @@ export default function GstBilling() {
   }, []);
 
   const handleUpgrade = async (planId) => {
-    try {
-      setProcessingPlan(planId);
-      setErrorMsg('');
-      setSuccessMsg('');
+    if (!window.Razorpay) {
+      setErrorMsg(
+        'Payment gateway failed to load. Please disable ad-blockers and try again.'
+      );
+      return;
+    }
 
+    const user = getActiveUser();
+    setProcessingPlan(planId);
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    try {
       // 1. Create order on backend
       const order = await gstApi.createBillingOrder(planId);
 
-      // 2. Complete payment verification
-      const verifyRes = await gstApi.verifyPayment({
-        razorpayOrderId: order.orderId,
-        razorpayPaymentId: `pay_${Date.now()}`,
-        razorpaySignature: 'simulated_success_sig',
+      // 2. Open real Razorpay Checkout modal
+      const options = {
+        key: order.keyId,
+        amount: order.amountPaise,
+        currency: 'INR',
+        name: 'LyZov GST Tool',
+        description: order.planName || (planId === 'pro' ? 'Pro CA Plan (₹499/mo)' : 'Starter Plan (₹149/mo)'),
+        order_id: order.orderId,
+        handler: async function (response) {
+          try {
+            const verifyRes = await gstApi.verifyPayment({
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+            });
+
+            const updatedUser = {
+              ...(user || {}),
+              plan: verifyRes.plan,
+              trialEndsAt: verifyRes.validTill,
+            };
+            localStorage.setItem('gst_user', JSON.stringify(updatedUser));
+
+            setCurrentPlan(verifyRes.plan);
+            setSuccessMsg(`Upgraded to ${verifyRes.plan.toUpperCase()} plan successfully!`);
+
+            // Refresh invoices
+            const invRes = await gstApi.getInvoices();
+            if (invRes?.invoices) setInvoices(invRes.invoices);
+          } catch (vErr) {
+            setErrorMsg(vErr?.data?.error || vErr.message || 'Payment verification failed');
+          } finally {
+            setProcessingPlan(null);
+          }
+        },
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+          contact: user?.phone || '',
+        },
+        theme: {
+          color: planId === 'pro' ? '#0077ff' : '#00d68f',
+        },
+        modal: {
+          ondismiss: () => setProcessingPlan(null),
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', (response) => {
+        setErrorMsg(`Payment failed: ${response.error?.description || 'Unknown error'}`);
+        setProcessingPlan(null);
       });
-
-      setCurrentPlan(verifyRes.plan);
-      setSuccessMsg(`Upgraded to ${verifyRes.plan.toUpperCase()} plan successfully!`);
-
-      // Refresh invoices
-      const invRes = await gstApi.getInvoices();
-      if (invRes?.invoices) setInvoices(invRes.invoices);
+      rzp.open();
     } catch (err) {
-      setErrorMsg(err.message || 'Payment processing failed');
-    } finally {
+      setErrorMsg(err?.data?.error || err.message || 'Payment processing failed');
       setProcessingPlan(null);
     }
   };
