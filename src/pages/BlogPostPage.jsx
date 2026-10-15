@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -13,7 +13,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Breadcrumbs,
   CircularProgress,
 } from '@mui/material';
 import {
@@ -21,15 +20,12 @@ import {
   Calendar,
   ArrowLeft,
   Share2,
-  CheckCircle2,
   AlertCircle,
   Lightbulb,
   Scissors,
   FileSpreadsheet,
   ArrowRight,
-  BookOpen,
-  Tag,
-  List,
+  Shield,
 } from 'lucide-react';
 import PageLayout from '../components/PageLayout';
 import { BLOG_POSTS } from '../data/blogPosts';
@@ -37,7 +33,6 @@ import { gstApi, getActiveUser } from '../gst-tool/api/client';
 
 export default function BlogPostPage() {
   const { slug } = useParams();
-  const navigate = useNavigate();
 
   const [post, setPost] = useState(null);
   const [relatedPosts, setRelatedPosts] = useState([]);
@@ -59,17 +54,16 @@ export default function BlogPostPage() {
           if (res.relatedPosts && res.relatedPosts.length > 0) {
             setRelatedPosts(res.relatedPosts);
           } else {
-            // Find related locally
             const localRelated = BLOG_POSTS.filter(
               (p) => p.slug !== slug && p.category === res.post.category
-            ).slice(0, 3);
+            ).slice(0, 2);
             setRelatedPosts(localRelated);
           }
           setLoading(false);
           return;
         }
       } catch (err) {
-        // Fallback to local data
+        // Fallback silently
       }
 
       // Local fallback
@@ -79,7 +73,7 @@ export default function BlogPostPage() {
           setPost(found);
           const related = BLOG_POSTS.filter(
             (p) => p.slug !== slug && p.category === found.category
-          ).slice(0, 3);
+          ).slice(0, 2);
           setRelatedPosts(related);
         } else {
           setPost(null);
@@ -96,17 +90,6 @@ export default function BlogPostPage() {
     };
   }, [slug]);
 
-  // Extract table of contents from headings
-  const headings = useMemo(() => {
-    if (!post?.content) return [];
-    return post.content
-      .filter((block) => block.type === 'heading')
-      .map((block, idx) => ({
-        id: `section-${idx + 1}`,
-        title: block.text,
-      }));
-  }, [post]);
-
   const handleShare = async () => {
     const url = window.location.href;
     if (navigator.clipboard) {
@@ -118,10 +101,12 @@ export default function BlogPostPage() {
 
   if (loading) {
     return (
-      <PageLayout title="Loading Guide..." maxWidth={900}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 12 }}>
-          <CircularProgress size={40} sx={{ color: '#00c9ff', mb: 2 }} />
-          <Typography color="text.secondary">Fetching article details...</Typography>
+      <PageLayout title="Loading Guide..." maxWidth={780}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 14 }}>
+          <CircularProgress size={36} sx={{ color: '#00c9ff', mb: 2 }} />
+          <Typography color="text.secondary" sx={{ fontSize: '1.05rem' }}>
+            Loading article...
+          </Typography>
         </Box>
       </PageLayout>
     );
@@ -129,13 +114,13 @@ export default function BlogPostPage() {
 
   if (!post) {
     return (
-      <PageLayout title="Article Not Found" maxWidth={800}>
-        <Box sx={{ textAlign: 'center', py: 10 }}>
+      <PageLayout title="Article Not Found" maxWidth={780}>
+        <Box sx={{ textAlign: 'center', py: 12 }}>
           <Typography variant="h4" fontWeight={800} sx={{ mb: 2 }}>
             Article Not Found
           </Typography>
-          <Typography color="text.secondary" sx={{ mb: 4 }}>
-            The guide or tutorial you requested could not be located. It may have been updated or moved.
+          <Typography color="text.secondary" sx={{ mb: 4, fontSize: '1.1rem' }}>
+            The guide you requested could not be located. It may have been updated or moved.
           </Typography>
           <Button
             component={Link}
@@ -148,6 +133,8 @@ export default function BlogPostPage() {
               fontWeight: 700,
               borderRadius: 2.5,
               textTransform: 'none',
+              px: 3,
+              py: 1,
               '&:hover': { bgcolor: '#38bdf8' },
             }}
           >
@@ -186,9 +173,9 @@ export default function BlogPostPage() {
 
   return (
     <PageLayout
-      title={`${post.title} | LyZov Seller Guides`}
+      title={`${post.title} | LyZov Guides`}
       description={post.excerpt}
-      maxWidth={1080}
+      maxWidth={780}
     >
       {/* Inject JSON-LD Structured Data */}
       <script
@@ -196,23 +183,28 @@ export default function BlogPostPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
       />
 
-      {/* Navigation Breadcrumbs */}
+      {/* Back to Guides Link */}
       <Box sx={{ mb: 3 }}>
-        <Breadcrumbs aria-label="breadcrumb" sx={{ fontSize: '0.85rem' }}>
-          <Link to="/" style={{ color: 'inherit', textDecoration: 'none' }}>
-            Home
-          </Link>
-          <Link to="/blog" style={{ color: 'inherit', textDecoration: 'none' }}>
-            Blog &amp; Guides
-          </Link>
-          <Typography color="text.primary" sx={{ fontSize: '0.85rem', fontWeight: 600 }}>
-            {post.category}
-          </Typography>
-        </Breadcrumbs>
+        <Button
+          component={Link}
+          to="/blog"
+          startIcon={<ArrowLeft size={16} />}
+          sx={{
+            color: 'text.secondary',
+            textTransform: 'none',
+            fontWeight: 600,
+            fontSize: '0.95rem',
+            p: 0,
+            '&:hover': { color: '#00c9ff', bgcolor: 'transparent' },
+          }}
+        >
+          All Guides
+        </Button>
       </Box>
 
-      {/* Header / Meta */}
+      {/* Article Header */}
       <Box sx={{ mb: 4 }}>
+        {/* Meta badges: Category, Read time, Date */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2, flexWrap: 'wrap' }}>
           <Chip
             label={post.category}
@@ -220,24 +212,24 @@ export default function BlogPostPage() {
             sx={{
               bgcolor: 'rgba(0, 201, 255, 0.12)',
               color: '#00c9ff',
-              fontWeight: 800,
-              fontSize: '0.75rem',
-              border: '1px solid rgba(0, 201, 255, 0.3)',
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              border: '1px solid rgba(0, 201, 255, 0.25)',
             }}
           />
           <Typography
-            variant="caption"
+            variant="body2"
             color="text.secondary"
-            sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+            sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.9rem' }}
           >
-            <Clock size={13} /> {post.readTime}
+            <Clock size={14} /> {post.readTime}
           </Typography>
           <Typography
-            variant="caption"
+            variant="body2"
             color="text.secondary"
-            sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+            sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.9rem' }}
           >
-            <Calendar size={13} />{' '}
+            <Calendar size={14} />{' '}
             {new Date(post.publishedAt).toLocaleDateString('en-US', {
               year: 'numeric',
               month: 'short',
@@ -246,6 +238,7 @@ export default function BlogPostPage() {
           </Typography>
         </Box>
 
+        {/* Big, Clear Title */}
         <Typography
           component="h1"
           variant="h3"
@@ -253,7 +246,7 @@ export default function BlogPostPage() {
           sx={{
             letterSpacing: '-0.8px',
             color: 'text.primary',
-            fontSize: { xs: '1.75rem', sm: '2.3rem', md: '2.7rem' },
+            fontSize: { xs: '1.9rem', sm: '2.4rem', md: '2.85rem' },
             lineHeight: 1.25,
             mb: 2.5,
           }}
@@ -261,20 +254,21 @@ export default function BlogPostPage() {
           {post.title}
         </Typography>
 
+        {/* Lead Excerpt */}
         <Typography
           variant="body1"
           color="text.secondary"
           sx={{
-            fontSize: { xs: '1rem', md: '1.15rem' },
-            lineHeight: 1.7,
+            fontSize: { xs: '1.1rem', sm: '1.2rem' },
+            lineHeight: 1.75,
             mb: 3,
-            maxWidth: 900,
+            fontWeight: 400,
           }}
         >
           {post.excerpt}
         </Typography>
 
-        {/* Author & Share Bar */}
+        {/* Author & Action Row */}
         <Box
           sx={{
             display: 'flex',
@@ -282,35 +276,34 @@ export default function BlogPostPage() {
             justifyContent: 'space-between',
             flexWrap: 'wrap',
             gap: 2,
-            pt: 2.5,
-            pb: 2.5,
+            py: 2,
             borderTop: '1px solid',
             borderBottom: '1px solid',
             borderColor: 'divider',
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
             <Box
               sx={{
-                width: 44,
-                height: 44,
+                width: 38,
+                height: 38,
                 borderRadius: '50%',
-                bgcolor: 'rgba(0,201,255,0.1)',
-                border: '1px solid rgba(0,201,255,0.3)',
+                bgcolor: 'rgba(0, 201, 255, 0.1)',
+                border: '1px solid rgba(0, 201, 255, 0.3)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '1.3rem',
+                fontSize: '1.1rem',
               }}
             >
-              {post.author?.avatar || '✍️'}
+              📦
             </Box>
             <Box>
-              <Typography variant="body2" fontWeight={800} color="text.primary">
+              <Typography variant="body1" fontWeight={700} color="text.primary" sx={{ fontSize: '0.95rem', lineHeight: 1.2 }}>
                 {post.author?.name || 'LyZov'}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {post.author?.role || 'Staff Specialist'}
+                Seller Research &amp; Logistics
               </Typography>
             </Box>
           </Box>
@@ -320,17 +313,19 @@ export default function BlogPostPage() {
               onClick={handleShare}
               variant="outlined"
               size="small"
-              startIcon={<Share2 size={15} />}
+              startIcon={<Share2 size={14} />}
               sx={{
                 borderColor: copied ? '#10b981' : 'divider',
                 color: copied ? '#10b981' : 'text.primary',
                 textTransform: 'none',
                 borderRadius: 2,
                 fontWeight: 600,
-                fontSize: '0.8rem',
+                fontSize: '0.85rem',
+                py: 0.5,
+                px: 1.5,
               }}
             >
-              {copied ? 'Link Copied!' : 'Share Guide'}
+              {copied ? 'Link Copied!' : 'Share'}
             </Button>
 
             {isAdmin && (
@@ -339,506 +334,363 @@ export default function BlogPostPage() {
                 to="/gst-tool/admin"
                 variant="outlined"
                 size="small"
+                startIcon={<Shield size={14} />}
                 sx={{
-                  borderColor: 'rgba(239,68,68,0.4)',
+                  borderColor: 'rgba(239, 68, 68, 0.4)',
                   color: '#fca5a5',
                   textTransform: 'none',
                   borderRadius: 2,
                   fontWeight: 700,
-                  fontSize: '0.8rem',
-                  bgcolor: 'rgba(239,68,68,0.08)',
-                  '&:hover': {
-                    bgcolor: 'rgba(239,68,68,0.15)',
-                    borderColor: '#ef4444',
-                  },
+                  fontSize: '0.85rem',
+                  bgcolor: 'rgba(239, 68, 68, 0.08)',
+                  py: 0.5,
+                  px: 1.5,
                 }}
               >
-                🛡️ Admin CMS
+                Admin CMS
               </Button>
             )}
-
-            <Button
-              component={Link}
-              to="/blog"
-              variant="text"
-              size="small"
-              startIcon={<ArrowLeft size={15} />}
-              sx={{
-                color: 'text.secondary',
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                '&:hover': { color: 'text.primary' },
-              }}
-            >
-              All Articles
-            </Button>
           </Box>
         </Box>
       </Box>
 
-      {/* Main Body + Sidebar */}
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: { xs: '1fr', lg: '1fr 280px' },
-          gap: 5,
-          alignItems: 'start',
-        }}
-      >
-        {/* Article Content */}
-        <Box sx={{ minWidth: 0 }}>
-          {post.content &&
-            post.content.map((block, idx) => {
-              // INTRO BLOCK
-              if (block.type === 'intro') {
-                return (
-                  <Typography
-                    key={idx}
-                    sx={{
-                      fontSize: '1.15rem',
-                      lineHeight: 1.8,
-                      color: 'text.primary',
-                      mb: 3.5,
-                      fontStyle: 'normal',
-                      fontWeight: 500,
-                    }}
-                  >
-                    {block.text}
-                  </Typography>
-                );
-              }
+      {/* Main Reading Column (Clean, Centered, Big Readable Font) */}
+      <Box sx={{ mb: 6 }}>
+        {post.content &&
+          post.content.map((block, idx) => {
+            // INTRO BLOCK
+            if (block.type === 'intro') {
+              return (
+                <Typography
+                  key={idx}
+                  sx={{
+                    fontSize: { xs: '1.15rem', sm: '1.25rem' },
+                    lineHeight: 1.85,
+                    color: 'text.primary',
+                    mb: 3.5,
+                    fontWeight: 450,
+                  }}
+                >
+                  {block.text}
+                </Typography>
+              );
+            }
 
-              // HEADING BLOCK
-              if (block.type === 'heading') {
-                const headingIdx = headings.findIndex((h) => h.title === block.text);
-                const sectionId = headingIdx !== -1 ? headings[headingIdx].id : `heading-${idx}`;
+            // HEADING BLOCK
+            if (block.type === 'heading') {
+              return (
+                <Typography
+                  key={idx}
+                  component="h2"
+                  variant="h5"
+                  fontWeight={800}
+                  sx={{
+                    color: 'text.primary',
+                    mt: 4.5,
+                    mb: 2,
+                    fontSize: { xs: '1.45rem', sm: '1.7rem' },
+                    letterSpacing: '-0.4px',
+                    lineHeight: 1.35,
+                  }}
+                >
+                  {block.text}
+                </Typography>
+              );
+            }
 
-                return (
-                  <Typography
-                    key={idx}
-                    id={sectionId}
-                    component="h2"
-                    variant="h5"
-                    fontWeight={800}
-                    sx={{
-                      color: 'text.primary',
-                      mt: 4,
-                      mb: 2,
-                      pt: 1,
-                      letterSpacing: '-0.4px',
-                      scrollMarginTop: '100px',
-                    }}
-                  >
-                    {block.text}
-                  </Typography>
-                );
-              }
+            // PARAGRAPH BLOCK
+            if (block.type === 'paragraph') {
+              return (
+                <Typography
+                  key={idx}
+                  variant="body1"
+                  color="text.secondary"
+                  sx={{
+                    lineHeight: 1.9,
+                    fontSize: { xs: '1.05rem', sm: '1.125rem' },
+                    mb: 3,
+                  }}
+                >
+                  {block.text}
+                </Typography>
+              );
+            }
 
-              // PARAGRAPH BLOCK
-              if (block.type === 'paragraph') {
-                return (
-                  <Typography
-                    key={idx}
-                    variant="body1"
-                    color="text.secondary"
-                    sx={{
-                      lineHeight: 1.85,
-                      fontSize: '1rem',
-                      mb: 3,
-                    }}
-                  >
-                    {block.text}
-                  </Typography>
-                );
-              }
+            // CALLOUT BLOCK
+            if (block.type === 'callout') {
+              const isWarning = block.variant === 'warning';
+              const borderColor = isWarning ? 'rgba(239, 68, 68, 0.4)' : 'rgba(0, 201, 255, 0.4)';
+              const bgColor = isWarning ? 'rgba(239, 68, 68, 0.06)' : 'rgba(0, 201, 255, 0.06)';
+              const iconColor = isWarning ? '#ef4444' : '#00c9ff';
 
-              // CALLOUT BLOCK
-              if (block.type === 'callout') {
-                const isWarning = block.variant === 'warning';
-                const borderColor = isWarning ? 'rgba(239, 68, 68, 0.4)' : 'rgba(0, 201, 255, 0.4)';
-                const bgColor = isWarning ? 'rgba(239, 68, 68, 0.06)' : 'rgba(0, 201, 255, 0.06)';
-                const iconColor = isWarning ? '#ef4444' : '#00c9ff';
-
-                return (
-                  <Box
-                    key={idx}
-                    sx={{
-                      p: 2.5,
-                      borderRadius: 3,
-                      border: '1px solid',
-                      borderColor,
-                      bgcolor: bgColor,
-                      mb: 3.5,
-                      display: 'flex',
-                      gap: 2,
-                      alignItems: 'flex-start',
-                    }}
-                  >
-                    <Box sx={{ mt: 0.3, flexShrink: 0 }}>
-                      {isWarning ? (
-                        <AlertCircle size={20} color={iconColor} />
-                      ) : (
-                        <Lightbulb size={20} color={iconColor} />
-                      )}
-                    </Box>
-                    <Box>
-                      {block.title && (
-                        <Typography
-                          variant="subtitle2"
-                          fontWeight={800}
-                          sx={{ color: isWarning ? '#ef4444' : '#00c9ff', mb: 0.5 }}
-                        >
-                          {block.title}
-                        </Typography>
-                      )}
-                      <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
-                        {block.text}
-                      </Typography>
-                    </Box>
+              return (
+                <Box
+                  key={idx}
+                  sx={{
+                    p: { xs: 2.5, sm: 3 },
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor,
+                    bgcolor: bgColor,
+                    my: 3.5,
+                    display: 'flex',
+                    gap: 2,
+                    alignItems: 'flex-start',
+                  }}
+                >
+                  <Box sx={{ mt: 0.4, flexShrink: 0 }}>
+                    {isWarning ? (
+                      <AlertCircle size={22} color={iconColor} />
+                    ) : (
+                      <Lightbulb size={22} color={iconColor} />
+                    )}
                   </Box>
-                );
-              }
+                  <Box>
+                    {block.title && (
+                      <Typography
+                        variant="subtitle1"
+                        fontWeight={800}
+                        sx={{ color: isWarning ? '#ef4444' : '#00c9ff', mb: 0.75, fontSize: '1.05rem' }}
+                      >
+                        {block.title}
+                      </Typography>
+                    )}
+                    <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.8, fontSize: '1.05rem' }}>
+                      {block.text}
+                    </Typography>
+                  </Box>
+                </Box>
+              );
+            }
 
-              // STEPS BLOCK
-              if (block.type === 'steps' && block.items) {
-                return (
-                  <Box key={idx} sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 4 }}>
-                    {block.items.map((step, sIdx) => (
+            // STEPS BLOCK
+            if (block.type === 'steps' && block.items) {
+              return (
+                <Box key={idx} sx={{ display: 'flex', flexDirection: 'column', gap: 2, my: 3.5 }}>
+                  {block.items.map((step, sIdx) => (
+                    <Box
+                      key={sIdx}
+                      sx={{
+                        p: { xs: 2.2, sm: 2.8 },
+                        borderRadius: 3,
+                        bgcolor: 'background.paper',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        display: 'flex',
+                        gap: 2,
+                        alignItems: 'flex-start',
+                      }}
+                    >
                       <Box
-                        key={sIdx}
                         sx={{
-                          p: 2.5,
-                          borderRadius: 3,
-                          bgcolor: 'background.paper',
-                          border: '1px solid',
-                          borderColor: 'divider',
+                          width: 34,
+                          height: 34,
+                          borderRadius: '50%',
+                          bgcolor: 'rgba(0, 201, 255, 0.15)',
+                          color: '#00c9ff',
                           display: 'flex',
-                          gap: 2,
-                          alignItems: 'flex-start',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 800,
+                          fontSize: '0.95rem',
+                          flexShrink: 0,
                         }}
                       >
-                        <Box
-                          sx={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: '50%',
-                            bgcolor: 'rgba(0, 201, 255, 0.15)',
-                            color: '#00c9ff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 800,
-                            fontSize: '0.85rem',
-                            flexShrink: 0,
-                          }}
-                        >
-                          {sIdx + 1}
-                        </Box>
-                        <Box>
-                          <Typography variant="subtitle2" fontWeight={800} color="text.primary" sx={{ mb: 0.5 }}>
-                            {step.title}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.65 }}>
-                            {step.desc}
-                          </Typography>
-                        </Box>
+                        {sIdx + 1}
                       </Box>
-                    ))}
-                  </Box>
-                );
-              }
+                      <Box>
+                        <Typography variant="subtitle1" fontWeight={800} color="text.primary" sx={{ mb: 0.5, fontSize: '1.05rem' }}>
+                          {step.title}
+                        </Typography>
+                        <Typography variant="body1" color="text.secondary" sx={{ lineHeight: 1.75, fontSize: '1rem' }}>
+                          {step.desc}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              );
+            }
 
-              // TABLE BLOCK
-              if (block.type === 'table' && block.headers && block.rows) {
-                return (
-                  <TableContainer
-                    key={idx}
-                    component={Paper}
-                    sx={{
-                      mb: 4,
-                      borderRadius: 3,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      boxShadow: 'none',
-                      overflowX: 'auto',
-                    }}
-                  >
-                    <Table size="small">
-                      <TableHead sx={{ bgcolor: 'rgba(0, 201, 255, 0.05)' }}>
-                        <TableRow>
-                          {block.headers.map((h, hIdx) => (
-                            <TableCell key={hIdx} sx={{ fontWeight: 800, color: 'text.primary', py: 1.5 }}>
-                              {h}
+            // TABLE BLOCK
+            if (block.type === 'table' && block.headers && block.rows) {
+              return (
+                <TableContainer
+                  key={idx}
+                  component={Paper}
+                  sx={{
+                    my: 3.5,
+                    borderRadius: 3,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    boxShadow: 'none',
+                    overflowX: 'auto',
+                  }}
+                >
+                  <Table>
+                    <TableHead sx={{ bgcolor: 'rgba(0, 201, 255, 0.05)' }}>
+                      <TableRow>
+                        {block.headers.map((h, hIdx) => (
+                          <TableCell key={hIdx} sx={{ fontWeight: 800, color: 'text.primary', py: 1.8, fontSize: '0.95rem' }}>
+                            {h}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {block.rows.map((row, rIdx) => (
+                        <TableRow key={rIdx} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                          {row.map((cell, cIdx) => (
+                            <TableCell
+                              key={cIdx}
+                              sx={{
+                                color: cIdx === 0 ? 'text.primary' : 'text.secondary',
+                                fontWeight: cIdx === 0 ? 600 : 400,
+                                py: 1.6,
+                                fontSize: '0.95rem',
+                              }}
+                            >
+                              {cell}
                             </TableCell>
                           ))}
                         </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {block.rows.map((row, rIdx) => (
-                          <TableRow key={rIdx} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                            {row.map((cell, cIdx) => (
-                              <TableCell
-                                key={cIdx}
-                                sx={{
-                                  color: cIdx === 0 ? 'text.primary' : 'text.secondary',
-                                  fontWeight: cIdx === 0 ? 600 : 400,
-                                  py: 1.5,
-                                  fontSize: '0.85rem',
-                                }}
-                              >
-                                {cell}
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                );
-              }
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              );
+            }
 
-              return null;
-            })}
+            return null;
+          })}
 
-          {/* Tags */}
-          {post.tags && post.tags.length > 0 && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mt: 4, mb: 5 }}>
-              <Tag size={15} color="#8896b3" />
-              {post.tags.map((tag) => (
-                <Chip
-                  key={tag}
-                  label={tag}
-                  size="small"
-                  sx={{
-                    borderRadius: 2,
-                    fontSize: '0.75rem',
-                    bgcolor: 'rgba(255,255,255,0.04)',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                  }}
-                />
-              ))}
-            </Box>
-          )}
-
-          {/* Interactive Tool CTA Box */}
-          <Box
-            sx={{
-              p: { xs: 3, sm: 4 },
-              borderRadius: 4,
-              background: 'linear-gradient(135deg, rgba(0, 201, 255, 0.12) 0%, rgba(168, 85, 247, 0.08) 100%)',
-              border: '1px solid rgba(0, 201, 255, 0.3)',
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              alignItems: { xs: 'flex-start', sm: 'center' },
-              justifyContent: 'space-between',
-              gap: 3,
-              mb: 6,
-            }}
-          >
-            <Box>
-              <Typography variant="h6" fontWeight={900} color="text.primary" sx={{ mb: 0.5 }}>
-                Try LyZov Studio Tools Today
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 480, lineHeight: 1.6 }}>
-                Crop 500+ marketplace shipping labels in seconds or automate GSTR-1 and GSTR-3B monthly tax reconciliation directly from your browser.
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-              <Button
-                component={Link}
-                to="/cropper"
-                variant="contained"
-                startIcon={<Scissors size={16} />}
-                sx={{
-                  bgcolor: '#00c9ff',
-                  color: '#000',
-                  fontWeight: 800,
-                  textTransform: 'none',
-                  borderRadius: 2.5,
-                  px: 2,
-                  '&:hover': { bgcolor: '#38bdf8' },
-                }}
-              >
-                Label Cropper
-              </Button>
-              <Button
-                component={Link}
-                to="/gst-tool"
-                variant="outlined"
-                startIcon={<FileSpreadsheet size={16} />}
-                sx={{
-                  borderColor: 'rgba(0, 201, 255, 0.4)',
-                  color: '#00c9ff',
-                  fontWeight: 700,
-                  textTransform: 'none',
-                  borderRadius: 2.5,
-                  px: 2,
-                  '&:hover': {
-                    borderColor: '#00c9ff',
-                    bgcolor: 'rgba(0, 201, 255, 0.05)',
-                  },
-                }}
-              >
-                GST Tool
-              </Button>
-            </Box>
-          </Box>
-        </Box>
-
-        {/* Sidebar: Table of Contents & Quick Links */}
+        {/* Clean Tools CTA Box */}
         <Box
           sx={{
-            position: { lg: 'sticky' },
-            top: { lg: 100 },
+            p: { xs: 3, sm: 4 },
+            borderRadius: 3.5,
+            bgcolor: 'background.paper',
+            border: '1px solid',
+            borderColor: 'rgba(0, 201, 255, 0.3)',
             display: 'flex',
-            flexDirection: 'column',
-            gap: 3,
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            justifyContent: 'space-between',
+            gap: 2.5,
+            mt: 6,
+            mb: 5,
           }}
         >
-          {headings.length > 0 && (
-            <Box
-              sx={{
-                p: 3,
-                borderRadius: 3,
-                bgcolor: 'background.paper',
-                border: '1px solid',
-                borderColor: 'divider',
-              }}
-            >
-              <Typography
-                variant="subtitle2"
-                fontWeight={800}
-                color="text.primary"
-                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}
-              >
-                <List size={16} color="#00c9ff" /> Table of Contents
-              </Typography>
-              <Box component="nav" sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                {headings.map((h) => (
-                  <a
-                    key={h.id}
-                    href={`#${h.id}`}
-                    style={{
-                      textDecoration: 'none',
-                      fontSize: '0.82rem',
-                      lineHeight: 1.4,
-                      color: 'var(--gst-text-sec, #8896b3)',
-                      transition: 'color 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => (e.target.style.color = '#00c9ff')}
-                    onMouseLeave={(e) => (e.target.style.color = 'var(--gst-text-sec, #8896b3)')}
-                  >
-                    {h.title}
-                  </a>
-                ))}
-              </Box>
-            </Box>
-          )}
-
-          {/* Quick Support / Contact Card */}
-          <Box
-            sx={{
-              p: 3,
-              borderRadius: 3,
-              bgcolor: 'background.paper',
-              border: '1px solid',
-              borderColor: 'divider',
-            }}
-          >
-            <Typography variant="subtitle2" fontWeight={800} color="text.primary" sx={{ mb: 1 }}>
-              Questions about this setup?
+          <Box>
+            <Typography variant="h6" fontWeight={800} color="text.primary" sx={{ mb: 0.5, fontSize: '1.15rem' }}>
+              Free E-Commerce Tools by LyZov
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2, lineHeight: 1.6 }}>
-              Our operations team helps marketplace merchants optimize packaging setups and tax workflows.
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem', lineHeight: 1.6 }}>
+              Batch crop shipping labels in seconds or automate monthly GSTR-1 filings.
             </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
             <Button
               component={Link}
-              to="/contact"
+              to="/cropper"
+              variant="contained"
+              startIcon={<Scissors size={15} />}
+              sx={{
+                bgcolor: '#00c9ff',
+                color: '#000',
+                fontWeight: 700,
+                textTransform: 'none',
+                borderRadius: 2,
+                px: 2,
+                fontSize: '0.88rem',
+                '&:hover': { bgcolor: '#38bdf8' },
+              }}
+            >
+              Label Cropper
+            </Button>
+            <Button
+              component={Link}
+              to="/gst-tool"
               variant="outlined"
-              size="small"
-              fullWidth
+              startIcon={<FileSpreadsheet size={15} />}
               sx={{
                 borderColor: 'divider',
                 color: 'text.primary',
+                fontWeight: 600,
                 textTransform: 'none',
-                fontWeight: 700,
                 borderRadius: 2,
+                px: 2,
+                fontSize: '0.88rem',
               }}
             >
-              Contact Support
+              GST Tool
             </Button>
           </Box>
         </Box>
       </Box>
 
-      {/* Related Articles Section */}
+      {/* Clean Related Guides */}
       {relatedPosts.length > 0 && (
-        <Box sx={{ mt: 6, pt: 5, borderTop: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="h5" fontWeight={900} color="text.primary" sx={{ mb: 3 }}>
-            Related Guides &amp; Articles
+        <Box sx={{ pt: 4, borderTop: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="h6" fontWeight={800} color="text.primary" sx={{ mb: 2.5, fontSize: '1.25rem' }}>
+            Next Reads &amp; Related Guides
           </Typography>
 
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-              gap: 3,
-            }}
-          >
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2.5 }}>
             {relatedPosts.map((rel) => (
               <Box
                 key={rel.slug}
+                component={Link}
+                to={`/blog/${rel.slug}`}
                 sx={{
                   p: 3,
                   borderRadius: 3,
                   bgcolor: 'background.paper',
                   border: '1px solid',
                   borderColor: 'divider',
+                  textDecoration: 'none',
                   display: 'flex',
                   flexDirection: 'column',
-                  transition: 'transform 0.2s, border-color 0.2s',
+                  transition: 'all 0.2s ease',
                   '&:hover': {
-                    borderColor: 'rgba(0, 201, 255, 0.4)',
-                    transform: 'translateY(-3px)',
+                    borderColor: '#00c9ff',
+                    transform: 'translateY(-2px)',
                   },
                 }}
               >
-                <Chip
-                  label={rel.category}
-                  size="small"
-                  sx={{
-                    alignSelf: 'flex-start',
-                    mb: 1.5,
-                    fontSize: '0.7rem',
-                    bgcolor: 'rgba(0,201,255,0.08)',
-                    color: '#00c9ff',
-                    fontWeight: 700,
-                  }}
-                />
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                  <Chip
+                    label={rel.category}
+                    size="small"
+                    sx={{
+                      fontSize: '0.72rem',
+                      bgcolor: 'rgba(0, 201, 255, 0.08)',
+                      color: '#00c9ff',
+                      fontWeight: 700,
+                    }}
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    {rel.readTime}
+                  </Typography>
+                </Box>
                 <Typography
-                  component={Link}
-                  to={`/blog/${rel.slug}`}
                   variant="subtitle1"
                   fontWeight={800}
                   sx={{
                     color: 'text.primary',
-                    textDecoration: 'none',
                     lineHeight: 1.35,
-                    mb: 1.5,
-                    '&:hover': { color: '#00c9ff' },
+                    mb: 1,
+                    fontSize: '1.05rem',
                   }}
                 >
                   {rel.title}
                 </Typography>
                 <Typography
-                  variant="caption"
+                  variant="body2"
                   color="text.secondary"
                   sx={{
                     lineHeight: 1.6,
-                    mb: 2,
-                    flexGrow: 1,
+                    fontSize: '0.9rem',
                     display: '-webkit-box',
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: 'vertical',
@@ -847,22 +699,6 @@ export default function BlogPostPage() {
                 >
                   {rel.excerpt}
                 </Typography>
-                <Button
-                  component={Link}
-                  to={`/blog/${rel.slug}`}
-                  size="small"
-                  endIcon={<ArrowRight size={14} />}
-                  sx={{
-                    alignSelf: 'flex-start',
-                    color: '#00c9ff',
-                    fontWeight: 700,
-                    textTransform: 'none',
-                    p: 0,
-                    '&:hover': { bgcolor: 'transparent', color: '#38bdf8' },
-                  }}
-                >
-                  Read guide
-                </Button>
               </Box>
             ))}
           </Box>
