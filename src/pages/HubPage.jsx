@@ -60,6 +60,31 @@ const TOOLS = [
     status: "Live",
     statusColor: "#00d68f",
   },
+  {
+    id: "pnl",
+    icon: BarChart2,
+    name: "LyZov P&L Analyzer",
+    tagline: "True Profit & Loss Intelligence for Multi-Channel Sellers",
+    description: "Drop in sales reports from Amazon, Flipkart, Meesho, Shopify, or WooCommerce. Uncover real net margins after all marketplace fees, analyze period-over-period waterfall profit movement, and run break-even price simulators.",
+    accent: "#ffb703",
+    accentDim: "#fb8500",
+    glowColor: "rgba(255,183,3,0.22)",
+    route: "/pnl",
+    badge: "1-Mo Free Trial",
+    badgeClass: "gst-badge-gold",
+    features: [
+      "Works for Amazon, Flipkart, Meesho, Shopify & WooCommerce",
+      "Explainable profit calculations with raw row drill-down",
+      "Reconciled Data Quality Report (raw = accepted + rejected)",
+      "Profit-Change Waterfall Bridge (Volume, ASP, Fees, COGS)",
+      "Interactive Price Break-Even & Return-Rate Simulators",
+      "100% Private — computations run locally on your device",
+    ],
+    useCases: ["Amazon Sellers", "Flipkart Sellers", "Shopify Stores", "D2C Brands", "Accountants & CAs"],
+    cta: "Launch P&L Analyzer",
+    status: "Live",
+    statusColor: "#00d68f",
+  },
 ];
 
 const HOW_IT_WORKS = [

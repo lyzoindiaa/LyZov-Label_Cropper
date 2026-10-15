@@ -1,0 +1,113 @@
+/* LyZov P&L Analyzer - Modern Theme & Aesthetics */
+
+:root {
+  --pnl-primary: #00c9ff;
+  --pnl-primary-glow: rgba(0, 201, 255, 0.25);
+  --pnl-secondary: #00d68f;
+  --pnl-danger: #ff4d6d;
+  --pnl-warning: #ffb703;
+  --pnl-card-bg: rgba(18, 24, 38, 0.85);
+  --pnl-card-border: rgba(255, 255, 255, 0.08);
+  --pnl-text: #f1f5f9;
+  --pnl-text-muted: #94a3b8;
+  --pnl-bg: #0b0f19;
+}
+
+.pnl-container {
+  min-height: 100vh;
+  background: radial-gradient(circle at top right, #111a2e 0%, #080c15 100%);
+  color: var(--pnl-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+}
+
+/* Glassmorphism Cards */
+.pnl-card {
+  background: var(--pnl-card-bg);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--pnl-card-border);
+  border-radius: 14px;
+  padding: 20px;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pnl-card:hover {
+  border-color: rgba(0, 201, 255, 0.35);
+  box-shadow: 0 8px 32px var(--pnl-primary-glow);
+}
+
+/* Metric KPI Blocks */
+.pnl-kpi-value {
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #ffffff 40%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.pnl-kpi-profit {
+  background: linear-gradient(135deg, #00d68f 0%, #70e000 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.pnl-kpi-loss {
+  background: linear-gradient(135deg, #ff4d6d 0%, #ff758f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Waterfall Bars */
+.waterfall-bar-pos {
+  background: linear-gradient(180deg, #00d68f 0%, #00a86b 100%);
+  border-radius: 6px 6px 0 0;
+}
+
+.waterfall-bar-neg {
+  background: linear-gradient(180deg, #ff4d6d 0%, #c9184a 100%);
+  border-radius: 0 0 6px 6px;
+}
+
+/* Table styling */
+.pnl-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.pnl-table th {
+  text-align: left;
+  padding: 12px 16px;
+  color: var(--pnl-text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--pnl-card-border);
+}
+
+.pnl-table td {
+  padding: 14px 16px;
+  font-size: 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.pnl-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Custom interactive pill button */
+.pnl-btn-primary {
+  background: linear-gradient(135deg, #00c9ff 0%, #0088ff 100%);
+  color: #ffffff;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pnl-btn-primary:hover {
+  box-shadow: 0 4px 20px rgba(0, 201, 255, 0.4);
+  transform: translateY(-1px);
+}

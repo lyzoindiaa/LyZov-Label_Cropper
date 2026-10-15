@@ -32,6 +32,7 @@ import { AppProvider, AppContext } from './context/AppContext';
 import CropperAuthModal from './components/CropperAuthModal';
 import CropperInvoicesModal from './components/CropperInvoicesModal';
 import GstApp from './gst-tool/GstApp';
+import PnlApp from './pnl-tool/PnlApp';
 import PdfUploader from './components/PdfUploader';
 import PdfViewer from './components/PdfViewer';
 import CropProcessor from './components/CropProcessor';
@@ -410,6 +411,27 @@ function MainContent() {
             ✦ GST Tool
           </Button>
 
+          <Button
+            component={Link}
+            to="/pnl"
+            variant="contained"
+            size="small"
+            sx={{
+              background: 'linear-gradient(135deg, #00c9ff 0%, #0088ff 100%)',
+              color: '#ffffff',
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              borderRadius: '10px',
+              textTransform: 'none',
+              px: 1.8,
+              py: 0.6,
+              boxShadow: '0 4px 14px rgba(0, 201, 255, 0.4)',
+              display: { xs: 'none', sm: 'inline-flex' },
+            }}
+          >
+            ✦ P&L Analyzer
+          </Button>
+
           {/* Theme Toggle Button */}
           <Tooltip title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
             <IconButton
@@ -705,6 +727,8 @@ function ThemedApp() {
         <Route path="/cropper" element={<MainContent />} />
         {/* GST Tool — lives at /gst-tool/* */}
         <Route path="/gst-tool/*" element={<GstApp />} />
+        {/* LyZov P&L Analyzer — lives at /pnl/* */}
+        <Route path="/pnl/*" element={<PnlApp />} />
         {/* Informational pages */}
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />

@@ -1,0 +1,144 @@
+{
+  "gstin": "29AABCU9603R1ZX",
+  "fp": "092026",
+  "version": "GST3.1.6",
+  "hash": "hash",
+  "b2b": [
+    {
+      "ctin": "27AABCU9603R1ZX",
+      "inv": [
+        {
+          "inum": "INV-2026-001",
+          "idt": "05-09-2026",
+          "val": 2950,
+          "pos": "27",
+          "rchrg": "N",
+          "inv_typ": "R",
+          "itms": [
+            {
+              "num": 1,
+              "itm_det": {
+                "rt": 18,
+                "txval": 2500,
+                "iamt": 450,
+                "camt": 0,
+                "samt": 0,
+                "csamt": 0
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "b2cs": [],
+  "cdnr": [],
+  "nil": {
+    "inv": [
+      {
+        "sply_ty": "INTRB2B",
+        "nil_amt": 0,
+        "expt_amt": 0,
+        "ngsup_amt": 0
+      },
+      {
+        "sply_ty": "INTRAB2B",
+        "nil_amt": 0,
+        "expt_amt": 0,
+        "ngsup_amt": 0
+      },
+      {
+        "sply_ty": "INTRB2C",
+        "nil_amt": 0,
+        "expt_amt": 0,
+        "ngsup_amt": 0
+      },
+      {
+        "sply_ty": "INTRAB2C",
+        "nil_amt": 0,
+        "expt_amt": 0,
+        "ngsup_amt": 0
+      }
+    ]
+  },
+  "hsn": {
+    "hsn_b2c": [
+      {
+        "num": 1,
+        "hsn_sc": "85170000",
+        "desc": "Wireless Bluetooth Headset",
+        "uqc": "NOS",
+        "qty": 2,
+        "val": 2950,
+        "txval": 2500,
+        "iamt": 450,
+        "camt": 0,
+        "samt": 0,
+        "csamt": 0,
+        "rt": 18
+      }
+    ]
+  },
+  "doc_issue": {
+    "doc_det": [
+      {
+        "doc_num": 1,
+        "doc_typ": "Invoices for outward supply",
+        "docs": [
+          {
+            "num": 1,
+            "from": "INV-2026-001",
+            "to": "INV-2026-001",
+            "totnum": 1,
+            "cancel": 0,
+            "net_issue": 1
+          },
+          {
+            "num": 2,
+            "from": "FK-2026-002",
+            "to": "FK-2026-002",
+            "totnum": 1,
+            "cancel": 0,
+            "net_issue": 1
+          }
+        ]
+      },
+      {
+        "doc_num": 5,
+        "doc_typ": "Credit Note",
+        "docs": [
+          {
+            "num": 1,
+            "from": "CR-2026-003",
+            "to": "CR-2026-003",
+            "totnum": 1,
+            "cancel": 0,
+            "net_issue": 1
+          }
+        ]
+      }
+    ]
+  },
+  "supeco": {
+    "clttx": [
+      {
+        "etin": "29AABCA0027R1ZW",
+        "suppval": 1300,
+        "igst": 450,
+        "cgst": -108,
+        "sgst": -108,
+        "cess": 0,
+        "flag": "N"
+      },
+      {
+        "etin": "29AAACF1479P1ZU",
+        "suppval": 1200,
+        "igst": 0,
+        "cgst": 108,
+        "sgst": 108,
+        "cess": 0,
+        "flag": "N"
+      }
+    ]
+  }
+}
