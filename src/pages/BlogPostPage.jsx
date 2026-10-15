@@ -164,7 +164,7 @@ export default function BlogPostPage() {
     datePublished: post.publishedAt,
     author: {
       '@type': 'Person',
-      name: post.author?.name || 'LyZov Editorial',
+      name: post.author?.name || 'LyZov',
     },
     publisher: {
       '@type': 'Organization',
@@ -304,7 +304,7 @@ export default function BlogPostPage() {
             </Box>
             <Box>
               <Typography variant="body2" fontWeight={800} color="text.primary">
-                {post.author?.name || 'LyZov Editorial'}
+                {post.author?.name || 'LyZov'}
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 {post.author?.role || 'Staff Specialist'}

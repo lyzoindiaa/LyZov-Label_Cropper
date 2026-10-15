@@ -14,7 +14,7 @@ const INITIAL_POSTS = [
     readTime: '6 min read',
     publishedAt: new Date('2026-10-14'),
     author: {
-      name: 'Adarsh S.',
+      name: 'LyZov',
       role: 'Logistics & Printing Specialist',
       avatar: '📦',
     },
@@ -102,7 +102,7 @@ const INITIAL_POSTS = [
     readTime: '5 min read',
     publishedAt: new Date('2026-10-12'),
     author: {
-      name: 'LyZov Operations',
+      name: 'LyZov',
       role: 'E-Commerce Automation Team',
       avatar: '⚡',
     },
@@ -188,7 +188,7 @@ const INITIAL_POSTS = [
     readTime: '8 min read',
     publishedAt: new Date('2026-10-10'),
     author: {
-      name: 'CA Gaurav M.',
+      name: 'LyZov',
       role: 'Taxation Consultant',
       avatar: '📊',
     },
@@ -262,7 +262,7 @@ const INITIAL_POSTS = [
     readTime: '5 min read',
     publishedAt: new Date('2026-10-08'),
     author: {
-      name: 'Adarsh S.',
+      name: 'LyZov',
       role: 'Logistics Specialist',
       avatar: '🖨️',
     },
@@ -422,7 +422,7 @@ router.post('/', requireAdmin, async (req, res, next) => {
       excerpt,
       category: category || 'Shipping & Printing',
       readTime: readTime || '5 min read',
-      author: author || { name: 'LyZov Editorial', role: 'Staff Writer', avatar: '✍️' },
+      author: author || { name: 'LyZov', role: 'Staff Writer', avatar: '✍️' },
       tags: Array.isArray(tags) ? tags : [],
       featured: Boolean(featured),
       isPublished: isPublished !== undefined ? Boolean(isPublished) : true,

@@ -36,7 +36,7 @@ const blogPostSchema = new mongoose.Schema(
       default: Date.now,
     },
     author: {
-      name: { type: String, default: 'LyZov Editorial' },
+      name: { type: String, default: 'LyZov' },
       role: { type: String, default: 'E-Commerce Logistics Specialist' },
       avatar: { type: String, default: '📦' },
     },
