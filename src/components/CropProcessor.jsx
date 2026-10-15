@@ -54,34 +54,49 @@ export default function CropProcessor() {
 
   const previewCanvasRef = useRef(null);
 
-  // Live real-time crop snippet canvas rendering
+  // Live real-time crop snippet canvas rendering (optimized with RAF & buffer reuse)
   useEffect(() => {
     if (!selection) return;
 
-    const sourceCanvas = document.querySelector('.react-pdf__Page__canvas');
-    const targetCanvas = previewCanvasRef.current;
-    if (!sourceCanvas || !targetCanvas) return;
+    let animId = null;
+    const renderPreview = () => {
+      const sourceCanvas = document.querySelector('.react-pdf__Page__canvas');
+      const targetCanvas = previewCanvasRef.current;
+      if (!sourceCanvas || !targetCanvas) return;
 
-    const ctx = targetCanvas.getContext('2d');
-    if (!ctx) return;
+      const ctx = targetCanvas.getContext('2d');
+      if (!ctx) return;
 
-    const srcW = sourceCanvas.width;
-    const srcH = sourceCanvas.height;
+      const srcW = sourceCanvas.width;
+      const srcH = sourceCanvas.height;
 
-    const sx = Math.max(0, selection.xRatio * srcW);
-    const sy = Math.max(0, selection.yRatio * srcH);
-    const sw = Math.min(srcW - sx, selection.widthRatio * srcW);
-    const sh = Math.min(srcH - sy, selection.heightRatio * srcH);
+      const sx = Math.max(0, selection.xRatio * srcW);
+      const sy = Math.max(0, selection.yRatio * srcH);
+      const sw = Math.min(srcW - sx, selection.widthRatio * srcW);
+      const sh = Math.min(srcH - sy, selection.heightRatio * srcH);
 
-    if (sw <= 0 || sh <= 0) return;
+      if (sw <= 0 || sh <= 0) return;
 
-    const maxPreviewW = 280;
-    const aspect = sw / sh;
-    targetCanvas.width = maxPreviewW;
-    targetCanvas.height = Math.round(maxPreviewW / aspect);
+      const maxPreviewW = 280;
+      const aspect = sw / sh;
+      const targetW = maxPreviewW;
+      const targetH = Math.max(20, Math.round(maxPreviewW / aspect));
 
-    ctx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
-    ctx.drawImage(sourceCanvas, sx, sy, sw, sh, 0, 0, targetCanvas.width, targetCanvas.height);
+      // CRITICAL: Avoid resetting canvas dimensions if they haven't changed!
+      // Mutating canvas.width or height forces the browser to discard and reallocate GPU textures.
+      if (targetCanvas.width !== targetW || targetCanvas.height !== targetH) {
+        targetCanvas.width = targetW;
+        targetCanvas.height = targetH;
+      }
+
+      ctx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
+      ctx.drawImage(sourceCanvas, sx, sy, sw, sh, 0, 0, targetCanvas.width, targetCanvas.height);
+    };
+
+    animId = requestAnimationFrame(renderPreview);
+    return () => {
+      if (animId) cancelAnimationFrame(animId);
+    };
   }, [selection, selectedPdfIndex, rotation, cropMode]);
 
   const handleBatchCrop = async () => {
@@ -99,11 +114,17 @@ export default function CropProcessor() {
     setIsProcessing(true);
     setProcessProgress({ current: 0, total: pdfFiles.length });
 
+    // Yield to let React re-render loading state and let browser paint the progress bar
+    await new Promise((resolve) => setTimeout(resolve, 60));
+
     const results = [];
     try {
       for (let i = 0; i < pdfFiles.length; i++) {
         const item = pdfFiles[i];
         setProcessProgress({ current: i + 1, total: pdfFiles.length });
+
+        // Yield between documents so browser paints progress bar and remains responsive
+        await new Promise((resolve) => setTimeout(resolve, 30));
 
         const croppedItems = await cropPdfBlob(item.file, selection, {
           ...cropOptions,

@@ -32,9 +32,10 @@ import {
   Maximize2,
 } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
-import { detectLabelBoundingBox } from '../utils/pdfUtils';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = typeof window !== 'undefined'
+  ? new URL('/pdf.worker.min.mjs', window.location.origin).toString()
+  : `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 const PDF_OPTIONS = {
   cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
@@ -60,7 +61,6 @@ export default function PdfViewer() {
     rotation,
     rotateClockwise,
     rotateCounterClockwise,
-    applyPreset,
     customPresets,
     saveCurrentPreset,
     deleteCustomPreset,
@@ -75,8 +75,13 @@ export default function PdfViewer() {
   const [numPages, setNumPages] = useState(null);
   const [pageDimensions, setPageDimensions] = useState({ width: 612, height: 792 });
   const [interactionMode, setInteractionMode] = useState(null);
-  const [dragStart, setDragStart] = useState(null);
-  const [initialBox, setInitialBox] = useState(null);
+
+  // References for ultra-smooth 60fps/120fps requestAnimationFrame dragging
+  const interactionModeRef = useRef(null);
+  const dragStartRef = useRef(null);
+  const initialBoxRef = useRef(null);
+  const moveRafRef = useRef(null);
+  const pendingCoordsRef = useRef(null);
 
   // Save preset dialog
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -163,7 +168,9 @@ export default function PdfViewer() {
       e.currentTarget.setPointerCapture?.(e.pointerId);
     } catch {}
     setInteractionMode('draw');
-    setDragStart(coords);
+    interactionModeRef.current = 'draw';
+    dragStartRef.current = coords;
+    initialBoxRef.current = null;
     setSelection({
       xRatio: coords.x,
       yRatio: coords.y,
@@ -179,8 +186,10 @@ export default function PdfViewer() {
     } catch {}
     const coords = getRelativeCoords(e);
     setInteractionMode('move');
-    setDragStart(coords);
-    setInitialBox({ ...selection });
+    interactionModeRef.current = 'move';
+    dragStartRef.current = coords;
+    const box = { ...selection };
+    initialBoxRef.current = box;
   };
 
   const handleResizePointerStart = (e, handleType) => {
@@ -189,73 +198,96 @@ export default function PdfViewer() {
       e.currentTarget.setPointerCapture?.(e.pointerId);
     } catch {}
     const coords = getRelativeCoords(e);
-    setInteractionMode(`resize-${handleType}`);
-    setDragStart(coords);
-    setInitialBox({ ...selection });
+    const mode = `resize-${handleType}`;
+    setInteractionMode(mode);
+    interactionModeRef.current = mode;
+    dragStartRef.current = coords;
+    const box = { ...selection };
+    initialBoxRef.current = box;
   };
 
-  const handlePointerMove = useCallback((e) => {
-    if (!interactionMode || !dragStart) return;
-    const current = getRelativeCoords(e);
+  // Perform calculation once per display animation frame
+  const applyMove = useCallback(() => {
+    moveRafRef.current = null;
+    const current = pendingCoordsRef.current;
+    const mode = interactionModeRef.current;
+    const start = dragStartRef.current;
+    const box = initialBoxRef.current;
 
-    if (interactionMode === 'draw') {
-      const x1 = Math.min(dragStart.x, current.x);
-      const y1 = Math.min(dragStart.y, current.y);
-      const x2 = Math.max(dragStart.x, current.x);
-      const y2 = Math.max(dragStart.y, current.y);
+    if (!current || !mode || !start) return;
+
+    if (mode === 'draw') {
+      const x1 = Math.min(start.x, current.x);
+      const y1 = Math.min(start.y, current.y);
+      const x2 = Math.max(start.x, current.x);
+      const y2 = Math.max(start.y, current.y);
       setSelection({
         xRatio: x1,
         yRatio: y1,
         widthRatio: Math.max(0.02, x2 - x1),
         heightRatio: Math.max(0.02, y2 - y1),
       });
-    } else if (interactionMode === 'move' && initialBox) {
-      const dx = current.x - dragStart.x;
-      const dy = current.y - dragStart.y;
-      const newX = Math.max(0, Math.min(1 - initialBox.widthRatio, initialBox.xRatio + dx));
-      const newY = Math.max(0, Math.min(1 - initialBox.heightRatio, initialBox.yRatio + dy));
+    } else if (mode === 'move' && box) {
+      const dx = current.x - start.x;
+      const dy = current.y - start.y;
+      const newX = Math.max(0, Math.min(1 - box.widthRatio, box.xRatio + dx));
+      const newY = Math.max(0, Math.min(1 - box.heightRatio, box.yRatio + dy));
       setSelection({
-        ...initialBox,
+        ...box,
         xRatio: newX,
         yRatio: newY,
       });
-    } else if (interactionMode.startsWith('resize-') && initialBox) {
-      const handle = interactionMode.replace('resize-', '');
-      let { xRatio, yRatio, widthRatio, heightRatio } = initialBox;
-      const dx = current.x - dragStart.x;
-      const dy = current.y - dragStart.y;
+    } else if (mode.startsWith('resize-') && box) {
+      const handle = mode.replace('resize-', '');
+      let { xRatio, yRatio, widthRatio, heightRatio } = box;
+      const dx = current.x - start.x;
+      const dy = current.y - start.y;
 
       if (handle === 'se') {
-        widthRatio = Math.max(0.04, Math.min(1 - xRatio, initialBox.widthRatio + dx));
-        heightRatio = Math.max(0.04, Math.min(1 - yRatio, initialBox.heightRatio + dy));
+        widthRatio = Math.max(0.04, Math.min(1 - xRatio, box.widthRatio + dx));
+        heightRatio = Math.max(0.04, Math.min(1 - yRatio, box.heightRatio + dy));
       } else if (handle === 'sw') {
-        const potentialX = Math.max(0, initialBox.xRatio + dx);
-        widthRatio = Math.max(0.04, (initialBox.xRatio + initialBox.widthRatio) - potentialX);
-        xRatio = (initialBox.xRatio + initialBox.widthRatio) - widthRatio;
-        heightRatio = Math.max(0.04, Math.min(1 - yRatio, initialBox.heightRatio + dy));
+        const potentialX = Math.max(0, box.xRatio + dx);
+        widthRatio = Math.max(0.04, (box.xRatio + box.widthRatio) - potentialX);
+        xRatio = (box.xRatio + box.widthRatio) - widthRatio;
+        heightRatio = Math.max(0.04, Math.min(1 - yRatio, box.heightRatio + dy));
       } else if (handle === 'ne') {
-        const potentialY = Math.max(0, initialBox.yRatio + dy);
-        heightRatio = Math.max(0.04, (initialBox.yRatio + initialBox.heightRatio) - potentialY);
-        yRatio = (initialBox.yRatio + initialBox.heightRatio) - heightRatio;
-        widthRatio = Math.max(0.04, Math.min(1 - xRatio, initialBox.widthRatio + dx));
+        const potentialY = Math.max(0, box.yRatio + dy);
+        heightRatio = Math.max(0.04, (box.yRatio + box.heightRatio) - potentialY);
+        yRatio = (box.yRatio + box.heightRatio) - heightRatio;
+        widthRatio = Math.max(0.04, Math.min(1 - xRatio, box.widthRatio + dx));
       } else if (handle === 'nw') {
-        const potentialX = Math.max(0, initialBox.xRatio + dx);
-        const potentialY = Math.max(0, initialBox.yRatio + dy);
-        widthRatio = Math.max(0.04, (initialBox.xRatio + initialBox.widthRatio) - potentialX);
-        xRatio = (initialBox.xRatio + initialBox.widthRatio) - widthRatio;
-        heightRatio = Math.max(0.04, (initialBox.yRatio + initialBox.heightRatio) - potentialY);
-        yRatio = (initialBox.yRatio + initialBox.heightRatio) - heightRatio;
+        const potentialX = Math.max(0, box.xRatio + dx);
+        const potentialY = Math.max(0, box.yRatio + dy);
+        widthRatio = Math.max(0.04, (box.xRatio + box.widthRatio) - potentialX);
+        xRatio = (box.xRatio + box.widthRatio) - widthRatio;
+        heightRatio = Math.max(0.04, (box.yRatio + box.heightRatio) - potentialY);
+        yRatio = (box.yRatio + box.heightRatio) - heightRatio;
       }
 
       setSelection({ xRatio, yRatio, widthRatio, heightRatio });
     }
-  }, [interactionMode, dragStart, initialBox, setSelection]);
+  }, [setSelection]);
+
+  const handlePointerMove = useCallback((e) => {
+    if (!interactionModeRef.current || !dragStartRef.current) return;
+    pendingCoordsRef.current = getRelativeCoords(e);
+    if (!moveRafRef.current) {
+      moveRafRef.current = requestAnimationFrame(applyMove);
+    }
+  }, [applyMove]);
 
   const handlePointerUp = useCallback(() => {
+    if (moveRafRef.current) {
+      cancelAnimationFrame(moveRafRef.current);
+      moveRafRef.current = null;
+      applyMove();
+    }
     setInteractionMode(null);
-    setDragStart(null);
-    setInitialBox(null);
-  }, []);
+    interactionModeRef.current = null;
+    dragStartRef.current = null;
+    initialBoxRef.current = null;
+  }, [applyMove]);
 
   const handleKeyDown = useCallback((e) => {
     if (!selection) return;

@@ -154,8 +154,13 @@ export async function cropPdfBlob(pdfBlob, selectionRatio, options = { pagesToCr
     const region = sliceRegions[sIdx];
     const newDoc = await PDFDocument.create();
 
-    for (const pageIdx of pageIndicesToProcess) {
-      const srcPage = srcDoc.getPage(pageIdx);
+    // High performance batch embedding: embed all needed pages at once instead of in a loop
+    const pagesToEmbed = pageIndicesToProcess.map((idx) => srcDoc.getPage(idx));
+    const embeddedPages = await newDoc.embedPages(pagesToEmbed);
+
+    for (let pIdx = 0; pIdx < pageIndicesToProcess.length; pIdx++) {
+      const srcPage = pagesToEmbed[pIdx];
+      const embedded = embeddedPages[pIdx];
       const { width: origWidth, height: origHeight } = srcPage.getSize();
 
       const cropWidth = Math.max(10, Math.round(region.widthRatio * origWidth));
@@ -163,7 +168,6 @@ export async function cropPdfBlob(pdfBlob, selectionRatio, options = { pagesToCr
       const cropX = Math.round(region.xRatio * origWidth);
       const cropY = Math.round((1 - region.yRatio - region.heightRatio) * origHeight);
 
-      const [embedded] = await newDoc.embedPages([srcPage]);
       const newPage = newDoc.addPage([cropWidth, cropHeight]);
 
       newPage.drawPage(embedded, {
@@ -175,6 +179,11 @@ export async function cropPdfBlob(pdfBlob, selectionRatio, options = { pagesToCr
 
       if (options.rotation && options.rotation !== 0) {
         newPage.setRotation({ angle: options.rotation % 360 });
+      }
+
+      // Yield event loop every 4 pages for large documents to prevent browser freezing
+      if (pIdx > 0 && pIdx % 4 === 0) {
+        await new Promise((r) => setTimeout(r, 0));
       }
     }
 
@@ -196,11 +205,16 @@ export async function cropPdfBlob(pdfBlob, selectionRatio, options = { pagesToCr
 export async function mergePdfBlobs(items) {
   const mergedDoc = await PDFDocument.create();
 
-  for (const item of items) {
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
     const arrayBuffer = await item.blob.arrayBuffer();
     const doc = await PDFDocument.load(arrayBuffer);
     const copiedPages = await mergedDoc.copyPages(doc, doc.getPageIndices());
     copiedPages.forEach((page) => mergedDoc.addPage(page));
+
+    if (i > 0 && i % 4 === 0) {
+      await new Promise((r) => setTimeout(r, 0));
+    }
   }
 
   const mergedBytes = await mergedDoc.save();
