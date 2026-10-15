@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import PageLayout from '../components/PageLayout';
 import { BLOG_POSTS } from '../data/blogPosts';
-import { gstApi } from '../gst-tool/api/client';
+import { gstApi, getActiveUser } from '../gst-tool/api/client';
 
 export default function BlogPostPage() {
   const { slug } = useParams();
@@ -43,6 +43,9 @@ export default function BlogPostPage() {
   const [relatedPosts, setRelatedPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+
+  const currentUser = useMemo(() => getActiveUser(), []);
+  const isAdmin = currentUser?.role === 'admin';
 
   useEffect(() => {
     let isMounted = true;
@@ -329,6 +332,31 @@ export default function BlogPostPage() {
             >
               {copied ? 'Link Copied!' : 'Share Guide'}
             </Button>
+
+            {isAdmin && (
+              <Button
+                component={Link}
+                to="/gst-tool/admin"
+                variant="outlined"
+                size="small"
+                sx={{
+                  borderColor: 'rgba(239,68,68,0.4)',
+                  color: '#fca5a5',
+                  textTransform: 'none',
+                  borderRadius: 2,
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  bgcolor: 'rgba(239,68,68,0.08)',
+                  '&:hover': {
+                    bgcolor: 'rgba(239,68,68,0.15)',
+                    borderColor: '#ef4444',
+                  },
+                }}
+              >
+                🛡️ Admin CMS
+              </Button>
+            )}
+
             <Button
               component={Link}
               to="/blog"

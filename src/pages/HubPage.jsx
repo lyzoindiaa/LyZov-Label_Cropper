@@ -60,30 +60,6 @@ const TOOLS = [
     status: "Live",
     statusColor: "#00d68f",
   },
-  {
-    id: "blog",
-    icon: BookOpen,
-    name: "Seller Blog & Guides",
-    tagline: "Thermal Printing & GST Compliance Tutorials",
-    description: "In-depth tutorials on optimal 4x6 thermal printer setup, 203 vs 300 DPI calibrations, barcode scannability, packaging fixes, and monthly GSTR-1 & 3B return reconciliations.",
-    accent: "#a78bfa",
-    accentDim: "#8b5cf6",
-    glowColor: "rgba(167,139,250,0.22)",
-    route: "/blog",
-    badge: "5 Free Guides",
-    badgeClass: "gst-badge-purple",
-    features: [
-      "Thermal printer DPI & darkness driver setup",
-      "Batch label cropping for Amazon, Flipkart & Meesho",
-      "GSTR-1 B2B/B2C section mapping & TCS offset",
-      "Laser vs thermal printer ROI & cost comparison",
-      "Common packaging blunders causing return to origin (RTO)",
-    ],
-    useCases: ["Thermal Printing", "Amazon FBA", "Flipkart Hub", "GST Return Filers"],
-    cta: "Explore Guides",
-    status: "New",
-    statusColor: "#a78bfa",
-  },
 ];
 
 const HOW_IT_WORKS = [

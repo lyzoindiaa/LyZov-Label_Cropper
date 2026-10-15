@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import PageLayout from '../components/PageLayout';
 import { BLOG_POSTS } from '../data/blogPosts';
-import { gstApi } from '../gst-tool/api/client';
+import { gstApi, getActiveUser } from '../gst-tool/api/client';
 
 const CATEGORIES = ['All', 'Shipping & Printing', 'E-Commerce', 'GST & Taxes'];
 
@@ -24,6 +24,9 @@ export default function BlogListPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [posts, setPosts] = useState(BLOG_POSTS);
   const [loading, setLoading] = useState(false);
+
+  const currentUser = useMemo(() => getActiveUser(), []);
+  const isAdmin = currentUser?.role === 'admin';
 
   useEffect(() => {
     let isMounted = true;
@@ -107,6 +110,23 @@ export default function BlogListPage() {
                 border: '1px solid rgba(16,185,129,0.3)',
               }}
             />
+            {isAdmin && (
+              <Chip
+                component={Link}
+                to="/gst-tool/admin"
+                label="🛡️ Open Admin CMS"
+                size="small"
+                clickable
+                sx={{
+                  bgcolor: 'rgba(239,68,68,0.15)',
+                  color: '#fca5a5',
+                  fontWeight: 800,
+                  border: '1px solid rgba(239,68,68,0.4)',
+                  cursor: 'pointer',
+                  '&:hover': { bgcolor: 'rgba(239,68,68,0.25)' },
+                }}
+              />
+            )}
           </Box>
 
           <Typography
