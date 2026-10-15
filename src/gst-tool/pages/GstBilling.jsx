@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../gst.css';
 import { CheckCircle2, Zap, Star, Crown, Receipt, Loader2, AlertCircle } from 'lucide-react';
-import { gstApi, getActiveUser } from '../api/client';
+import { gstApi, getActiveUser, setActiveUser } from '../api/client';
 
 const PLANS = [
   {
@@ -48,6 +48,19 @@ export default function GstBilling() {
     if (user?.plan) {
       setCurrentPlan(user.plan);
     }
+
+    async function syncUserData() {
+      try {
+        const res = await gstApi.getMe();
+        if (res?.user?.plan) {
+          setCurrentPlan(res.user.plan);
+          setActiveUser(res.user);
+        }
+      } catch {
+        // fallback
+      }
+    }
+    syncUserData();
 
     async function loadInvoices() {
       try {
@@ -100,7 +113,7 @@ export default function GstBilling() {
               plan: verifyRes.plan,
               trialEndsAt: verifyRes.validTill,
             };
-            localStorage.setItem('gst_user', JSON.stringify(updatedUser));
+            setActiveUser(updatedUser);
 
             setCurrentPlan(verifyRes.plan);
             setSuccessMsg(`Upgraded to ${verifyRes.plan.toUpperCase()} plan successfully!`);
@@ -268,11 +281,19 @@ export default function GstBilling() {
 
                 <button
                   className={`gst-btn gst-btn-sm ${isCurrent ? 'gst-btn-ghost' : p.highlight ? 'gst-btn-primary' : 'gst-btn-outline'}`}
-                  style={{ width: '100%', justifyContent: 'center', opacity: isCurrent ? 0.5 : 1 }}
-                  disabled={isCurrent || isBusy}
+                  style={{ width: '100%', justifyContent: 'center', opacity: (isCurrent || p.id === 'trial') ? 0.5 : 1 }}
+                  disabled={isCurrent || isBusy || p.id === 'trial'}
                   onClick={() => p.id !== 'trial' && handleUpgrade(p.id)}
                 >
-                  {isBusy ? <><Loader2 size={12} className="gst-spin" /> Upgrading...</> : isCurrent ? 'Active Plan' : `Upgrade to ${p.name}`}
+                  {isBusy ? (
+                    <><Loader2 size={12} className="gst-spin" /> Upgrading...</>
+                  ) : isCurrent ? (
+                    'Active Plan'
+                  ) : p.id === 'trial' ? (
+                    'Free Trial'
+                  ) : (
+                    `Upgrade to ${p.name}`
+                  )}
                 </button>
               </div>
             );

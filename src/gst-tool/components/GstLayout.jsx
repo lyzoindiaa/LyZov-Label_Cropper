@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import '../gst.css';
 import {
@@ -6,7 +6,7 @@ import {
   Download, CreditCard, HelpCircle, LogOut, ChevronRight,
   FileText, Bell, Shield, Crown, Calculator, Menu, X
 } from 'lucide-react';
-import { gstApi, getActiveUser } from '../api/client';
+import { gstApi, getActiveUser, setActiveUser } from '../api/client';
 
 const BASE_NAV = [
   { to: '/gst-tool/dashboard',  label: 'Dashboard',      icon: LayoutDashboard },
@@ -23,10 +23,96 @@ export default function GstLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const user = getActiveUser();
+  const [user, setUser] = useState(() => getActiveUser());
+
+  useEffect(() => {
+    const syncUser = () => {
+      setUser(getActiveUser());
+    };
+    window.addEventListener('gst_user_updated', syncUser);
+    window.addEventListener('storage', syncUser);
+
+    async function fetchMe() {
+      try {
+        const res = await gstApi.getMe();
+        if (res?.user) {
+          setActiveUser(res.user);
+          setUser(res.user);
+        }
+      } catch {
+        // Fallback silently to localStorage
+      }
+    }
+    fetchMe();
+
+    return () => {
+      window.removeEventListener('gst_user_updated', syncUser);
+      window.removeEventListener('storage', syncUser);
+    };
+  }, []);
+
   const userName = user?.name || 'Seller';
   const userInitial = userName.charAt(0).toUpperCase();
   const isAdmin = user?.role === 'admin';
+  const plan = user?.plan || 'trial';
+
+  // Determine plan banner styling & labels
+  let planConfig = {
+    title: '⚡ Free Trial',
+    titleColor: 'var(--gst-gold)',
+    actionText: 'Upgrade →',
+    actionColor: 'var(--gst-gold)',
+    bg: 'linear-gradient(135deg,rgba(245,166,35,0.12),rgba(245,166,35,0.04))',
+    border: '1px solid rgba(245,166,35,0.2)',
+    subText: 'Active · ',
+    showUpgrade: true,
+  };
+
+  if (isAdmin) {
+    planConfig = {
+      title: '🛡️ Super Administrator',
+      titleColor: '#fca5a5',
+      actionText: '',
+      actionColor: '#fca5a5',
+      bg: 'linear-gradient(135deg,rgba(239,68,68,0.15),rgba(245,166,35,0.08))',
+      border: '1px solid rgba(239,68,68,0.3)',
+      subText: 'Full Management Access',
+      showUpgrade: false,
+    };
+  } else if (plan === 'starter') {
+    planConfig = {
+      title: '⭐ Starter Plan',
+      titleColor: 'var(--gst-emerald)',
+      actionText: 'Upgrade to Pro →',
+      actionColor: 'var(--gst-emerald)',
+      bg: 'linear-gradient(135deg,rgba(0,214,143,0.15),rgba(0,214,143,0.04))',
+      border: '1px solid rgba(0,214,143,0.3)',
+      subText: 'Active · ',
+      showUpgrade: true,
+    };
+  } else if (plan === 'pro') {
+    planConfig = {
+      title: '👑 Pro CA Plan',
+      titleColor: 'var(--gst-blue)',
+      actionText: 'Manage →',
+      actionColor: 'var(--gst-blue)',
+      bg: 'linear-gradient(135deg,rgba(0,119,255,0.15),rgba(0,119,255,0.04))',
+      border: '1px solid rgba(0,119,255,0.3)',
+      subText: 'Active · ',
+      showUpgrade: true,
+    };
+  } else if (plan === 'cropper_monthly' || plan === 'cropper_yearly') {
+    planConfig = {
+      title: '🚀 Pro Subscriber',
+      titleColor: 'var(--gst-emerald)',
+      actionText: 'Manage →',
+      actionColor: 'var(--gst-emerald)',
+      bg: 'linear-gradient(135deg,rgba(0,214,143,0.15),rgba(0,214,143,0.04))',
+      border: '1px solid rgba(0,214,143,0.3)',
+      subText: 'Active · ',
+      showUpgrade: true,
+    };
+  }
 
   const navItems = isAdmin
     ? [
@@ -81,20 +167,22 @@ export default function GstLayout() {
         <div style={{
           margin: '12px 12px 0',
           padding: '10px 12px',
-          background: isAdmin
-            ? 'linear-gradient(135deg,rgba(239,68,68,0.15),rgba(245,166,35,0.08))'
-            : 'linear-gradient(135deg,rgba(245,166,35,0.12),rgba(245,166,35,0.04))',
-          border: isAdmin ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(245,166,35,0.2)',
+          background: planConfig.bg,
+          border: planConfig.border,
           borderRadius: 10,
         }}>
-          <div style={{ fontSize: '0.72rem', fontWeight: 700, color: isAdmin ? '#fca5a5' : 'var(--gst-gold)', marginBottom: 2 }}>
-            {isAdmin ? '🛡️ Super Administrator' : '⚡ Free Trial'}
+          <div style={{ fontSize: '0.72rem', fontWeight: 700, color: planConfig.titleColor, marginBottom: 2 }}>
+            {planConfig.title}
           </div>
           <div style={{ fontSize: '0.68rem', color: 'var(--gst-text-sec)', lineHeight: 1.4 }}>
-            {isAdmin ? (
-              <span style={{ color: '#fca5a5' }}>Full Management Access</span>
-            ) : (
-              <>Active · <span style={{ color: 'var(--gst-gold)', cursor: 'pointer' }} onClick={() => navigate('/gst-tool/billing')}>Upgrade →</span></>
+            {planConfig.subText}
+            {planConfig.showUpgrade && (
+              <span
+                style={{ color: planConfig.actionColor, cursor: 'pointer', fontWeight: 600 }}
+                onClick={() => navigate('/gst-tool/billing')}
+              >
+                {planConfig.actionText}
+              </span>
             )}
           </div>
         </div>
