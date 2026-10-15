@@ -60,6 +60,30 @@ const TOOLS = [
     status: "Live",
     statusColor: "#00d68f",
   },
+  {
+    id: "blog",
+    icon: BookOpen,
+    name: "Seller Blog & Guides",
+    tagline: "Thermal Printing & GST Compliance Tutorials",
+    description: "In-depth tutorials on optimal 4x6 thermal printer setup, 203 vs 300 DPI calibrations, barcode scannability, packaging fixes, and monthly GSTR-1 & 3B return reconciliations.",
+    accent: "#a78bfa",
+    accentDim: "#8b5cf6",
+    glowColor: "rgba(167,139,250,0.22)",
+    route: "/blog",
+    badge: "5 Free Guides",
+    badgeClass: "gst-badge-purple",
+    features: [
+      "Thermal printer DPI & darkness driver setup",
+      "Batch label cropping for Amazon, Flipkart & Meesho",
+      "GSTR-1 B2B/B2C section mapping & TCS offset",
+      "Laser vs thermal printer ROI & cost comparison",
+      "Common packaging blunders causing return to origin (RTO)",
+    ],
+    useCases: ["Thermal Printing", "Amazon FBA", "Flipkart Hub", "GST Return Filers"],
+    cta: "Explore Guides",
+    status: "New",
+    statusColor: "#a78bfa",
+  },
 ];
 
 const HOW_IT_WORKS = [
@@ -148,6 +172,9 @@ export default function HubPage() {
         {/* Desktop Links & Action Buttons */}
         <nav style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div className="gst-nav-desktop" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button className="gst-btn gst-btn-ghost gst-btn-sm" onClick={() => navigate("/blog")}>
+              <BookOpen size={14} color="#a78bfa" /> Blog &amp; Guides
+            </button>
             <a href="#tools" className="gst-btn gst-btn-ghost gst-btn-sm">Tools</a>
             <a href="#how" className="gst-btn gst-btn-ghost gst-btn-sm">How it works</a>
             <a href="#why" className="gst-btn gst-btn-ghost gst-btn-sm">Why LyZov</a>
@@ -198,8 +225,11 @@ export default function HubPage() {
           animation: "gst-fade-in 0.25s ease",
           boxShadow: "0 12px 30px rgba(0,0,0,0.15)",
         }}>
+          <button className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={() => { closeMobileMenu(); navigate("/blog"); }}>
+            <BookOpen size={16} color="#a78bfa" /> Seller Blog &amp; Guides
+          </button>
           <a href="#tools" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={closeMobileMenu}>
-            <BookOpen size={16} color="#00c9ff" /> Available Tools
+            <Layers size={16} color="#00c9ff" /> Available Tools
           </a>
           <a href="#how" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={closeMobileMenu}>
             <Lightbulb size={16} color="#a78bfa" /> How it Works

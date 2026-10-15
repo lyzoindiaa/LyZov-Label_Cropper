@@ -4,7 +4,7 @@ import '../gst.css';
 import {
   LayoutDashboard, Building2, Upload, FileBarChart2,
   Download, CreditCard, HelpCircle, LogOut, ChevronRight,
-  FileText, Bell, Shield, Crown, Calculator, Menu, X
+  FileText, Bell, Shield, Crown, Calculator, Menu, X, BookOpen
 } from 'lucide-react';
 import { gstApi, getActiveUser, setActiveUser } from '../api/client';
 
@@ -16,6 +16,7 @@ const BASE_NAV = [
   { to: '/gst-tool/gstr3b',     label: 'GSTR-3B Helper',  icon: Calculator, badge: 'NEW' },
   { to: '/gst-tool/downloads',  label: 'Downloads',       icon: Download },
   { to: '/gst-tool/billing',    label: 'Billing',         icon: CreditCard },
+  { to: '/blog',                label: 'Blog & Guides',   icon: BookOpen },
   { to: '/gst-tool/help',       label: 'Help',            icon: HelpCircle },
 ];
 
