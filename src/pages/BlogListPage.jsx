@@ -10,7 +10,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import PageLayout from '../components/PageLayout';
-import { BLOG_POSTS } from '../data/blogPosts';
+import { BLOG_POSTS } from '../data/blogPosts.js';
 import { gstApi, getActiveUser } from '../gst-tool/api/client';
 
 const CATEGORIES = ['All', 'Shipping & Printing', 'E-Commerce', 'GST & Taxes'];
