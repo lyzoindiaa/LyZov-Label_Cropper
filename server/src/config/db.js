@@ -10,8 +10,9 @@ export async function connectDB() {
     console.log(`✓ MongoDB Connected: ${conn.connection.host}`);
     return true;
   } catch (error) {
+    mongoose.set('bufferCommands', false);
     console.warn(`! MongoDB Connection Warning: ${error.message}`);
-    console.warn('  (Running without local MongoDB: Connect to MongoDB Atlas or local mongod for data persistence)');
+    console.warn('  (Running in offline/in-memory fallback mode: Connect to MongoDB Atlas or local mongod for persistent storage)');
     return false;
   }
 }

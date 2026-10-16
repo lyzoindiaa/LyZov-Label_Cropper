@@ -8,6 +8,7 @@ import {
   Menu,
   MenuItem,
   Divider,
+  Tooltip,
 } from '@mui/material';
 import {
   BarChart3,
@@ -21,6 +22,10 @@ import {
   User as UserIcon,
   LogOut,
   Sparkles,
+  RotateCcw,
+  Trash2,
+  CheckCircle2,
+  ArrowRight,
 } from 'lucide-react';
 
 import './pnl.css';
@@ -36,7 +41,8 @@ import RulesView from './pages/RulesView.jsx';
 import BridgeView from './pages/BridgeView.jsx';
 import AdminView from './pages/AdminView.jsx';
 
-import { getLocalOrderLines } from './db/index.js';
+import { getLocalOrderLines, seedLocalDatabase, clearLocalDatabase } from './db/index.js';
+import { DEMO_AUDIT_REPORT } from './db/seedData.js';
 
 function PnlAppContent() {
   const {
@@ -54,28 +60,53 @@ function PnlAppContent() {
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [orders, setOrders] = useState([]);
-  const [auditResult, setAuditResult] = useState(null);
+  const [auditResult, setAuditResult] = useState(DEMO_AUDIT_REPORT);
   const [missingSkus, setMissingSkus] = useState([]);
+  const [isDemoMode, setIsDemoMode] = useState(true);
 
   // User menu anchor
   const [anchorEl, setAnchorEl] = useState(null);
 
-  // Load existing orders on startup
+  // Load or auto-seed on startup
+  const initAppDatabase = async (force = false) => {
+    try {
+      const data = await seedLocalDatabase(force);
+      setOrders(data.orders || []);
+      setAuditResult(data.audit || DEMO_AUDIT_REPORT);
+      const missing = Array.from(
+        new Set((data.orders || []).filter(l => l.cogsSource === 'missing').map(l => l.sku))
+      );
+      setMissingSkus(missing);
+      setIsDemoMode(true);
+    } catch (err) {
+      console.warn('LocalDB initialization notice:', err);
+    }
+  };
+
   useEffect(() => {
-    getLocalOrderLines().then(lines => {
-      if (lines && lines.length) {
-        setOrders(lines);
-        const missing = Array.from(new Set(lines.filter(l => l.cogsSource === 'missing').map(l => l.sku)));
-        setMissingSkus(missing);
-      }
-    });
+    initAppDatabase(false);
   }, []);
+
+  const handleReloadDemo = async () => {
+    await initAppDatabase(true);
+  };
+
+  const handleClearData = async () => {
+    await clearLocalDatabase();
+    setOrders([]);
+    setAuditResult(null);
+    setMissingSkus([]);
+    setIsDemoMode(false);
+  };
 
   const handleIngestComplete = (normResult) => {
     setOrders(normResult.accepted);
     setAuditResult(normResult);
-    const missing = Array.from(new Set(normResult.accepted.filter(l => l.cogsSource === 'missing').map(l => l.sku)));
+    const missing = Array.from(
+      new Set(normResult.accepted.filter(l => l.cogsSource === 'missing').map(l => l.sku))
+    );
     setMissingSkus(missing);
+    setIsDemoMode(false);
     setActiveTab('quality');
   };
 
@@ -95,8 +126,8 @@ function PnlAppContent() {
       <Box
         sx={{
           borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          bgcolor: 'rgba(11, 15, 25, 0.95)',
-          backdropFilter: 'blur(16px)',
+          bgcolor: 'rgba(8, 12, 24, 0.95)',
+          backdropFilter: 'blur(20px)',
           position: 'sticky',
           top: 0,
           zIndex: 100,
@@ -113,30 +144,30 @@ function PnlAppContent() {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box
             sx={{
-              width: 36,
-              height: 36,
-              borderRadius: '10px',
-              background: 'linear-gradient(135deg, #00c9ff 0%, #0088ff 100%)',
+              width: 38,
+              height: 38,
+              borderRadius: '11px',
+              background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 16px rgba(0, 201, 255, 0.4)',
+              boxShadow: '0 4px 20px rgba(0, 201, 255, 0.45)',
             }}
           >
             <Sparkles size={20} color="#fff" />
           </Box>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 800, color: '#f8fafc', lineHeight: 1.1 }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, color: '#f8fafc', lineHeight: 1.1, letterSpacing: '-0.3px' }}>
               LyZov <span style={{ color: '#00c9ff' }}>P&L Analyzer</span>
             </Typography>
-            <Typography variant="caption" sx={{ color: '#64748b' }}>
-              Multi-Channel E-Commerce Intelligence
+            <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.72rem' }}>
+              Private Multi-Channel Financial Intelligence
             </Typography>
           </Box>
         </Box>
 
         {/* Navigation Tabs */}
-        <Box sx={{ display: 'flex', gap: 0.8, overflowX: 'auto', py: 0.5 }}>
+        <Box sx={{ display: 'flex', gap: 0.6, overflowX: 'auto', py: 0.5 }}>
           {navItems.map((item) => {
             const isActive = activeTab === item.key;
             return (
@@ -150,7 +181,7 @@ function PnlAppContent() {
                   fontWeight: isActive ? 700 : 500,
                   fontSize: '0.82rem',
                   textTransform: 'none',
-                  borderRadius: '8px',
+                  borderRadius: '10px',
                   px: 1.8,
                   py: 0.8,
                   transition: 'all 0.2s ease',
@@ -245,10 +276,68 @@ function PnlAppContent() {
         </Box>
       </Box>
 
-      {/* Main View Router */}
-      <Box sx={{ maxWidth: 1440, mx: 'auto' }}>
+      {/* Demo Store & Data Control Banner */}
+      <Box className="pnl-demo-banner">
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Chip
+            label={isDemoMode ? 'SAMPLE DATA LOADED' : 'USER DATA ACTIVE'}
+            size="small"
+            sx={{
+              bgcolor: isDemoMode ? 'rgba(0, 201, 255, 0.2)' : 'rgba(0, 214, 143, 0.2)',
+              color: isDemoMode ? '#00c9ff' : '#00d68f',
+              fontWeight: 800,
+              fontSize: '0.7rem',
+              letterSpacing: '0.5px',
+            }}
+          />
+          <Typography variant="body2" sx={{ color: '#cbd5e1', fontSize: '0.82rem' }}>
+            {isDemoMode
+              ? 'Multi-channel store dataset populated in IndexedDB (Amazon, Flipkart, Meesho, Shopify). All tabs, drill-downs, and simulators are interactive.'
+              : 'Displaying your imported dataset. All numbers computed locally.'}
+          </Typography>
+        </Box>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Button
+            size="small"
+            onClick={handleReloadDemo}
+            startIcon={<RotateCcw size={14} />}
+            sx={{
+              color: '#00c9ff',
+              bgcolor: 'rgba(0, 201, 255, 0.08)',
+              textTransform: 'none',
+              fontSize: '0.78rem',
+              fontWeight: 600,
+              borderRadius: '8px',
+              px: 1.5,
+              '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.16)' },
+            }}
+          >
+            Reset / Reload Demo Data
+          </Button>
+
+          <Button
+            size="small"
+            onClick={handleClearData}
+            startIcon={<Trash2 size={14} />}
+            sx={{
+              color: '#94a3b8',
+              textTransform: 'none',
+              fontSize: '0.78rem',
+              borderRadius: '8px',
+              px: 1.2,
+              '&:hover': { color: '#ff4d6d' },
+            }}
+          >
+            Clear Data
+          </Button>
+        </Box>
+      </Box>
+
+      {/* Main Workspace Router */}
+      <Box sx={{ maxWidth: 1440, mx: 'auto', mt: 1 }}>
         {activeTab === 'dashboard' && <DashboardView orders={orders} />}
-        {activeTab === 'ingest' && <IngestView onIngestComplete={handleIngestComplete} />}
+        {activeTab === 'ingest' && <IngestView onIngestComplete={handleIngestComplete} onPreloadDemo={handleReloadDemo} />}
         {activeTab === 'quality' && <QualityView auditResult={auditResult} />}
         {activeTab === 'products' && <ProductsView missingSkus={missingSkus} />}
         {activeTab === 'rules' && <RulesView />}
@@ -256,7 +345,7 @@ function PnlAppContent() {
         {activeTab === 'admin' && <AdminView />}
       </Box>
 
-      {/* Global Modals */}
+      {/* Modals */}
       <AuthModal open={authModalOpen} onClose={() => setAuthModalOpen(false)} />
       <PricingModal open={pricingModalOpen} onClose={() => setPricingModalOpen(false)} />
     </Box>

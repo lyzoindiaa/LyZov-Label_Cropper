@@ -159,3 +159,52 @@ export async function getLocalProducts() {
     req.onerror = () => reject(req.error);
   });
 }
+
+import { DEMO_PRODUCTS, DEMO_BATCHES, DEMO_ORDER_LINES, DEMO_AUDIT_REPORT } from './seedData.js';
+
+export async function seedLocalDatabase(force = false) {
+  const existingProducts = await getLocalProducts();
+  if (existingProducts.length > 0 && !force) {
+    const existingOrders = await getLocalOrderLines();
+    const existingBatches = await getLocalBatches();
+    return {
+      products: existingProducts,
+      batches: existingBatches,
+      orders: existingOrders,
+      audit: DEMO_AUDIT_REPORT,
+    };
+  }
+
+  // Seed products
+  for (const p of DEMO_PRODUCTS) {
+    await saveLocalProduct(p);
+  }
+
+  // Seed batches
+  for (const b of DEMO_BATCHES) {
+    await saveLocalBatch(b);
+  }
+
+  // Seed orders
+  await saveLocalOrderLines(DEMO_ORDER_LINES);
+
+  return {
+    products: DEMO_PRODUCTS,
+    batches: DEMO_BATCHES,
+    orders: DEMO_ORDER_LINES,
+    audit: DEMO_AUDIT_REPORT,
+  };
+}
+
+export async function clearLocalDatabase() {
+  const db = await openLocalDb();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(['batches', 'orderLines', 'products', 'rawRows'], 'readwrite');
+    tx.objectStore('batches').clear();
+    tx.objectStore('orderLines').clear();
+    tx.objectStore('products').clear();
+    tx.objectStore('rawRows').clear();
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}

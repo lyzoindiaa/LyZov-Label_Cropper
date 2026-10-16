@@ -63,6 +63,25 @@ export default function IngestView({ onIngestComplete }) {
     }
   };
 
+  const handleLoadSampleFile = () => {
+    const sampleCsv = `Order Id,Order Date,Seller SKU,Title,Quantity,Item Price,Promotion Discount,Shipping Price,Order Status
+402-8921102-1928301,2026-10-14,TSHIRT-SLIM-BLK,"Men Slim Fit Cotton T-Shirt (Black)",2,1198.00,100.00,0,Shipped
+402-7719201-9812402,2026-10-13,WIRELESS-EARBUDS,"Pro Active Noise-Cancelling Bluetooth Earbuds",1,2499.00,250.00,0,Shipped
+402-1102938-4491820,2026-10-10,PHONE-CASE-CLR,"Shockproof Hybrid Armor Phone Case (Clear)",1,199.00,50.00,0,Shipped
+402-9918274-1234981,2026-10-07,SMART-WATCH-STRAP,"Silicone Breathable Sport Strap for Smartwatch",1,399.00,40.00,0,Shipped
+402-5544332-9988112,2026-10-06,HOODIE-WNT-GRY,"Fleece Winter Pullover Hoodie (Heather Grey)",1,1699.00,0,0,Returned
+,2026-10-05,TSHIRT-SLIM-BLK,"Damaged Row Without Order ID",1,499.00,0,0,Shipped
+402-8921102-1928301,2026-10-14,TSHIRT-SLIM-BLK,"Duplicate Row of Line 1",2,1198.00,100.00,0,Shipped`;
+
+    setFile({ name: 'Amazon_Sample_MTR_Export.csv' });
+    setChannel('amazon');
+    setFileHash('hash_sample_amz_export_demo');
+    const parsed = parseCsvText(sampleCsv);
+    setParsedData(parsed);
+    const suggestions = suggestColumnMappings(parsed.headers);
+    setMappings(suggestions);
+  };
+
   const handleProcessImport = async () => {
     if (!parsedData || !file) return;
 
@@ -195,6 +214,25 @@ export default function IngestView({ onIngestComplete }) {
                 Supports .CSV, .TSV (Any format, multi-thousand rows)
               </Typography>
             </Box>
+
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleLoadSampleFile}
+              startIcon={<Sparkles size={14} color="#00c9ff" />}
+              sx={{
+                borderColor: 'rgba(0, 201, 255, 0.4)',
+                color: '#00c9ff',
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: '0.8rem',
+                borderRadius: '8px',
+                py: 0.8,
+                '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.1)', borderColor: '#00c9ff' },
+              }}
+            >
+              ⚡ Quick Demo: Load Sample Amazon Export
+            </Button>
 
             {parsedData && (
               <Box sx={{ p: 2, bgcolor: 'rgba(0, 214, 143, 0.08)', borderRadius: '8px', border: '1px solid rgba(0, 214, 143, 0.25)' }}>

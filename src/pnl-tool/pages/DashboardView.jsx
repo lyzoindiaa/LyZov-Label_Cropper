@@ -27,22 +27,27 @@ import DrilldownModal from '../components/DrilldownModal.jsx';
 
 export default function DashboardView({ orders = [] }) {
   const [drilldownState, setDrilldownState] = useState({ open: false, title: '', lines: [] });
+  const [selectedChannel, setSelectedChannel] = useState('all');
 
-  // Calculate aggregates from orders
-  const totalGross = orders.reduce((acc, o) => acc + (o.grossSales || 0), 0);
-  const totalDiscounts = orders.reduce((acc, o) => acc + (o.discounts || 0), 0);
-  const totalShippingCharged = orders.reduce((acc, o) => acc + (o.shippingCharged || 0), 0);
-  const totalRefunds = orders.reduce((acc, o) => acc + (o.refundAmount || 0), 0);
+  const filteredOrders = selectedChannel === 'all'
+    ? orders
+    : orders.filter(o => (o.channelId || '').toLowerCase() === selectedChannel.toLowerCase());
+
+  // Calculate aggregates from filtered orders
+  const totalGross = filteredOrders.reduce((acc, o) => acc + (o.grossSales || 0), 0);
+  const totalDiscounts = filteredOrders.reduce((acc, o) => acc + (o.discounts || 0), 0);
+  const totalShippingCharged = filteredOrders.reduce((acc, o) => acc + (o.shippingCharged || 0), 0);
+  const totalRefunds = filteredOrders.reduce((acc, o) => acc + (o.refundAmount || 0), 0);
 
   const netRevenuePaise = totalGross - totalDiscounts + totalShippingCharged - totalRefunds;
 
   // Approximate default fees if not loaded from rules
-  const totalFeesPaise = orders.reduce((acc, o) => {
+  const totalFeesPaise = filteredOrders.reduce((acc, o) => {
     if (o.feesTotal) return acc + o.feesTotal;
     return acc + Math.round((o.grossSales || 0) * 0.16); // ~16% avg marketplace fee
   }, 0);
 
-  const totalCogsPaise = orders.reduce((acc, o) => {
+  const totalCogsPaise = filteredOrders.reduce((acc, o) => {
     if (o.cogsUnitPaise) return acc + (o.cogsUnitPaise * (o.quantity || 1));
     return acc + Math.round((o.grossSales || 0) * 0.35); // sample 35% COGS fallback
   }, 0);
@@ -50,11 +55,11 @@ export default function DashboardView({ orders = [] }) {
   const netContributionPaise = netRevenuePaise - totalFeesPaise - totalCogsPaise;
   const marginPct = netRevenuePaise > 0 ? ((netContributionPaise / netRevenuePaise) * 100).toFixed(1) : 0;
 
-  const totalUnits = orders.reduce((acc, o) => acc + (o.quantity || 1), 0);
-  const returnUnits = orders.filter(o => o.status === 'returned' || o.status === 'rto').reduce((acc, o) => acc + (o.quantity || 1), 0);
+  const totalUnits = filteredOrders.reduce((acc, o) => acc + (o.quantity || 1), 0);
+  const returnUnits = filteredOrders.filter(o => o.status === 'returned' || o.status === 'rto').reduce((acc, o) => acc + (o.quantity || 1), 0);
   const returnRatePct = totalUnits > 0 ? ((returnUnits / totalUnits) * 100).toFixed(1) : 0;
 
-  // Group by channel
+  // Group by channel (from all orders for comparison)
   const channelMap = {};
   orders.forEach(o => {
     const ch = o.channelId || 'unknown';
@@ -72,7 +77,7 @@ export default function DashboardView({ orders = [] }) {
 
   // Group by SKU to detect loss-makers
   const skuMap = {};
-  orders.forEach(o => {
+  filteredOrders.forEach(o => {
     const s = o.sku || 'UNKNOWN';
     if (!skuMap[s]) {
       skuMap[s] = { sku: s, title: o.productTitle || s, units: 0, revenue: 0, profit: 0, lines: [] };
@@ -110,6 +115,34 @@ export default function DashboardView({ orders = [] }) {
           size="small"
           sx={{ bgcolor: 'rgba(0, 201, 255, 0.12)', color: '#00c9ff', fontWeight: 700 }}
         />
+      </Box>
+
+      {/* Channel Quick Filter Bar */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3.5, flexWrap: 'wrap' }}>
+        <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 700, textTransform: 'uppercase', mr: 1 }}>
+          Filter Channel:
+        </Typography>
+        {['all', 'amazon', 'flipkart', 'shopify', 'meesho'].map((ch) => {
+          const isSelected = selectedChannel === ch;
+          const count = ch === 'all' ? orders.length : orders.filter(o => (o.channelId || '').toLowerCase() === ch).length;
+          return (
+            <Chip
+              key={ch}
+              label={`${ch === 'all' ? 'All Channels' : ch.toUpperCase()} (${count})`}
+              clickable
+              onClick={() => setSelectedChannel(ch)}
+              size="small"
+              sx={{
+                bgcolor: isSelected ? 'rgba(0, 201, 255, 0.25)' : 'rgba(255, 255, 255, 0.04)',
+                color: isSelected ? '#00c9ff' : '#94a3b8',
+                border: isSelected ? '1px solid #00c9ff' : '1px solid rgba(255, 255, 255, 0.08)',
+                fontWeight: isSelected ? 800 : 500,
+                fontSize: '0.78rem',
+                transition: 'all 0.2s ease',
+              }}
+            />
+          );
+        })}
       </Box>
 
       {/* KPI Cards */}
