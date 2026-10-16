@@ -41,8 +41,7 @@ import RulesView from './pages/RulesView.jsx';
 import BridgeView from './pages/BridgeView.jsx';
 import AdminView from './pages/AdminView.jsx';
 
-import { getLocalOrderLines, seedLocalDatabase, clearLocalDatabase } from './db/index.js';
-import { DEMO_AUDIT_REPORT } from './db/seedData.js';
+import { getLocalOrderLines, clearLocalDatabase } from './db/index.js';
 
 function PnlAppContent() {
   const {
@@ -60,43 +59,35 @@ function PnlAppContent() {
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [orders, setOrders] = useState([]);
-  const [auditResult, setAuditResult] = useState(DEMO_AUDIT_REPORT);
+  const [auditResult, setAuditResult] = useState(null);
   const [missingSkus, setMissingSkus] = useState([]);
-  const [isDemoMode, setIsDemoMode] = useState(true);
 
   // User menu anchor
   const [anchorEl, setAnchorEl] = useState(null);
 
-  // Load or auto-seed on startup
-  const initAppDatabase = async (force = false) => {
+  // Load user data from local database on startup (clean, no sample seed)
+  const initAppDatabase = async () => {
     try {
-      const data = await seedLocalDatabase(force);
-      setOrders(data.orders || []);
-      setAuditResult(data.audit || DEMO_AUDIT_REPORT);
+      const localOrders = await getLocalOrderLines();
+      setOrders(localOrders || []);
       const missing = Array.from(
-        new Set((data.orders || []).filter(l => l.cogsSource === 'missing').map(l => l.sku))
+        new Set((localOrders || []).filter(l => l.cogsSource === 'missing').map(l => l.sku))
       );
       setMissingSkus(missing);
-      setIsDemoMode(true);
     } catch (err) {
       console.warn('LocalDB initialization notice:', err);
     }
   };
 
   useEffect(() => {
-    initAppDatabase(false);
+    initAppDatabase();
   }, []);
-
-  const handleReloadDemo = async () => {
-    await initAppDatabase(true);
-  };
 
   const handleClearData = async () => {
     await clearLocalDatabase();
     setOrders([]);
     setAuditResult(null);
     setMissingSkus([]);
-    setIsDemoMode(false);
   };
 
   const handleIngestComplete = (normResult) => {
@@ -106,7 +97,6 @@ function PnlAppContent() {
       new Set(normResult.accepted.filter(l => l.cogsSource === 'missing').map(l => l.sku))
     );
     setMissingSkus(missing);
-    setIsDemoMode(false);
     setActiveTab('quality');
   };
 
@@ -276,68 +266,10 @@ function PnlAppContent() {
         </Box>
       </Box>
 
-      {/* Demo Store & Data Control Banner */}
-      <Box className="pnl-demo-banner">
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Chip
-            label={isDemoMode ? 'SAMPLE DATA LOADED' : 'USER DATA ACTIVE'}
-            size="small"
-            sx={{
-              bgcolor: isDemoMode ? 'rgba(0, 201, 255, 0.2)' : 'rgba(0, 214, 143, 0.2)',
-              color: isDemoMode ? '#00c9ff' : '#00d68f',
-              fontWeight: 800,
-              fontSize: '0.7rem',
-              letterSpacing: '0.5px',
-            }}
-          />
-          <Typography variant="body2" sx={{ color: '#cbd5e1', fontSize: '0.82rem' }}>
-            {isDemoMode
-              ? 'Multi-channel store dataset populated in IndexedDB (Amazon, Flipkart, Meesho, Shopify). All tabs, drill-downs, and simulators are interactive.'
-              : 'Displaying your imported dataset. All numbers computed locally.'}
-          </Typography>
-        </Box>
-
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Button
-            size="small"
-            onClick={handleReloadDemo}
-            startIcon={<RotateCcw size={14} />}
-            sx={{
-              color: '#00c9ff',
-              bgcolor: 'rgba(0, 201, 255, 0.08)',
-              textTransform: 'none',
-              fontSize: '0.78rem',
-              fontWeight: 600,
-              borderRadius: '8px',
-              px: 1.5,
-              '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.16)' },
-            }}
-          >
-            Reset / Reload Demo Data
-          </Button>
-
-          <Button
-            size="small"
-            onClick={handleClearData}
-            startIcon={<Trash2 size={14} />}
-            sx={{
-              color: '#94a3b8',
-              textTransform: 'none',
-              fontSize: '0.78rem',
-              borderRadius: '8px',
-              px: 1.2,
-              '&:hover': { color: '#ff4d6d' },
-            }}
-          >
-            Clear Data
-          </Button>
-        </Box>
-      </Box>
-
       {/* Main Workspace Router */}
-      <Box sx={{ maxWidth: 1440, mx: 'auto', mt: 1 }}>
-        {activeTab === 'dashboard' && <DashboardView orders={orders} />}
-        {activeTab === 'ingest' && <IngestView onIngestComplete={handleIngestComplete} onPreloadDemo={handleReloadDemo} />}
+      <Box sx={{ maxWidth: 1440, mx: 'auto', mt: 2 }}>
+        {activeTab === 'dashboard' && <DashboardView orders={orders} onNavigateTab={setActiveTab} />}
+        {activeTab === 'ingest' && <IngestView onIngestComplete={handleIngestComplete} />}
         {activeTab === 'quality' && <QualityView auditResult={auditResult} />}
         {activeTab === 'products' && <ProductsView missingSkus={missingSkus} />}
         {activeTab === 'rules' && <RulesView />}

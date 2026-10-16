@@ -26,7 +26,7 @@ import {
 import { Money } from '../domain/money.js';
 import DrilldownModal from '../components/DrilldownModal.jsx';
 
-export default function DashboardView({ orders = [] }) {
+export default function DashboardView({ orders = [], onNavigateTab }) {
   const [drilldownState, setDrilldownState] = useState({ open: false, title: '', lines: [] });
   const [selectedChannel, setSelectedChannel] = useState('all');
 
@@ -145,6 +145,47 @@ export default function DashboardView({ orders = [] }) {
           );
         })}
       </Box>
+
+      {orders.length === 0 && (
+        <Box
+          sx={{
+            p: 3,
+            mb: 4,
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, rgba(0, 201, 255, 0.08) 0%, rgba(0, 136, 255, 0.04) 100%)',
+            border: '1px solid rgba(0, 201, 255, 0.25)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 2,
+          }}
+        >
+          <Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#f8fafc', mb: 0.5 }}>
+              Ready to analyze your multi-channel store profit?
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
+              Import your sales report from Amazon, Flipkart, Shopify, or Meesho to calculate exact net profit, marketplace fees, and detect loss-making SKUs.
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            onClick={() => onNavigateTab?.('ingest')}
+            startIcon={<FileSpreadsheet size={16} />}
+            sx={{
+              background: 'linear-gradient(135deg, #00c9ff 0%, #0088ff 100%)',
+              fontWeight: 700,
+              textTransform: 'none',
+              borderRadius: '8px',
+              px: 2.5,
+              py: 1,
+            }}
+          >
+            Import Sales Report
+          </Button>
+        </Box>
+      )}
 
       {/* KPI Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
