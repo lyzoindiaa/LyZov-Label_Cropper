@@ -15,13 +15,13 @@ import { CheckCircle2, AlertTriangle, AlertCircle, Info, Download, ShieldCheck }
 import { QualityFlags } from '../domain/flags.js';
 
 export default function QualityView({ auditResult }) {
-  const result = auditResult || {
-    rawCount: 0,
-    acceptedCount: 0,
-    rejectedCount: 0,
-    isReconciled: true,
-    flagCounts: {},
-    rejected: [],
+  const result = {
+    rawCount: auditResult?.rawCount || 0,
+    acceptedCount: auditResult?.acceptedCount || 0,
+    rejectedCount: auditResult?.rejectedCount || 0,
+    isReconciled: auditResult?.isReconciled !== false,
+    flagCounts: auditResult?.flagCounts || {},
+    rejected: auditResult?.rejected || [],
   };
 
   const handleDownloadRejected = () => {

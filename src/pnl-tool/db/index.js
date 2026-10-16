@@ -2,6 +2,7 @@
  * Local IndexedDB Database Engine for P&L Analyzer
  * Provides blazing-fast client-side storage for files, raw rows, batches, and cache.
  */
+import { DEMO_PRODUCTS, DEMO_BATCHES, DEMO_ORDER_LINES, DEMO_AUDIT_REPORT } from './seedData.js';
 
 const DB_NAME = 'lyzov_pnl_db';
 const DB_VERSION = 1;
@@ -159,8 +160,6 @@ export async function getLocalProducts() {
     req.onerror = () => reject(req.error);
   });
 }
-
-import { DEMO_PRODUCTS, DEMO_BATCHES, DEMO_ORDER_LINES, DEMO_AUDIT_REPORT } from './seedData.js';
 
 export async function seedLocalDatabase(force = false) {
   const existingProducts = await getLocalProducts();

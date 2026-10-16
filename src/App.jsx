@@ -727,7 +727,8 @@ function ThemedApp() {
         <Route path="/cropper" element={<MainContent />} />
         {/* GST Tool — lives at /gst-tool/* */}
         <Route path="/gst-tool/*" element={<GstApp />} />
-        {/* LyZov P&L Analyzer — lives at /pnl/* */}
+        {/* LyZov P&L Analyzer — lives at /pnl and /pnl/* */}
+        <Route path="/pnl" element={<PnlApp />} />
         <Route path="/pnl/*" element={<PnlApp />} />
         {/* Informational pages */}
         <Route path="/about" element={<AboutPage />} />

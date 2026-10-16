@@ -352,10 +352,50 @@ function PnlAppContent() {
   );
 }
 
+class PnlErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('LyZov P&L ErrorBoundary caught:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <Box sx={{ p: 4, maxWidth: 800, mx: 'auto', mt: 8, bgcolor: '#0f172a', border: '1px solid #ef4444', borderRadius: 3, color: '#f8fafc' }}>
+          <Typography variant="h5" sx={{ color: '#ef4444', fontWeight: 800, mb: 2 }}>
+            P&L Analyzer Encountered an Error
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2, fontFamily: 'monospace', bgcolor: '#020617', p: 2, borderRadius: 2, whiteSpace: 'pre-wrap' }}>
+            {this.state.error?.message || String(this.state.error)}
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={() => {
+              this.setState({ hasError: false, error: null });
+              window.location.reload();
+            }}
+            sx={{ background: 'linear-gradient(135deg, #00c9ff, #92fe9d)', color: '#020617', fontWeight: 700 }}
+          >
+            Reload Application
+          </Button>
+        </Box>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function PnlApp() {
   return (
-    <PnlAuthProvider>
-      <PnlAppContent />
-    </PnlAuthProvider>
+    <PnlErrorBoundary>
+      <PnlAuthProvider>
+        <PnlAppContent />
+      </PnlAuthProvider>
+    </PnlErrorBoundary>
   );
 }
