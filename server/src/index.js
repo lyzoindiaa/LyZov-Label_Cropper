@@ -121,6 +121,15 @@ mountRoutes('');
 // Centralized error handler
 app.use(errorHandler);
 
+// Global process error guards
+process.on('uncaughtException', (err) => {
+  console.error('[Uncaught Exception]:', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Unhandled Rejection]:', reason);
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 GST Tool Server running on http://localhost:${PORT}`);
