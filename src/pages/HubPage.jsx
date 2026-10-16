@@ -16,20 +16,19 @@ const TOOLS = [
     id: "cropper",
     icon: Scissors,
     name: "LyZov Cropper Studio",
-    tagline: "Batch PDF Label Cropper & Thermal Printer",
-    description: "Upload any multi-page PDF, draw your crop zone once, and batch-extract hundreds of labels in seconds. Perfect for shipping labels, barcodes, product tags, and any repeated PDF element.",
+    tagline: "Batch PDF Label Cropper & Printer",
+    description: "Crop and batch-extract hundreds of thermal shipping labels, barcodes, and tags in seconds. 100% private.",
     accent: "#00c9ff",
     accentDim: "#0096cc",
     glowColor: "rgba(0,201,255,0.22)",
     route: "/cropper",
-    badge: "Free � No Signup",
+    badge: "Free • No Signup",
     badgeClass: "gst-badge-blue",
     features: [
-      "Drag-and-drop multi-page PDF upload",
-      "Visual crop zone � drag to select once",
-      "Batch export as ZIP of images or PDF",
-      "Thermal printer ready (4x6, 6x4, A4)",
-      "100% client-side � files never leave your device",
+      "Visual drag-to-crop selection",
+      "Batch export as ZIP or unified PDF",
+      "Thermal printer ready (4×6, 6×4, A4)",
+      "100% client-side — zero server uploads",
     ],
     useCases: ["Shipping Labels", "Barcodes", "Product Tags", "Invoices"],
     cta: "Open Cropper Studio",
@@ -40,8 +39,8 @@ const TOOLS = [
     id: "gst",
     icon: FileText,
     name: "GST Tool",
-    tagline: "GSTR-1 Return Generator for Online Sellers",
-    description: "Upload your Amazon MTR or Flipkart GST report and get a government-compliant GSTR-1 JSON ready to file in minutes. Handles B2B, B2CS, CDNR, HSN, and Table 14 with built-in GSTIN validation and error checking.",
+    tagline: "GSTR-1 Return Generator for Sellers",
+    description: "Convert Amazon & Flipkart GST reports into portal-ready GSTR-1 JSON in minutes with automated error checks.",
     accent: "#00d68f",
     accentDim: "#00a86b",
     glowColor: "rgba(0,214,143,0.22)",
@@ -49,13 +48,12 @@ const TOOLS = [
     badge: "30-Day Free Trial",
     badgeClass: "gst-badge-green",
     features: [
-      "Supports Amazon MTR & Flipkart GST reports",
-      "Auto-classifies B2B / B2CS / CDNR / HSN / Table 14",
-      "GSTIN checksum & structure validation",
-      "Row-level error report with exact line numbers",
-      "GSTR-1 JSON (portal-ready) + Excel for CA review",
+      "Supports Amazon MTR & Flipkart GST",
+      "Auto-splits B2B, B2CS, CDNR & HSN",
+      "Built-in GSTIN checksum validation",
+      "Portal-ready JSON + CA review Excel",
     ],
-    useCases: ["Amazon Sellers", "Flipkart Sellers", "CAs & Tax Filers", "Multi-GSTIN Businesses"],
+    useCases: ["Amazon Sellers", "Flipkart Sellers", "CAs & Tax Filers", "Multi-GSTIN"],
     cta: "Open GST Tool",
     status: "Live",
     statusColor: "#00d68f",
@@ -64,8 +62,8 @@ const TOOLS = [
     id: "pnl",
     icon: BarChart2,
     name: "LyZov P&L Analyzer",
-    tagline: "True Profit & Loss Intelligence for Multi-Channel Sellers",
-    description: "Drop in sales reports from Amazon, Flipkart, Meesho, Shopify, or WooCommerce. Uncover real net margins after all marketplace fees, analyze period-over-period waterfall profit movement, and run break-even price simulators.",
+    tagline: "Multi-Channel Profit Intelligence",
+    description: "Uncover real net margins across Amazon, Flipkart, Meesho & Shopify with fee reconciliation and simulators.",
     accent: "#ffb703",
     accentDim: "#fb8500",
     glowColor: "rgba(255,183,3,0.22)",
@@ -73,14 +71,12 @@ const TOOLS = [
     badge: "1-Mo Free Trial",
     badgeClass: "gst-badge-gold",
     features: [
-      "Works for Amazon, Flipkart, Meesho, Shopify & WooCommerce",
-      "Explainable profit calculations with raw row drill-down",
-      "Reconciled Data Quality Report (raw = accepted + rejected)",
-      "Profit-Change Waterfall Bridge (Volume, ASP, Fees, COGS)",
-      "Interactive Price Break-Even & Return-Rate Simulators",
-      "100% Private — computations run locally on your device",
+      "Amazon, Flipkart, Meesho & Shopify",
+      "Reconciled Audit (accepted vs rejected)",
+      "What-If price & return-rate simulators",
+      "100% private client-side calculations",
     ],
-    useCases: ["Amazon Sellers", "Flipkart Sellers", "Shopify Stores", "D2C Brands", "Accountants & CAs"],
+    useCases: ["Amazon Sellers", "Flipkart Sellers", "Shopify Stores", "D2C Brands"],
     cta: "Launch P&L Analyzer",
     status: "Live",
     statusColor: "#00d68f",
@@ -290,32 +286,46 @@ export default function HubPage() {
             const isH = hoveredTool === tool.id;
             return (
               <div key={tool.id} className="hub-obs"
-                style={{ background: isH ? (theme === 'dark' ? "linear-gradient(160deg,rgba(14,22,40,0.98),rgba(10,15,30,0.9))" : "var(--gst-surface2)") : "var(--gst-surface)", border: `1px solid ${isH ? tool.accent + "55" : "var(--gst-border)"}`, borderRadius: "var(--gst-radius-lg)", padding: "clamp(20px, 4vw, 32px) clamp(16px, 3.5vw, 28px)", cursor: "pointer", transition: "all 0.28s ease", boxShadow: isH ? `0 0 40px ${tool.glowColor}, var(--gst-shadow-lg)` : "var(--gst-shadow)", transform: isH ? "translateY(-8px)" : "translateY(0)", position: "relative", overflow: "hidden" }}
+                style={{
+                  background: isH ? (theme === 'dark' ? "linear-gradient(160deg,rgba(14,22,40,0.98),rgba(10,15,30,0.9))" : "var(--gst-surface2)") : "var(--gst-surface)",
+                  border: `1px solid ${isH ? tool.accent + "55" : "var(--gst-border)"}`,
+                  borderRadius: "var(--gst-radius-lg)",
+                  padding: "clamp(20px, 3.5vw, 28px) clamp(16px, 3vw, 24px)",
+                  cursor: "pointer",
+                  transition: "all 0.28s ease",
+                  boxShadow: isH ? `0 0 40px ${tool.glowColor}, var(--gst-shadow-lg)` : "var(--gst-shadow)",
+                  transform: isH ? "translateY(-8px)" : "translateY(0)",
+                  position: "relative",
+                  overflow: "hidden",
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                }}
                 onMouseEnter={() => setHoveredTool(tool.id)} onMouseLeave={() => setHoveredTool(null)} onClick={() => navigate(tool.route)}>
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,transparent,${tool.accent},transparent)`, opacity: isH ? 1 : 0.25, transition: "opacity 0.28s" }} />
-                <div style={{ width: 58, height: 58, borderRadius: 16, marginBottom: 22, background: `${tool.accent}15`, border: `1px solid ${tool.accent}30`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: isH ? `0 0 22px ${tool.glowColor}` : "none", transition: "box-shadow 0.28s" }}>
-                  <Icon size={28} color={tool.accent} />
+                <div style={{ width: 52, height: 52, borderRadius: 14, marginBottom: 18, background: `${tool.accent}15`, border: `1px solid ${tool.accent}30`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: isH ? `0 0 22px ${tool.glowColor}` : "none", transition: "box-shadow 0.28s" }}>
+                  <Icon size={26} color={tool.accent} />
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: "0.68rem", fontWeight: 700, color: tool.statusColor }}>
                     <span style={{ width: 7, height: 7, borderRadius: "50%", background: tool.statusColor, boxShadow: `0 0 6px ${tool.statusColor}`, display: "inline-block" }} />{tool.status}
                   </span>
                   <span className={`gst-badge ${tool.badgeClass}`} style={{ fontSize: "0.65rem" }}>{tool.badge}</span>
                 </div>
-                <div style={{ fontWeight: 800, fontSize: "1.25rem", marginBottom: 4, letterSpacing: "-0.3px" }}>{tool.name}</div>
-                <div style={{ fontSize: "0.78rem", color: tool.accent, fontWeight: 600, marginBottom: 14 }}>{tool.tagline}</div>
-                <p style={{ fontSize: "0.875rem", color: "var(--gst-text-sec)", lineHeight: 1.7, marginBottom: 22 }}>{tool.description}</p>
-                <ul style={{ listStyle: "none", padding: 0, margin: "0 0 20px" }}>
+                <div style={{ fontWeight: 800, fontSize: "1.2rem", marginBottom: 3, letterSpacing: "-0.3px" }}>{tool.name}</div>
+                <div style={{ fontSize: "0.76rem", color: tool.accent, fontWeight: 600, marginBottom: 12 }}>{tool.tagline}</div>
+                <p style={{ fontSize: "0.85rem", color: "var(--gst-text-sec)", lineHeight: 1.6, marginBottom: 18, minHeight: 44 }}>{tool.description}</p>
+                <ul style={{ listStyle: "none", padding: 0, margin: "0 0 16px" }}>
                   {tool.features.map(f => (
-                    <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 9, fontSize: "0.83rem", color: "var(--gst-text-sec)", marginBottom: 9 }}>
-                      <CheckCircle2 size={14} color={tool.accent} style={{ flexShrink: 0, marginTop: 2 }} /> {f}
+                    <li key={f} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "0.8rem", color: "var(--gst-text-sec)", marginBottom: 8 }}>
+                      <CheckCircle2 size={14} color={tool.accent} style={{ flexShrink: 0 }} /> {f}
                     </li>
                   ))}
                 </ul>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 26 }}>
-                  {tool.useCases.map(uc => (<span key={uc} className="gst-badge" style={{ fontSize: "0.67rem", background: `${tool.accent}12`, color: tool.accent, border: `1px solid ${tool.accent}28` }}>{uc}</span>))}
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
+                  {tool.useCases.map(uc => (<span key={uc} className="gst-badge" style={{ fontSize: "0.65rem", background: `${tool.accent}12`, color: tool.accent, border: `1px solid ${tool.accent}28`, padding: "3px 8px" }}>{uc}</span>))}
                 </div>
-                <button className="gst-btn" style={{ width: "100%", justifyContent: "center", background: `linear-gradient(135deg,${tool.accent},${tool.accentDim})`, color: "#0a0f1e", fontWeight: 800, boxShadow: `0 4px 16px ${tool.glowColor}` }}
+                <button className="gst-btn" style={{ width: "100%", marginTop: "auto", justifyContent: "center", background: `linear-gradient(135deg,${tool.accent},${tool.accentDim})`, color: "#0a0f1e", fontWeight: 800, boxShadow: `0 4px 16px ${tool.glowColor}` }}
                   onClick={(e) => { e.stopPropagation(); navigate(tool.route); }}>
                   {tool.cta} <ArrowRight size={16} />
                 </button>
