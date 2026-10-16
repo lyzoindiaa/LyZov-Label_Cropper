@@ -148,6 +148,9 @@ export default function HubPage() {
         {/* Desktop Links & Action Buttons */}
         <nav style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div className="gst-nav-desktop" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <button className="gst-btn gst-btn-ghost gst-btn-sm" onClick={() => navigate("/blog")}>
+              <BookOpen size={14} color="#a78bfa" /> Blog &amp; Guides
+            </button>
             <a href="#tools" className="gst-btn gst-btn-ghost gst-btn-sm">Tools</a>
             <a href="#how" className="gst-btn gst-btn-ghost gst-btn-sm">How it works</a>
             <a href="#why" className="gst-btn gst-btn-ghost gst-btn-sm">Why LyZov</a>
@@ -198,8 +201,11 @@ export default function HubPage() {
           animation: "gst-fade-in 0.25s ease",
           boxShadow: "0 12px 30px rgba(0,0,0,0.15)",
         }}>
+          <button className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={() => { closeMobileMenu(); navigate("/blog"); }}>
+            <BookOpen size={16} color="#a78bfa" /> Seller Blog &amp; Guides
+          </button>
           <a href="#tools" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={closeMobileMenu}>
-            <BookOpen size={16} color="#00c9ff" /> Available Tools
+            <Layers size={16} color="#00c9ff" /> Available Tools
           </a>
           <a href="#how" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={closeMobileMenu}>
             <Lightbulb size={16} color="#a78bfa" /> How it Works

@@ -4,7 +4,7 @@ import { Box, Typography, Button, Chip, Tooltip } from '@mui/material';
 import {
   Mail,
   Clock,
-  GitFork,
+  Headphones,
   Bug,
   Copy,
   Check,
@@ -14,6 +14,7 @@ import {
   ArrowRight,
   ExternalLink,
   MessageSquare,
+  Building2,
 } from 'lucide-react';
 import PageLayout from '../components/PageLayout';
 
@@ -50,7 +51,7 @@ export default function ContactPage() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2, flexWrap: 'wrap' }}>
             <Chip
               icon={<Sparkles size={14} color="#00c9ff" />}
-              label="Engineering &amp; Community Support"
+              label="Customer &amp; Seller Support"
               size="small"
               sx={{
                 bgcolor: 'rgba(0,201,255,0.12)',
@@ -255,14 +256,14 @@ export default function ContactPage() {
           </Box>
         </Box>
 
-        {/* Right Column: Open Source, Privacy Reminder, Quick Jump */}
+        {/* Right Column: Business & Seller Support, Privacy Reminder, Quick Jump */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {/* Open Source Card */}
+          {/* Business & Support Details Card */}
           <Box
             sx={{
               bgcolor: 'background.paper',
               border: '1px solid',
-              borderColor: 'divider',
+              borderColor: 'rgba(0, 201, 255, 0.25)',
               borderRadius: 3.5,
               p: 3.5,
               position: 'relative',
@@ -275,51 +276,68 @@ export default function ContactPage() {
                   width: 44,
                   height: 44,
                   borderRadius: 2.5,
-                  bgcolor: 'rgba(168, 85, 247, 0.1)',
+                  bgcolor: 'rgba(0, 201, 255, 0.1)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#a855f7',
+                  color: '#00c9ff',
                 }}
               >
-                <GitFork size={22} />
+                <Headphones size={22} />
               </Box>
               <Box>
                 <Typography variant="h6" fontWeight={800} sx={{ color: 'text.primary' }}>
-                  Open-Source Community
+                  Business &amp; Seller Support
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Transparent &amp; Community-Driven
+                  LyZov India · tools.lyzov.com
                 </Typography>
               </Box>
             </Box>
 
             <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.75, mb: 2.5 }}>
-              LyZov Cropper Studio is committed to the open web. Developers are welcome to review the client-side code, inspect the PDF coordinate algorithms, submit pull requests, or report issues on GitHub.
+              Need assistance with batch label cropping, custom marketplace label dimensions, thermal printer setups, or GST filing tools? Our support desk is directly reachable for all inquiries.
             </Typography>
+
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, mb: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="caption" color="text.secondary">Organization:</Typography>
+                <Typography variant="caption" fontWeight={700} color="text.primary">LyZov India</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="caption" color="text.secondary">Official Website:</Typography>
+                <Typography variant="caption" fontWeight={700} color="text.primary">tools.lyzov.com</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="caption" color="text.secondary">Support Email:</Typography>
+                <Typography variant="caption" fontWeight={700} color="text.primary">lyzovindia@gmail.com</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="caption" color="text.secondary">Operating Hours:</Typography>
+                <Typography variant="caption" fontWeight={700} color="text.primary">Mon – Sat, 9:00 AM – 6:00 PM IST</Typography>
+              </Box>
+            </Box>
 
             <Button
               component="a"
-              href="https://github.com/lyzoindiaa/LyZov-Label_Cropper/issues"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="mailto:lyzovindia@gmail.com?subject=Support%20Inquiry%20-%20LyZov%20Tools"
               variant="outlined"
               fullWidth
-              endIcon={<ExternalLink size={16} />}
+              endIcon={<Send size={16} />}
               sx={{
-                borderColor: 'divider',
-                color: 'text.primary',
+                borderColor: 'rgba(0, 201, 255, 0.4)',
+                color: '#00c9ff',
                 fontWeight: 700,
                 borderRadius: 2.5,
                 textTransform: 'none',
                 py: 1,
                 '&:hover': {
-                  borderColor: '#a855f7',
-                  bgcolor: 'rgba(168, 85, 247, 0.05)',
+                  borderColor: '#00c9ff',
+                  bgcolor: 'rgba(0, 201, 255, 0.05)',
                 },
               }}
             >
-              Open a GitHub Issue
+              Email Support Team
             </Button>
           </Box>
 

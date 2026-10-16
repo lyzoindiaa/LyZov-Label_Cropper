@@ -14,6 +14,7 @@ import returnRoutes from './routes/returnRoutes.js';
 import billingRoutes from './routes/billingRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import gstr3bRoutes from './routes/gstr3bRoutes.js';
+import blogRoutes from './routes/blogRoutes.js';
 
 dotenv.config();
 
@@ -109,6 +110,7 @@ const mountRoutes = (prefix = '') => {
   app.use(`${prefix}/billing`, billingRoutes);
   app.use(`${prefix}/admin`, adminRoutes);
   app.use(`${prefix}/gstr3b`, gstr3bRoutes);
+  app.use(`${prefix}/blogs`, blogRoutes);
 };
 
 mountRoutes('/api');

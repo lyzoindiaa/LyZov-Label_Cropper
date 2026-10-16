@@ -35,7 +35,7 @@ const faqs = [
     categoryLabel: 'Privacy & Security',
     badgeColor: '#10b981',
     q: 'Is LyZov Cropper Studio completely free?',
-    a: 'Yes. LyZov Cropper Studio is entirely free to use, with no subscription, account, or payment required. The site displays non-intrusive ads to support hosting and ongoing open-source development.',
+    a: 'Yes. LyZov Cropper Studio is entirely free to use, with no subscription, account, or payment required. The site displays non-intrusive ads to support hosting and ongoing platform maintenance.',
   },
   {
     category: 'privacy',
@@ -375,7 +375,7 @@ export default function FaqPage() {
               </Typography>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, lineHeight: 1.6 }}>
-              Can't find what you are looking for? Send us an email or submit a GitHub issue.
+              Can't find what you are looking for? Reach out to our dedicated support team directly.
             </Typography>
             <Button
               component={Link}
