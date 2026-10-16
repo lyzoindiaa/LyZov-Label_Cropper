@@ -15,6 +15,7 @@ import billingRoutes from './routes/billingRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import gstr3bRoutes from './routes/gstr3bRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
+import pnlRoutes from './routes/pnlRoutes.js';
 
 dotenv.config();
 
@@ -111,6 +112,7 @@ const mountRoutes = (prefix = '') => {
   app.use(`${prefix}/admin`, adminRoutes);
   app.use(`${prefix}/gstr3b`, gstr3bRoutes);
   app.use(`${prefix}/blogs`, blogRoutes);
+  app.use(`${prefix}/pnl`, pnlRoutes);
 };
 
 mountRoutes('/api');
@@ -118,6 +120,15 @@ mountRoutes('');
 
 // Centralized error handler
 app.use(errorHandler);
+
+// Global process error guards
+process.on('uncaughtException', (err) => {
+  console.error('[Uncaught Exception]:', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[Unhandled Rejection]:', reason);
+});
 
 // Start server
 app.listen(PORT, () => {

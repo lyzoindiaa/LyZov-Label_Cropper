@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import { BlogPost } from '../models/BlogPost.js';
 import { requireAdmin } from '../middleware/adminAuth.js';
 
@@ -311,6 +312,25 @@ const INITIAL_POSTS = [
 router.get('/', async (req, res, next) => {
   try {
     const { category, search } = req.query;
+
+    // Offline / In-memory fallback if MongoDB is not connected
+    if (mongoose.connection.readyState !== 1) {
+      let filtered = INITIAL_POSTS.filter((p) => p.isPublished !== false);
+      if (category && category !== 'All') {
+        filtered = filtered.filter((p) => p.category === category);
+      }
+      if (search && search.trim()) {
+        const q = search.trim().toLowerCase();
+        filtered = filtered.filter(
+          (p) =>
+            p.title?.toLowerCase().includes(q) ||
+            p.excerpt?.toLowerCase().includes(q) ||
+            p.tags?.some((t) => t.toLowerCase().includes(q))
+        );
+      }
+      return res.json({ success: true, posts: filtered, count: filtered.length, offline: true });
+    }
+
     const filter = { isPublished: true };
 
     if (category && category !== 'All') {
@@ -342,6 +362,20 @@ router.get('/', async (req, res, next) => {
 router.get('/:slug', async (req, res, next) => {
   try {
     const { slug } = req.params;
+
+    // Offline / In-memory fallback if MongoDB is not connected
+    if (mongoose.connection.readyState !== 1) {
+      const post = INITIAL_POSTS.find(
+        (p) => p.slug.toLowerCase() === slug.toLowerCase() && p.isPublished !== false
+      );
+      if (!post) {
+        return res.status(404).json({ success: false, message: 'Article not found' });
+      }
+      const relatedPosts = INITIAL_POSTS.filter(
+        (p) => p.slug !== post.slug && p.category === post.category
+      ).slice(0, 3);
+      return res.json({ success: true, post, relatedPosts, offline: true });
+    }
 
     // Auto-seed if database is currently empty
     const count = await BlogPost.countDocuments();

@@ -1,5 +1,5 @@
 import React, { createContext, useState, useCallback, useEffect, useRef } from 'react';
-import { detectLabelBoundingBox } from '../utils/pdfUtils';
+import { detectLabelBoundingBox, cropPdfBlob } from '../utils/pdfUtils';
 import { getActiveUser, clearAuthSession, setAuthSession, gstApi } from '../gst-tool/api/client';
 
 export const AppContext = createContext();
@@ -492,7 +492,68 @@ export const AppProvider = ({ children }) => {
     }
   }, []);
 
+  const processBatchCrop = useCallback(async () => {
+    if (!requireCropperAccess()) return;
+    if (!selection) {
+      alert('Please select a crop area or choose a marketplace label mode first.');
+      return;
+    }
+    if (pdfFiles.length === 0) {
+      alert('Please upload at least one PDF file first.');
+      return;
+    }
+
+    setIsProcessing(true);
+    setProcessProgress({ current: 0, total: pdfFiles.length });
+
+    // Single animation frame yield to let browser show processing state
+    await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+
+    const results = [];
+    try {
+      for (let i = 0; i < pdfFiles.length; i++) {
+        const item = pdfFiles[i];
+        setProcessProgress({ current: i + 1, total: pdfFiles.length });
+
+        // Minimal yield only when processing multiple files to keep UI responsive
+        if (pdfFiles.length > 1 && i > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+        }
+
+        const croppedItems = await cropPdfBlob(item.file, selection, {
+          ...cropOptions,
+          rotation,
+        });
+
+        const baseClean = item.name.replace(/\.pdf$/i, '');
+
+        croppedItems.forEach((slice, sIdx) => {
+          let outputName = `${baseClean}${slice.suffix}`;
+          if (namingPattern === 'numbered') {
+            outputName = `label_${String(results.length + 1).padStart(2, '0')}`;
+          }
+
+          results.push({
+            id: `${item.name}-${Date.now()}-${i}-${sIdx}`,
+            name: outputName,
+            blob: slice.blob,
+          });
+        });
+      }
+
+      setCroppedBlobs(results);
+      recordCropUsage(results.length || 1);
+      setActiveTab(1);
+    } catch (err) {
+      console.error('Batch cropping failed', err);
+      alert('An error occurred during batch cropping: ' + err.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [requireCropperAccess, selection, pdfFiles, cropOptions, rotation, namingPattern, recordCropUsage, setActiveTab]);
+
   const value = {
+    processBatchCrop,
     pdfFiles,
     addPdfFiles,
     removePdfFile,

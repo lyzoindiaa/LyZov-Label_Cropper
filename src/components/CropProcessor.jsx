@@ -50,6 +50,7 @@ export default function CropProcessor() {
     requireCropperAccess,
     recordCropUsage,
     theme,
+    processBatchCrop,
   } = useContext(AppContext);
 
   const previewCanvasRef = useRef(null);
@@ -82,8 +83,6 @@ export default function CropProcessor() {
       const targetW = maxPreviewW;
       const targetH = Math.max(20, Math.round(maxPreviewW / aspect));
 
-      // CRITICAL: Avoid resetting canvas dimensions if they haven't changed!
-      // Mutating canvas.width or height forces the browser to discard and reallocate GPU textures.
       if (targetCanvas.width !== targetW || targetCanvas.height !== targetH) {
         targetCanvas.width = targetW;
         targetCanvas.height = targetH;
@@ -99,64 +98,7 @@ export default function CropProcessor() {
     };
   }, [selection, selectedPdfIndex, rotation, cropMode]);
 
-  const handleBatchCrop = async () => {
-    if (!requireCropperAccess()) return;
-
-    if (!selection) {
-      alert('Please select a crop area or choose a marketplace label mode first.');
-      return;
-    }
-    if (pdfFiles.length === 0) {
-      alert('Please upload at least one PDF file first.');
-      return;
-    }
-
-    setIsProcessing(true);
-    setProcessProgress({ current: 0, total: pdfFiles.length });
-
-    // Yield to let React re-render loading state and let browser paint the progress bar
-    await new Promise((resolve) => setTimeout(resolve, 60));
-
-    const results = [];
-    try {
-      for (let i = 0; i < pdfFiles.length; i++) {
-        const item = pdfFiles[i];
-        setProcessProgress({ current: i + 1, total: pdfFiles.length });
-
-        // Yield between documents so browser paints progress bar and remains responsive
-        await new Promise((resolve) => setTimeout(resolve, 30));
-
-        const croppedItems = await cropPdfBlob(item.file, selection, {
-          ...cropOptions,
-          rotation,
-        });
-
-        const baseClean = item.name.replace(/\.pdf$/i, '');
-
-        croppedItems.forEach((slice, sIdx) => {
-          let outputName = `${baseClean}${slice.suffix}`;
-          if (namingPattern === 'numbered') {
-            outputName = `label_${String(results.length + 1).padStart(2, '0')}`;
-          }
-
-          results.push({
-            id: `${item.name}-${Date.now()}-${i}-${sIdx}`,
-            name: outputName,
-            blob: slice.blob,
-          });
-        });
-      }
-
-      setCroppedBlobs(results);
-      recordCropUsage(results.length || 1);
-      setActiveTab(1);
-    } catch (err) {
-      console.error('Batch cropping failed', err);
-      alert('An error occurred during batch cropping: ' + err.message);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+  const handleBatchCrop = processBatchCrop;
 
   const progressPercent =
     processProgress.total > 0

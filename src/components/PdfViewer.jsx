@@ -70,18 +70,35 @@ export default function PdfViewer() {
     currentPage,
     setCurrentPage,
     theme,
+    processBatchCrop,
+    isProcessing,
   } = useContext(AppContext);
 
   const [numPages, setNumPages] = useState(null);
   const [pageDimensions, setPageDimensions] = useState({ width: 612, height: 792 });
   const [interactionMode, setInteractionMode] = useState(null);
 
-  // References for ultra-smooth 60fps/120fps requestAnimationFrame dragging
+  // References for ultra-smooth 60fps/120fps direct DOM manipulation
+  const boxRef = useRef(null);
+  const badgeTextRef = useRef(null);
+  const currentBoxRef = useRef(selection);
+  const pageRectRef = useRef(null);
   const interactionModeRef = useRef(null);
   const dragStartRef = useRef(null);
   const initialBoxRef = useRef(null);
   const moveRafRef = useRef(null);
   const pendingCoordsRef = useRef(null);
+
+  // Keep currentBoxRef and DOM box synced with React selection state when not actively dragging
+  useEffect(() => {
+    currentBoxRef.current = selection;
+    if (boxRef.current && selection && !interactionModeRef.current) {
+      boxRef.current.style.left = `${selection.xRatio * 100}%`;
+      boxRef.current.style.top = `${selection.yRatio * 100}%`;
+      boxRef.current.style.width = `${selection.widthRatio * 100}%`;
+      boxRef.current.style.height = `${selection.heightRatio * 100}%`;
+    }
+  }, [selection]);
 
   // Save preset dialog
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -134,10 +151,10 @@ export default function PdfViewer() {
   }, [pageDimensions.width, setZoom]);
 
   const getRelativeCoords = (e) => {
-    if (!pageWrapperRef.current) return { x: 0, y: 0 };
-    const rect = pageWrapperRef.current.getBoundingClientRect();
-    const clientX = e.clientX !== undefined ? e.clientX : (e.touches ? e.touches[0].clientX : 0);
-    const clientY = e.clientY !== undefined ? e.clientY : (e.touches ? e.touches[0].clientY : 0);
+    const rect = pageRectRef.current || pageWrapperRef.current?.getBoundingClientRect();
+    if (!rect || rect.width <= 0 || rect.height <= 0) return { x: 0, y: 0 };
+    const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+    const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
     const rawX = (clientX - rect.left) / rect.width;
     const rawY = (clientY - rect.top) / rect.height;
     return {
@@ -150,20 +167,19 @@ export default function PdfViewer() {
     if (e.target.dataset.handle || e.target.dataset.role === 'selection-box') {
       return;
     }
-    if (selectionMode !== 'select' && !selection) {
+    // If a selection already exists, clicking the wrapper should NOT wipe it out
+    if (selection) {
+      return;
+    }
+    if (selectionMode !== 'select') {
       return;
     }
 
+    if (pageWrapperRef.current) {
+      pageRectRef.current = pageWrapperRef.current.getBoundingClientRect();
+    }
     const coords = getRelativeCoords(e);
 
-    // In fixed marketplace mode (Flipkart, Meesho, Amazon), clicking on the background canvas
-    // should NOT jump/teleport the box away from its calibrated centered position.
-    // The user can drag inside the box itself or use arrow keys if they want to nudge it.
-    if (cropMode !== 'other') {
-      return;
-    }
-
-    // In 'other' (Adjustable) mode, start drawing new custom box
     try {
       e.currentTarget.setPointerCapture?.(e.pointerId);
     } catch {}
@@ -171,12 +187,13 @@ export default function PdfViewer() {
     interactionModeRef.current = 'draw';
     dragStartRef.current = coords;
     initialBoxRef.current = null;
-    setSelection({
+    currentBoxRef.current = {
       xRatio: coords.x,
       yRatio: coords.y,
       widthRatio: 0.001,
       heightRatio: 0.001,
-    });
+    };
+    setSelection(currentBoxRef.current);
   };
 
   const handleBoxPointerDown = (e) => {
@@ -184,11 +201,14 @@ export default function PdfViewer() {
     try {
       e.currentTarget.setPointerCapture?.(e.pointerId);
     } catch {}
+    if (pageWrapperRef.current) {
+      pageRectRef.current = pageWrapperRef.current.getBoundingClientRect();
+    }
     const coords = getRelativeCoords(e);
     setInteractionMode('move');
     interactionModeRef.current = 'move';
     dragStartRef.current = coords;
-    const box = { ...selection };
+    const box = { ...(currentBoxRef.current || selection) };
     initialBoxRef.current = box;
   };
 
@@ -197,16 +217,19 @@ export default function PdfViewer() {
     try {
       e.currentTarget.setPointerCapture?.(e.pointerId);
     } catch {}
+    if (pageWrapperRef.current) {
+      pageRectRef.current = pageWrapperRef.current.getBoundingClientRect();
+    }
     const coords = getRelativeCoords(e);
     const mode = `resize-${handleType}`;
     setInteractionMode(mode);
     interactionModeRef.current = mode;
     dragStartRef.current = coords;
-    const box = { ...selection };
+    const box = { ...(currentBoxRef.current || selection) };
     initialBoxRef.current = box;
   };
 
-  // Perform calculation once per display animation frame
+  // Perform direct DOM updates at 60fps/120fps without React re-render lag
   const applyMove = useCallback(() => {
     moveRafRef.current = null;
     const current = pendingCoordsRef.current;
@@ -216,27 +239,29 @@ export default function PdfViewer() {
 
     if (!current || !mode || !start) return;
 
+    let nextBox = null;
+
     if (mode === 'draw') {
       const x1 = Math.min(start.x, current.x);
       const y1 = Math.min(start.y, current.y);
       const x2 = Math.max(start.x, current.x);
       const y2 = Math.max(start.y, current.y);
-      setSelection({
+      nextBox = {
         xRatio: x1,
         yRatio: y1,
         widthRatio: Math.max(0.02, x2 - x1),
         heightRatio: Math.max(0.02, y2 - y1),
-      });
+      };
     } else if (mode === 'move' && box) {
       const dx = current.x - start.x;
       const dy = current.y - start.y;
       const newX = Math.max(0, Math.min(1 - box.widthRatio, box.xRatio + dx));
       const newY = Math.max(0, Math.min(1 - box.heightRatio, box.yRatio + dy));
-      setSelection({
+      nextBox = {
         ...box,
         xRatio: newX,
         yRatio: newY,
-      });
+      };
     } else if (mode.startsWith('resize-') && box) {
       const handle = mode.replace('resize-', '');
       let { xRatio, yRatio, widthRatio, heightRatio } = box;
@@ -263,11 +288,40 @@ export default function PdfViewer() {
         xRatio = (box.xRatio + box.widthRatio) - widthRatio;
         heightRatio = Math.max(0.04, (box.yRatio + box.heightRatio) - potentialY);
         yRatio = (box.yRatio + box.heightRatio) - heightRatio;
+      } else if (handle === 'n') {
+        const potentialY = Math.max(0, box.yRatio + dy);
+        heightRatio = Math.max(0.04, (box.yRatio + box.heightRatio) - potentialY);
+        yRatio = (box.yRatio + box.heightRatio) - heightRatio;
+      } else if (handle === 's') {
+        heightRatio = Math.max(0.04, Math.min(1 - yRatio, box.heightRatio + dy));
+      } else if (handle === 'w') {
+        const potentialX = Math.max(0, box.xRatio + dx);
+        widthRatio = Math.max(0.04, (box.xRatio + box.widthRatio) - potentialX);
+        xRatio = (box.xRatio + box.widthRatio) - widthRatio;
+      } else if (handle === 'e') {
+        widthRatio = Math.max(0.04, Math.min(1 - xRatio, box.widthRatio + dx));
       }
 
-      setSelection({ xRatio, yRatio, widthRatio, heightRatio });
+      nextBox = { xRatio, yRatio, widthRatio, heightRatio };
     }
-  }, [setSelection]);
+
+    if (nextBox) {
+      currentBoxRef.current = nextBox;
+      if (boxRef.current) {
+        boxRef.current.style.left = `${nextBox.xRatio * 100}%`;
+        boxRef.current.style.top = `${nextBox.yRatio * 100}%`;
+        boxRef.current.style.width = `${nextBox.widthRatio * 100}%`;
+        boxRef.current.style.height = `${nextBox.heightRatio * 100}%`;
+      }
+      if (badgeTextRef.current) {
+        const ptW = Math.round(nextBox.widthRatio * (pageDimensions.width || 612));
+        const ptH = Math.round(nextBox.heightRatio * (pageDimensions.height || 792));
+        const inW = (ptW / 72).toFixed(2);
+        const inH = (ptH / 72).toFixed(2);
+        badgeTextRef.current.textContent = `${inW}" × ${inH}"`;
+      }
+    }
+  }, [pageDimensions.width, pageDimensions.height]);
 
   const handlePointerMove = useCallback((e) => {
     if (!interactionModeRef.current || !dragStartRef.current) return;
@@ -283,11 +337,15 @@ export default function PdfViewer() {
       moveRafRef.current = null;
       applyMove();
     }
+    if (currentBoxRef.current) {
+      setSelection({ ...currentBoxRef.current });
+    }
     setInteractionMode(null);
     interactionModeRef.current = null;
     dragStartRef.current = null;
     initialBoxRef.current = null;
-  }, [applyMove]);
+    pageRectRef.current = null;
+  }, [applyMove, setSelection]);
 
   const handleKeyDown = useCallback((e) => {
     if (!selection) return;
@@ -665,22 +723,43 @@ export default function PdfViewer() {
         </Typography>
 
         {selection && (
-          <Chip
-            size="small"
-            label={`${cropMode !== 'other' ? `🔒 ${MARKETPLACE_PRESETS[cropMode]?.name} • ` : ''}${inchWidth}" × ${inchHeight}" (${pointWidth} × ${pointHeight} pt)`}
-            sx={{
-              bgcolor: cropMode !== 'other' ? `${MARKETPLACE_PRESETS[cropMode]?.color}25` : 'rgba(0, 201, 255, 0.15)',
-              color: cropMode !== 'other' ? MARKETPLACE_PRESETS[cropMode]?.color : '#00c9ff',
-              fontWeight: 700,
-              fontSize: '0.75rem',
-              border: `1px solid ${cropMode !== 'other' ? MARKETPLACE_PRESETS[cropMode]?.color : 'rgba(0, 201, 255, 0.3)'}`,
-            }}
-          />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Chip
+              size="small"
+              label={`${cropMode !== 'other' ? `🔒 ${MARKETPLACE_PRESETS[cropMode]?.name} • ` : ''}${inchWidth}" × ${inchHeight}" (${pointWidth} × ${pointHeight} pt)`}
+              sx={{
+                bgcolor: cropMode !== 'other' ? `${MARKETPLACE_PRESETS[cropMode]?.color}25` : 'rgba(0, 201, 255, 0.15)',
+                color: cropMode !== 'other' ? MARKETPLACE_PRESETS[cropMode]?.color : '#00c9ff',
+                fontWeight: 700,
+                fontSize: '0.75rem',
+                border: `1px solid ${cropMode !== 'other' ? MARKETPLACE_PRESETS[cropMode]?.color : 'rgba(0, 201, 255, 0.3)'}`,
+              }}
+            />
+            <Button
+              size="small"
+              variant="contained"
+              disabled={isProcessing}
+              onClick={processBatchCrop}
+              sx={{
+                background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
+                color: '#ffffff',
+                fontWeight: 800,
+                fontSize: '0.75rem',
+                textTransform: 'none',
+                px: 1.5,
+                py: 0.3,
+                borderRadius: 2,
+                boxShadow: '0 2px 10px rgba(0, 201, 255, 0.35)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #00b4e6 0%, #0066dd 100%)',
+                },
+              }}
+            >
+              {isProcessing ? 'Cropping...' : `✂️ Apply Crop (${pdfFiles.length} PDF${pdfFiles.length > 1 ? 's' : ''})`}
+            </Button>
+          </Box>
         )}
       </Box>
-
-
-
 
       {/* Interactive Full-Width PDF Canvas Container */}
       <Box
@@ -701,7 +780,7 @@ export default function PdfViewer() {
           borderColor: 'divider',
           overflow: 'auto',
           userSelect: 'none',
-          touchAction: 'none',
+          touchAction: 'pan-y',
         }}
       >
         <Box
@@ -713,7 +792,7 @@ export default function PdfViewer() {
             boxShadow: theme === 'dark' ? '0 16px 40px rgba(0,0,0,0.6)' : '0 12px 30px rgba(0,0,0,0.15)',
             cursor: selectionMode === 'select' ? 'crosshair' : 'default',
             lineHeight: 0,
-            touchAction: 'none',
+            touchAction: 'pan-y',
             userSelect: 'none',
           }}
         >
@@ -754,6 +833,7 @@ export default function PdfViewer() {
           {/* Interactive Crop Box */}
           {selection && (
             <Box
+              ref={boxRef}
               data-role="selection-box"
               onPointerDown={handleBoxPointerDown}
               sx={{
@@ -794,37 +874,101 @@ export default function PdfViewer() {
               >
                 <span>{cropMode !== 'other' ? `🔒 ${MARKETPLACE_PRESETS[cropMode]?.name}` : '📐 Custom'}</span>
                 <span>•</span>
-                <span>{inchWidth}" × {inchHeight}"</span>
+                <span ref={badgeTextRef}>{inchWidth}" × {inchHeight}"</span>
               </Box>
 
-              {/* 4 Corner Handles – only available in 'other' (Adjustable) mode (min 24px for touch) */}
-              {cropMode === 'other' && ['nw', 'ne', 'se', 'sw'].map((h) => (
-                <Box
-                  key={h}
-                  data-handle={h}
-                  onPointerDown={(e) => handleResizePointerStart(e, h)}
-                  sx={{
-                    position: 'absolute',
-                    width: 24,
-                    height: 24,
-                    bgcolor: '#ffffff',
-                    border: '2.5px solid #00c9ff',
-                    borderRadius: '50%',
-                    top: h.includes('n') ? -12 : 'calc(100% - 12px)',
-                    left: h.includes('w') ? -12 : 'calc(100% - 12px)',
-                    cursor: `${h}-resize`,
-                    zIndex: 20,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-                    touchAction: 'none',
-                    userSelect: 'none',
-                    transition: 'transform 0.1s ease',
-                    '&:hover': {
-                      transform: 'scale(1.15)',
-                      bgcolor: '#e6f9ff',
-                    },
-                  }}
-                />
-              ))}
+              {/* 8 Drag Handles – available in 'other' (Adjustable) mode with generous touch hit areas */}
+              {cropMode === 'other' && (
+                <>
+                  {/* 4 Corner Handles */}
+                  {[
+                    { id: 'nw', top: -12, left: -12, cursor: 'nw-resize' },
+                    { id: 'ne', top: -12, left: 'calc(100% - 12px)', cursor: 'ne-resize' },
+                    { id: 'se', top: 'calc(100% - 12px)', left: 'calc(100% - 12px)', cursor: 'se-resize' },
+                    { id: 'sw', top: 'calc(100% - 12px)', left: -12, cursor: 'sw-resize' },
+                  ].map((h) => (
+                    <Box
+                      key={h.id}
+                      data-handle={h.id}
+                      onPointerDown={(e) => handleResizePointerStart(e, h.id)}
+                      sx={{
+                        position: 'absolute',
+                        width: 24,
+                        height: 24,
+                        bgcolor: '#ffffff',
+                        border: '2.5px solid #00c9ff',
+                        borderRadius: '50%',
+                        top: h.top,
+                        left: h.left,
+                        cursor: h.cursor,
+                        zIndex: 25,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                        touchAction: 'none',
+                        userSelect: 'none',
+                        '&:hover': {
+                          transform: 'scale(1.15)',
+                          bgcolor: '#e6f9ff',
+                        },
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: -12,
+                          left: -12,
+                          width: 48,
+                          height: 48,
+                          borderRadius: '50%',
+                        },
+                      }}
+                    />
+                  ))}
+
+                  {/* 4 Edge Handles (Top, Bottom, Left, Right) */}
+                  {[
+                    { id: 'n', top: -10, left: 'calc(50% - 18px)', width: 36, height: 18, cursor: 'n-resize', borderRadius: '9px' },
+                    { id: 's', top: 'calc(100% - 8px)', left: 'calc(50% - 18px)', width: 36, height: 18, cursor: 's-resize', borderRadius: '9px' },
+                    { id: 'w', top: 'calc(50% - 18px)', left: -10, width: 18, height: 36, cursor: 'w-resize', borderRadius: '9px' },
+                    { id: 'e', top: 'calc(50% - 18px)', left: 'calc(100% - 8px)', width: 18, height: 36, cursor: 'e-resize', borderRadius: '9px' },
+                  ].map((h) => (
+                    <Box
+                      key={h.id}
+                      data-handle={h.id}
+                      onPointerDown={(e) => handleResizePointerStart(e, h.id)}
+                      sx={{
+                        position: 'absolute',
+                        width: h.width,
+                        height: h.height,
+                        bgcolor: '#ffffff',
+                        border: '2px solid #00c9ff',
+                        borderRadius: h.borderRadius,
+                        top: h.top,
+                        left: h.left,
+                        cursor: h.cursor,
+                        zIndex: 24,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+                        touchAction: 'none',
+                        userSelect: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        '&:hover': {
+                          transform: 'scale(1.1)',
+                          bgcolor: '#e6f9ff',
+                        },
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: -10,
+                          left: -10,
+                          width: 'calc(100% + 20px)',
+                          height: 'calc(100% + 20px)',
+                        },
+                      }}
+                    >
+                      <Box sx={{ width: h.width > h.height ? 14 : 3, height: h.width > h.height ? 3 : 14, bgcolor: '#00c9ff', borderRadius: 1 }} />
+                    </Box>
+                  ))}
+                </>
+              )}
             </Box>
           )}
         </Box>
