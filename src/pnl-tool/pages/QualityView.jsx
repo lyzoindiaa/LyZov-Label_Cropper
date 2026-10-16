@@ -13,8 +13,10 @@ import {
 } from '@mui/material';
 import { CheckCircle2, AlertTriangle, AlertCircle, Info, Download, ShieldCheck } from 'lucide-react';
 import { QualityFlags } from '../domain/flags.js';
+import { usePnlAuth } from '../auth/AuthContext.jsx';
 
 export default function QualityView({ auditResult }) {
+  const { user, setAuthModalOpen } = usePnlAuth();
   const result = {
     rawCount: auditResult?.rawCount || 0,
     acceptedCount: auditResult?.acceptedCount || 0,
@@ -25,6 +27,10 @@ export default function QualityView({ auditResult }) {
   };
 
   const handleDownloadRejected = () => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
     if (!result.rejected.length) return;
     const csvContent = 'data:text/csv;charset=utf-8,' +
       ['Row Index,Reason,Raw Data', ...result.rejected.map(r => `${r.rowIndex},"${r.reason}","${JSON.stringify(r.rawValues).replace(/"/g, '""')}"`)].join('\n');

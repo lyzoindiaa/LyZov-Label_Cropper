@@ -20,8 +20,10 @@ import { Package, Plus, Edit2, Tag, AlertTriangle, CheckCircle2, X } from 'lucid
 import { Money } from '../domain/money.js';
 import { getLocalProducts, saveLocalProduct } from '../db/index.js';
 import { pnlApi } from '../api/client.js';
+import { usePnlAuth } from '../auth/AuthContext.jsx';
 
 export default function ProductsView({ missingSkus = [] }) {
+  const { user, setAuthModalOpen } = usePnlAuth();
   const [products, setProducts] = useState([]);
   const [openModal, setOpenModal] = useState(false);
   const [sku, setSku] = useState('');
@@ -52,6 +54,11 @@ export default function ProductsView({ missingSkus = [] }) {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (!user) {
+      setError('Please sign in or start your 1-Month Free Trial to save custom product master costs.');
+      setAuthModalOpen(true);
+      return;
+    }
     if (!sku) {
       setError('SKU is required');
       return;

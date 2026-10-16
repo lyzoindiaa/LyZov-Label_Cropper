@@ -23,8 +23,10 @@ import { suggestColumnMappings, CANONICAL_FIELDS } from '../utils/mapper.js';
 import { normalizeRows } from '../domain/pipeline.js';
 import { saveLocalBatch, saveLocalRawRows, saveLocalOrderLines } from '../db/index.js';
 import { pnlApi } from '../api/client.js';
+import { usePnlAuth } from '../auth/AuthContext.jsx';
 
 export default function IngestView({ onIngestComplete }) {
+  const { user, setAuthModalOpen } = usePnlAuth();
   const [channel, setChannel] = useState('amazon');
   const [file, setFile] = useState(null);
   const [parsedData, setParsedData] = useState(null);
@@ -84,6 +86,13 @@ export default function IngestView({ onIngestComplete }) {
 
   const handleProcessImport = async () => {
     if (!parsedData || !file) return;
+
+    // Free guest exploration allows sample demo; real files require 1-Month Free Trial login
+    if (!user && file.name !== 'Amazon_Sample_MTR_Export.csv') {
+      setError('Please sign in or create an account for your 1-Month Free Trial to import and reconcile real store files.');
+      setAuthModalOpen(true);
+      return;
+    }
 
     // Verify required mappings
     for (const reqField of CANONICAL_FIELDS.filter(f => f.required)) {
