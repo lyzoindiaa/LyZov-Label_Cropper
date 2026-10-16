@@ -17,20 +17,22 @@ import {
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'pnl_secret_jwt_key_2026';
 
-// In-Memory Dev / Offline User Cache
+// In-Memory Dev / Offline User Cache (Used when MongoDB is offline)
 const inMemoryPnlUsers = new Map();
-inMemoryPnlUsers.set('admin@lyzov.com', {
-  _id: 'admin_master_001',
-  id: 'admin_master_001',
-  email: 'admin@lyzov.com',
-  password: 'admin123',
-  name: 'Master Admin',
-  businessName: 'LyZov Admin HQ',
-  role: 'admin',
-  plan: 'enterprise_499',
-  trialEndsAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-  subscriptionStatus: 'active',
-});
+if (process.env.ADMIN_EMAIL) {
+  inMemoryPnlUsers.set(process.env.ADMIN_EMAIL.toLowerCase(), {
+    _id: 'admin_master_001',
+    id: 'admin_master_001',
+    email: process.env.ADMIN_EMAIL.toLowerCase(),
+    password: process.env.ADMIN_PASSWORD || 'admin123',
+    name: 'Admin',
+    businessName: 'Admin HQ',
+    role: 'admin',
+    plan: 'enterprise_499',
+    trialEndsAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+    subscriptionStatus: 'active',
+  });
+}
 
 // Middleware for P&L User Authentication
 export function authenticatePnlUser(req, res, next) {
@@ -79,6 +81,34 @@ router.post('/auth/register', async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
+
+    if (mongoose.connection?.readyState !== 1) {
+      if (inMemoryPnlUsers.has(email.toLowerCase())) {
+        return res.status(400).json({ error: 'An account with this email already exists' });
+      }
+      const adminEmail = (process.env.ADMIN_EMAIL || '').toLowerCase();
+      const role = (adminEmail && email.toLowerCase() === adminEmail) || inMemoryPnlUsers.size === 0 ? 'admin' : 'seller';
+      const mockUser = {
+        _id: 'user_' + Date.now(),
+        id: 'user_' + Date.now(),
+        email: email.toLowerCase(),
+        password,
+        name: name || '',
+        businessName: businessName || '',
+        role,
+        plan: role === 'admin' ? 'enterprise_499' : 'trial',
+        trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        subscriptionStatus: 'active',
+      };
+      inMemoryPnlUsers.set(email.toLowerCase(), mockUser);
+      const token = jwt.sign(
+        { id: mockUser._id, email: mockUser.email, role: mockUser.role, plan: mockUser.plan },
+        JWT_SECRET,
+        { expiresIn: '30d' }
+      );
+      return res.status(201).json({ token, user: mockUser });
+    }
+
     const existing = await PnlUser.findOne({ email: email.toLowerCase() });
     if (existing) {
       return res.status(400).json({ error: 'An account with this email already exists' });
@@ -149,19 +179,6 @@ router.post('/auth/login', async (req, res) => {
     }
 
     let user = await PnlUser.findOne({ email: email.toLowerCase() });
-    if (!user && email.toLowerCase() === 'admin@lyzov.com' && password === 'admin123') {
-      const hashedPassword = await bcrypt.hash('admin123', 10);
-      user = await PnlUser.create({
-        email: 'admin@lyzov.com',
-        password: hashedPassword,
-        name: 'Master Admin',
-        businessName: 'LyZov Admin HQ',
-        role: 'admin',
-        plan: 'enterprise_499',
-        trialEndsAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-        subscriptionStatus: 'active',
-      });
-    }
     if (!user) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }

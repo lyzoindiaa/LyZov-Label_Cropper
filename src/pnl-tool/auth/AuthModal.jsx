@@ -171,32 +171,6 @@ export default function AuthModal({ open, onClose }) {
             {loading ? 'Please wait...' : tab === 0 ? 'Sign In' : 'Activate 30-Day Free Trial'}
           </Button>
 
-          {tab === 0 && (
-            <Button
-              type="button"
-              variant="outlined"
-              size="small"
-              onClick={() => {
-                setEmail('admin@lyzov.com');
-                setPassword('admin123');
-              }}
-              sx={{
-                borderColor: 'rgba(255, 183, 3, 0.4)',
-                color: '#ffb703',
-                fontSize: '0.75rem',
-                textTransform: 'none',
-                borderRadius: '8px',
-                py: 0.6,
-                '&:hover': {
-                  borderColor: '#ffb703',
-                  bgcolor: 'rgba(255, 183, 3, 0.1)',
-                },
-              }}
-            >
-              👑 Fill Master Admin Demo (admin@lyzov.com)
-            </Button>
-          )}
-
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mt: 1 }}>
             <ShieldCheck size={14} color="#00d68f" />
             <Typography variant="caption" sx={{ color: '#64748b' }}>
