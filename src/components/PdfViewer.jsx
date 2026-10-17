@@ -200,6 +200,7 @@ export default function PdfViewer() {
     try {
       e.currentTarget.setPointerCapture?.(e.pointerId);
     } catch {}
+    setCropMode('other');
     setInteractionMode('draw');
     interactionModeRef.current = 'draw';
     dragStartRef.current = coords;
@@ -216,6 +217,9 @@ export default function PdfViewer() {
   const handleScaleSelection = useCallback((factor) => {
     const current = currentBoxRef.current || selection;
     if (!current) return;
+    if (cropMode !== 'other') {
+      setCropMode('other');
+    }
     const centerCX = current.xRatio + current.widthRatio / 2;
     const centerCY = current.yRatio + current.heightRatio / 2;
     const newW = Math.max(0.02, Math.min(1.0, current.widthRatio * factor));
@@ -238,7 +242,40 @@ export default function PdfViewer() {
       const inH = (ptH / 72).toFixed(2);
       badgeTextRef.current.textContent = `${inW}" × ${inH}"`;
     }
-  }, [selection, pageDimensions.width, pageDimensions.height, setSelection]);
+  }, [selection, cropMode, setCropMode, pageDimensions.width, pageDimensions.height, setSelection]);
+
+  const applyQuickSize = useCallback((wInches, hInches) => {
+    const pageW = pageDimensions.width || 612;
+    const pageH = pageDimensions.height || 792;
+    const targetW = (wInches * 72) / pageW;
+    const targetH = (hInches * 72) / pageH;
+    const current = currentBoxRef.current || selection || { xRatio: 0.1, yRatio: 0.1, widthRatio: 0.5, heightRatio: 0.5 };
+    const centerCX = current.xRatio + current.widthRatio / 2;
+    const centerCY = current.yRatio + current.heightRatio / 2;
+    const wRatio = Math.max(0.02, Math.min(1.0, targetW));
+    const hRatio = Math.max(0.02, Math.min(1.0, targetH));
+    const xRatio = Math.max(0, Math.min(1 - wRatio, centerCX - wRatio / 2));
+    const yRatio = Math.max(0, Math.min(1 - hRatio, centerCY - hRatio / 2));
+    const nextBox = { xRatio, yRatio, widthRatio: wRatio, heightRatio: hRatio };
+    setCropMode('other');
+    currentBoxRef.current = nextBox;
+    setSelection(nextBox);
+    if (boxRef.current) {
+      boxRef.current.style.left = `${nextBox.xRatio * 100}%`;
+      boxRef.current.style.top = `${nextBox.yRatio * 100}%`;
+      boxRef.current.style.width = `${nextBox.widthRatio * 100}%`;
+      boxRef.current.style.height = `${nextBox.heightRatio * 100}%`;
+    }
+    if (badgeTextRef.current) {
+      badgeTextRef.current.textContent = `${wInches.toFixed(2)}" × ${hInches.toFixed(2)}"`;
+    }
+  }, [selection, setCropMode, pageDimensions.width, pageDimensions.height, setSelection]);
+
+  const handleStartRedraw = useCallback(() => {
+    setSelection(null);
+    setSelectionMode('select');
+    setCropMode('other');
+  }, [setSelection, setSelectionMode, setCropMode]);
 
   const handleBoxPointerDown = (e) => {
     // If user clicked or touched directly on a handle, let handleResizePointerStart handle it
@@ -253,10 +290,10 @@ export default function PdfViewer() {
     }
     const coords = getRelativeCoords(e);
 
-    // In 'other' (Adjustable) mode: if user touches near corners or edges of the box,
+    // If user touches near corners or edges of the box,
     // seamlessly treat it as a resize instead of moving the whole box!
     // This allows effortless mobile touch resizing to make the box small without missing tiny handles.
-    if (cropMode === 'other' && boxRef.current) {
+    if (boxRef.current) {
       const boxRect = boxRef.current.getBoundingClientRect();
       const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
       const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
@@ -296,6 +333,9 @@ export default function PdfViewer() {
         try {
           e.currentTarget.setPointerCapture?.(e.pointerId);
         } catch {}
+        if (cropMode !== 'other') {
+          setCropMode('other');
+        }
         const mode = `resize-${autoHandle}`;
         setInteractionMode(mode);
         interactionModeRef.current = mode;
@@ -331,6 +371,9 @@ export default function PdfViewer() {
     dragStartRef.current = coords;
     const box = { ...(currentBoxRef.current || selection) };
     initialBoxRef.current = box;
+    if (cropMode !== 'other') {
+      setCropMode('other');
+    }
   };
 
   // Perform direct DOM updates at 60fps/120fps without React re-render lag
@@ -828,58 +871,142 @@ export default function PdfViewer() {
         </Typography>
 
         {selection && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: { xs: 'space-between', sm: 'flex-end' },
+              gap: 1,
+              flexWrap: 'wrap',
+              width: { xs: '100%', md: 'auto' },
+            }}
+          >
             <Chip
               size="small"
-              label={`${cropMode !== 'other' ? `🔒 ${MARKETPLACE_PRESETS[cropMode]?.name} • ` : ''}${inchWidth}" × ${inchHeight}" (${pointWidth} × ${pointHeight} pt)`}
+              label={`${cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? `🔒 ${MARKETPLACE_PRESETS[cropMode].name} • ` : '📐 Custom • '}${inchWidth}" × ${inchHeight}" (${pointWidth} × ${pointHeight} pt)`}
               sx={{
-                bgcolor: cropMode !== 'other' ? `${MARKETPLACE_PRESETS[cropMode]?.color}25` : 'rgba(0, 201, 255, 0.15)',
-                color: cropMode !== 'other' ? MARKETPLACE_PRESETS[cropMode]?.color : '#00c9ff',
+                bgcolor: cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? `${MARKETPLACE_PRESETS[cropMode].color}25` : 'rgba(0, 201, 255, 0.15)',
+                color: cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? MARKETPLACE_PRESETS[cropMode].color : '#00c9ff',
                 fontWeight: 700,
                 fontSize: '0.75rem',
-                border: `1px solid ${cropMode !== 'other' ? MARKETPLACE_PRESETS[cropMode]?.color : 'rgba(0, 201, 255, 0.3)'}`,
+                border: `1px solid ${cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? MARKETPLACE_PRESETS[cropMode].color : 'rgba(0, 201, 255, 0.3)'}`,
               }}
             />
-            {cropMode === 'other' && (
-              <ButtonGroup size="small" variant="outlined" sx={{ height: 26 }}>
-                <Tooltip title="Make Crop Box 10% Smaller">
-                  <Button
-                    onClick={() => handleScaleSelection(0.9)}
-                    startIcon={<Minus size={12} />}
-                    sx={{
-                      fontSize: '0.7rem',
-                      fontWeight: 700,
-                      px: 0.8,
-                      py: 0,
-                      borderColor: 'rgba(0, 201, 255, 0.4)',
-                      color: '#00c9ff',
-                      textTransform: 'none',
-                      '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.12)' },
-                    }}
-                  >
-                    −10% Small
-                  </Button>
-                </Tooltip>
-                <Tooltip title="Make Crop Box 10% Larger">
-                  <Button
-                    onClick={() => handleScaleSelection(1.1)}
-                    startIcon={<Plus size={12} />}
-                    sx={{
-                      fontSize: '0.7rem',
-                      fontWeight: 700,
-                      px: 0.8,
-                      py: 0,
-                      borderColor: 'rgba(0, 201, 255, 0.4)',
-                      color: '#00c9ff',
-                      textTransform: 'none',
-                      '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.12)' },
-                    }}
-                  >
-                    +10%
-                  </Button>
-                </Tooltip>
-              </ButtonGroup>
-            )}
+
+            {/* Quick Sizing Buttons - Always available so mobile users can easily shrink/enlarge */}
+            <ButtonGroup size="small" variant="outlined" sx={{ height: 26 }}>
+              <Tooltip title="Make Crop Box 15% Smaller (Shrink for small label/barcode area)">
+                <Button
+                  onClick={() => handleScaleSelection(0.85)}
+                  startIcon={<Minus size={12} />}
+                  sx={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    px: 0.8,
+                    py: 0,
+                    borderColor: 'rgba(0, 201, 255, 0.4)',
+                    color: '#00c9ff',
+                    textTransform: 'none',
+                    '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.12)' },
+                  }}
+                >
+                  − Shrink
+                </Button>
+              </Tooltip>
+              <Tooltip title="Make Crop Box 15% Larger">
+                <Button
+                  onClick={() => handleScaleSelection(1.15)}
+                  startIcon={<Plus size={12} />}
+                  sx={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    px: 0.8,
+                    py: 0,
+                    borderColor: 'rgba(0, 201, 255, 0.4)',
+                    color: '#00c9ff',
+                    textTransform: 'none',
+                    '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.12)' },
+                  }}
+                >
+                  + Enlarge
+                </Button>
+              </Tooltip>
+            </ButtonGroup>
+
+            {/* Quick Presets (Small 2"x2" is ideal for small areas/barcodes on mobile) */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => applyQuickSize(2.2, 2.2)}
+                sx={{
+                  fontSize: '0.68rem',
+                  height: 26,
+                  px: 0.8,
+                  py: 0,
+                  fontWeight: 700,
+                  borderColor: 'rgba(0, 201, 255, 0.3)',
+                  color: '#00c9ff',
+                  textTransform: 'none',
+                  bgcolor: 'rgba(0, 201, 255, 0.05)',
+                  '&:hover': { borderColor: '#00c9ff', bgcolor: 'rgba(0, 201, 255, 0.15)' },
+                }}
+              >
+                Small 2"×2"
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => applyQuickSize(3.0, 5.0)}
+                sx={{
+                  fontSize: '0.68rem',
+                  height: 26,
+                  px: 0.7,
+                  py: 0,
+                  borderColor: 'divider',
+                  color: 'text.secondary',
+                  textTransform: 'none',
+                  '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
+                }}
+              >
+                3"×5"
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => applyQuickSize(4.0, 6.0)}
+                sx={{
+                  fontSize: '0.68rem',
+                  height: 26,
+                  px: 0.7,
+                  py: 0,
+                  borderColor: 'divider',
+                  color: 'text.secondary',
+                  textTransform: 'none',
+                  '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
+                }}
+              >
+                4"×6"
+              </Button>
+              <Button
+                size="small"
+                variant="text"
+                onClick={handleStartRedraw}
+                sx={{
+                  fontSize: '0.68rem',
+                  height: 26,
+                  px: 0.8,
+                  py: 0,
+                  color: '#ff4d6d',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  '&:hover': { bgcolor: 'rgba(255, 77, 109, 0.1)' },
+                }}
+              >
+                ✏️ Redraw
+              </Button>
+            </Box>
+
             <Button
               size="small"
               variant="contained"
@@ -889,11 +1016,13 @@ export default function PdfViewer() {
                 background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
                 color: '#ffffff',
                 fontWeight: 800,
-                fontSize: '0.75rem',
+                fontSize: { xs: '0.8rem', sm: '0.75rem' },
                 textTransform: 'none',
-                px: 1.5,
-                py: 0.3,
+                px: { xs: 2, sm: 1.5 },
+                py: { xs: 0.6, sm: 0.3 },
                 borderRadius: 2,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
                 boxShadow: '0 2px 10px rgba(0, 201, 255, 0.35)',
                 '&:hover': {
                   background: 'linear-gradient(135deg, #00b4e6 0%, #0066dd 100%)',
@@ -1006,7 +1135,7 @@ export default function PdfViewer() {
                   position: 'absolute',
                   top: -24,
                   left: 0,
-                  bgcolor: cropMode !== 'other' ? MARKETPLACE_PRESETS[cropMode]?.color || '#00c9ff' : '#00c9ff',
+                  bgcolor: cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? MARKETPLACE_PRESETS[cropMode].color : '#00c9ff',
                   color: '#ffffff',
                   px: 1,
                   py: 0.2,
@@ -1021,146 +1150,145 @@ export default function PdfViewer() {
                   boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
                 }}
               >
-                <span>{cropMode !== 'other' ? `🔒 ${MARKETPLACE_PRESETS[cropMode]?.name}` : '📐 Custom'}</span>
+                <span>{cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? `🔒 ${MARKETPLACE_PRESETS[cropMode].name}` : '📐 Custom'}</span>
                 <span>•</span>
                 <span ref={badgeTextRef}>{inchWidth}" × {inchHeight}"</span>
               </Box>
 
-              {/* Center Move Badge */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  pointerEvents: 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  bgcolor: 'rgba(0, 0, 0, 0.45)',
-                  backdropFilter: 'blur(4px)',
-                  color: 'rgba(255, 255, 255, 0.9)',
-                  px: 1,
-                  py: 0.3,
-                  borderRadius: 2,
-                  fontSize: '0.65rem',
-                  fontWeight: 700,
-                  opacity: interactionMode === 'move' ? 0.95 : 0.4,
-                  transition: 'opacity 0.2s',
-                  userSelect: 'none',
-                }}
-              >
-                <Move size={12} />
-                <span>Move</span>
-              </Box>
+              {/* Center Move Badge - hide on small boxes to keep interior clean */}
+              {selection.widthRatio >= 0.16 && selection.heightRatio >= 0.10 && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    pointerEvents: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    bgcolor: 'rgba(0, 0, 0, 0.45)',
+                    backdropFilter: 'blur(4px)',
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    px: 1,
+                    py: 0.3,
+                    borderRadius: 2,
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    opacity: interactionMode === 'move' ? 0.95 : 0.4,
+                    transition: 'opacity 0.2s',
+                    userSelect: 'none',
+                  }}
+                >
+                  <Move size={12} />
+                  <span>Move</span>
+                </Box>
+              )}
 
-              {/* 8 Drag Handles – available in 'other' (Adjustable) mode with 44px+ touch hit areas */}
-              {cropMode === 'other' && (
-                <>
-                  {/* 4 Corner Handles with 44px hit-test containers */}
-                  {[
-                    { id: 'nw', top: -22, left: -22, cursor: 'nw-resize' },
-                    { id: 'ne', top: -22, left: 'calc(100% - 22px)', cursor: 'ne-resize' },
-                    { id: 'se', top: 'calc(100% - 22px)', left: 'calc(100% - 22px)', cursor: 'se-resize' },
-                    { id: 'sw', top: 'calc(100% - 22px)', left: -22, cursor: 'sw-resize' },
-                  ].map((h) => (
+              {/* 4 Corner Handles with 44px hit-test containers – always active on all modes so mobile users can easily resize */}
+              {[
+                { id: 'nw', top: -22, left: -22, cursor: 'nw-resize' },
+                { id: 'ne', top: -22, left: 'calc(100% - 22px)', cursor: 'ne-resize' },
+                { id: 'se', top: 'calc(100% - 22px)', left: 'calc(100% - 22px)', cursor: 'se-resize' },
+                { id: 'sw', top: 'calc(100% - 22px)', left: -22, cursor: 'sw-resize' },
+              ].map((h) => (
+                <Box
+                  key={h.id}
+                  data-handle={h.id}
+                  onPointerDown={(e) => handleResizePointerStart(e, h.id)}
+                  sx={{
+                    position: 'absolute',
+                    width: 44,
+                    height: 44,
+                    top: h.top,
+                    left: h.left,
+                    cursor: h.cursor,
+                    zIndex: 35,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    touchAction: 'none',
+                    userSelect: 'none',
+                    bgcolor: 'transparent',
+                    '&:hover > div': {
+                      transform: 'scale(1.2)',
+                      bgcolor: '#e6f9ff',
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 22,
+                      height: 22,
+                      bgcolor: '#ffffff',
+                      border: '2.5px solid #00c9ff',
+                      borderRadius: '50%',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                      pointerEvents: 'none',
+                      transition: 'transform 0.15s ease',
+                    }}
+                  />
+                </Box>
+              ))}
+
+              {/* 4 Edge Handles (Top, Bottom, Left, Right) – only render when box is large enough to avoid crowding corners */}
+              {selection.widthRatio >= 0.18 && selection.heightRatio >= 0.14 && (
+                [
+                  { id: 'n', top: -22, left: 'calc(50% - 30px)', width: 60, height: 44, cursor: 'n-resize', isH: true },
+                  { id: 's', top: 'calc(100% - 22px)', left: 'calc(50% - 30px)', width: 60, height: 44, cursor: 's-resize', isH: true },
+                  { id: 'w', top: 'calc(50% - 30px)', left: -22, width: 44, height: 60, cursor: 'w-resize', isH: false },
+                  { id: 'e', top: 'calc(50% - 30px)', left: 'calc(100% - 22px)', width: 44, height: 60, cursor: 'e-resize', isH: false },
+                ].map((h) => (
+                  <Box
+                    key={h.id}
+                    data-handle={h.id}
+                    onPointerDown={(e) => handleResizePointerStart(e, h.id)}
+                    sx={{
+                      position: 'absolute',
+                      width: h.width,
+                      height: h.height,
+                      top: h.top,
+                      left: h.left,
+                      cursor: h.cursor,
+                      zIndex: 32,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      touchAction: 'none',
+                      userSelect: 'none',
+                      bgcolor: 'transparent',
+                      '&:hover > div': {
+                        transform: 'scale(1.15)',
+                        bgcolor: '#e6f9ff',
+                      },
+                    }}
+                  >
                     <Box
-                      key={h.id}
-                      data-handle={h.id}
-                      onPointerDown={(e) => handleResizePointerStart(e, h.id)}
                       sx={{
-                        position: 'absolute',
-                        width: 44,
-                        height: 44,
-                        top: h.top,
-                        left: h.left,
-                        cursor: h.cursor,
-                        zIndex: 35,
+                        width: h.isH ? 32 : 12,
+                        height: h.isH ? 12 : 32,
+                        bgcolor: '#ffffff',
+                        border: '2px solid #00c9ff',
+                        borderRadius: '6px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+                        pointerEvents: 'none',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        touchAction: 'none',
-                        userSelect: 'none',
-                        bgcolor: 'transparent',
-                        '&:hover > div': {
-                          transform: 'scale(1.2)',
-                          bgcolor: '#e6f9ff',
-                        },
+                        transition: 'transform 0.15s ease',
                       }}
                     >
                       <Box
                         sx={{
-                          width: 22,
-                          height: 22,
-                          bgcolor: '#ffffff',
-                          border: '2.5px solid #00c9ff',
-                          borderRadius: '50%',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-                          pointerEvents: 'none',
-                          transition: 'transform 0.15s ease',
+                          width: h.isH ? 12 : 3,
+                          height: h.isH ? 3 : 12,
+                          bgcolor: '#00c9ff',
+                          borderRadius: 1,
                         }}
                       />
                     </Box>
-                  ))}
-
-                  {/* 4 Edge Handles (Top, Bottom, Left, Right) with 44px+ hit-test containers */}
-                  {[
-                    { id: 'n', top: -22, left: 'calc(50% - 30px)', width: 60, height: 44, cursor: 'n-resize', isH: true },
-                    { id: 's', top: 'calc(100% - 22px)', left: 'calc(50% - 30px)', width: 60, height: 44, cursor: 's-resize', isH: true },
-                    { id: 'w', top: 'calc(50% - 30px)', left: -22, width: 44, height: 60, cursor: 'w-resize', isH: false },
-                    { id: 'e', top: 'calc(50% - 30px)', left: 'calc(100% - 22px)', width: 44, height: 60, cursor: 'e-resize', isH: false },
-                  ].map((h) => (
-                    <Box
-                      key={h.id}
-                      data-handle={h.id}
-                      onPointerDown={(e) => handleResizePointerStart(e, h.id)}
-                      sx={{
-                        position: 'absolute',
-                        width: h.width,
-                        height: h.height,
-                        top: h.top,
-                        left: h.left,
-                        cursor: h.cursor,
-                        zIndex: 32,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        touchAction: 'none',
-                        userSelect: 'none',
-                        bgcolor: 'transparent',
-                        '&:hover > div': {
-                          transform: 'scale(1.15)',
-                          bgcolor: '#e6f9ff',
-                        },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: h.isH ? 32 : 12,
-                          height: h.isH ? 12 : 32,
-                          bgcolor: '#ffffff',
-                          border: '2px solid #00c9ff',
-                          borderRadius: '6px',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                          pointerEvents: 'none',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          transition: 'transform 0.15s ease',
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            width: h.isH ? 12 : 3,
-                            height: h.isH ? 3 : 12,
-                            bgcolor: '#00c9ff',
-                            borderRadius: 1,
-                          }}
-                        />
-                      </Box>
-                    </Box>
-                  ))}
-                </>
+                  </Box>
+                ))
               )}
             </Box>
           )}
