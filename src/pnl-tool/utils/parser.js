@@ -94,6 +94,38 @@ export function parseCsvText(text, delimiter = null) {
     }
   }
 
+  return parseRowsMatrix(rows);
+}
+
+export function isXlsxFile(file) {
+  return /\.xlsx?$/i.test(file?.name || '');
+}
+
+/**
+ * Parse an .xlsx File into { headers, rows }. Prefers a sheet named like
+ * "Sales Report"/"Orders"; otherwise uses the sheet with the most rows.
+ */
+export async function parseXlsxFile(file) {
+  const mod = await import('read-excel-file/browser');
+  const readExcel = mod.default;
+  const sheets = await readExcel(file);
+  if (!Array.isArray(sheets) || !sheets.length) return { headers: [], rows: [] };
+
+  const nameOf = (s) => String(s.sheet || s.name || '').toLowerCase();
+  const preferred = sheets.find((s) => /sales|order/.test(nameOf(s)) && s.data?.length > 1);
+  const best = preferred || [...sheets].sort((a, b) => (b.data?.length || 0) - (a.data?.length || 0))[0];
+
+  const matrix = (best.data || []).map((r) =>
+    r.map((c) => {
+      if (c === null || c === undefined) return '';
+      if (c instanceof Date) return c.toISOString().slice(0, 10);
+      return String(c).trim();
+    })
+  );
+  return parseRowsMatrix(matrix.filter((r) => r.some((c) => c.length > 0)));
+}
+
+export function parseRowsMatrix(rows) {
   if (rows.length === 0) {
     return { headers: [], rows: [] };
   }

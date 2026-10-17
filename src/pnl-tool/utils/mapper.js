@@ -4,15 +4,15 @@
  */
 
 export const CANONICAL_FIELDS = [
-  { key: 'orderId', label: 'Order ID', required: true, synonyms: ['order id', 'order_id', 'order number', 'order no', 'sub order no', 'name', 'invoice no'] },
-  { key: 'orderDate', label: 'Order Date', required: true, synonyms: ['order date', 'order_date', 'date', 'created at', 'created_at', 'invoice date'] },
-  { key: 'sku', label: 'SKU / Product Code', required: true, synonyms: ['sku', 'seller sku', 'product sku', 'item sku', 'fsn', 'supplier sku', 'lineitem sku'] },
+  { key: 'orderId', label: 'Order ID', required: true, synonyms: ['order id', 'order_id', 'order number', 'order no', 'sub order no', 'sub order number', 'order item id', 'amazon order id', 'name', 'invoice no'] },
+  { key: 'orderDate', label: 'Order Date', required: true, synonyms: ['order date', 'order_date', 'ordered on', 'order approval date', 'purchase date', 'date', 'created at', 'created_at', 'invoice date'] },
+  { key: 'sku', label: 'SKU / Product Code', required: true, synonyms: ['sku', 'seller sku', 'product sku', 'item sku', 'fsn', 'supplier sku', 'sku id', 'lineitem sku'] },
   { key: 'productTitle', label: 'Product Title', required: false, synonyms: ['title', 'product title', 'product name', 'item name', 'lineitem name', 'description'] },
-  { key: 'quantity', label: 'Quantity', required: true, synonyms: ['quantity', 'qty', 'units', 'lineitem quantity', 'item count'] },
-  { key: 'grossSales', label: 'Gross Sales / Price', required: true, synonyms: ['price', 'selling price', 'item price', 'gross sales', 'lineitem price', 'final selling price', 'product price', 'total'] },
+  { key: 'quantity', label: 'Quantity', required: true, synonyms: ['quantity', 'qty', 'item quantity', 'units', 'lineitem quantity', 'item count'] },
+  { key: 'grossSales', label: 'Gross Sales / Price', required: true, synonyms: ['price', 'selling price', 'item price', 'gross sales', 'lineitem price', 'final selling price', 'final invoice amount', 'buyer invoice amount', 'invoice amount', 'product price', 'total'] },
   { key: 'discounts', label: 'Discounts', required: false, synonyms: ['discount', 'discounts', 'promotion discount', 'promo discount', 'lineitem discount', 'coupon'] },
   { key: 'shippingCharged', label: 'Shipping Charged', required: false, synonyms: ['shipping', 'shipping price', 'shipping charge', 'shipping charges', 'order shipping', 'shipping fee charged'] },
-  { key: 'status', label: 'Order Status', required: true, synonyms: ['status', 'order status', 'financial status', 'fulfillment status', 'item status'] },
+  { key: 'status', label: 'Order Status', required: true, synonyms: ['status', 'order status', 'event type', 'event sub type', 'financial status', 'fulfillment status', 'item status', 'reason for credit entry'] },
   { key: 'currency', label: 'Currency', required: false, synonyms: ['currency', 'currency code', 'iso currency'] },
 ];
 

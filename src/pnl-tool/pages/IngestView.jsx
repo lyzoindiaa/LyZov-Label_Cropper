@@ -18,7 +18,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { UploadCloud, FileSpreadsheet, CheckCircle2, ArrowRight, Sparkles, AlertTriangle } from 'lucide-react';
-import { parseCsvText, computeFileHash } from '../utils/parser.js';
+import { parseCsvText, parseXlsxFile, isXlsxFile, computeFileHash } from '../utils/parser.js';
 import { suggestColumnMappings, CANONICAL_FIELDS } from '../utils/mapper.js';
 import { normalizeRows } from '../domain/pipeline.js';
 import { saveLocalBatch, saveLocalRawRows, saveLocalOrderLines } from '../db/index.js';
@@ -35,6 +35,12 @@ export default function IngestView({ onIngestComplete }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [duplicateWarning, setDuplicateWarning] = useState('');
+  const [showAllColumns, setShowAllColumns] = useState(false);
+
+  const missingRequired = parsedData
+    ? CANONICAL_FIELDS.filter((f) => f.required && !mappings[f.key])
+    : [];
+  const visibleFields = showAllColumns ? CANONICAL_FIELDS : missingRequired;
 
   const handleFileUpload = async (e) => {
     const uploadedFile = e.target.files?.[0];
@@ -46,11 +52,12 @@ export default function IngestView({ onIngestComplete }) {
 
     try {
       setFile(uploadedFile);
-      const text = await uploadedFile.text();
-      const hash = await computeFileHash(text);
+      const xlsx = isXlsxFile(uploadedFile);
+      const text = xlsx ? null : await uploadedFile.text();
+      const hash = await computeFileHash(xlsx ? uploadedFile : text);
       setFileHash(hash);
 
-      const parsed = parseCsvText(text);
+      const parsed = xlsx ? await parseXlsxFile(uploadedFile) : parseCsvText(text);
       if (!parsed.headers.length) {
         throw new Error('Unable to extract headers from spreadsheet');
       }
@@ -220,7 +227,7 @@ export default function IngestView({ onIngestComplete }) {
                 {file ? file.name : 'Click or Drag Sales Export Here'}
               </Typography>
               <Typography variant="caption" sx={{ color: '#64748b' }}>
-                Supports .CSV, .TSV (Any format, multi-thousand rows)
+                Supports .XLSX, .CSV, .TSV (multi-thousand rows)
               </Typography>
             </Box>
 
@@ -266,10 +273,10 @@ export default function IngestView({ onIngestComplete }) {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Box>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#00c9ff' }}>
-                    2. Column Mapping
+                    2. Check Your Columns
                   </Typography>
                   <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-                    Auto-suggested matches shown below. Adjust if necessary.
+                    We read your file and matched the columns for you.
                   </Typography>
                 </Box>
                 <Button
@@ -289,8 +296,21 @@ export default function IngestView({ onIngestComplete }) {
                 </Button>
               </Box>
 
-              <Grid container spacing={2}>
-                {CANONICAL_FIELDS.map((field) => (
+              {missingRequired.length === 0 && !showAllColumns && (
+                <Alert severity="success" sx={{ borderRadius: '10px' }}>
+                  All required columns were found automatically. Just click "Analyze &amp; Normalize".
+                </Alert>
+              )}
+              {missingRequired.length > 0 && (
+                <Alert severity="warning" sx={{ borderRadius: '10px', mb: 2 }}>
+                  We couldn't find {missingRequired.map((f) => f.label).join(', ')} in your file.
+                  For each one below, pick the column from your file that has that information
+                  (for example, the column that holds the order number).
+                </Alert>
+              )}
+
+              <Grid container spacing={2} sx={{ mt: missingRequired.length === 0 ? 1.5 : 0 }}>
+                {visibleFields.map((field) => (
                   <Grid size={{ xs: 12, sm: 6 }} key={field.key}>
                     <FormControl fullWidth size="small">
                       <InputLabel sx={{ color: field.required ? '#00c9ff' : '#94a3b8' }}>
@@ -299,7 +319,10 @@ export default function IngestView({ onIngestComplete }) {
                       <Select
                         value={mappings[field.key] || ''}
                         label={`${field.label} ${field.required ? '*' : ''}`}
-                        onChange={(e) => setMappings({ ...mappings, [field.key]: e.target.value })}
+                        onChange={(e) => {
+                          setMappings({ ...mappings, [field.key]: e.target.value });
+                          setError('');
+                        }}
                         sx={{ color: '#f8fafc', bgcolor: 'rgba(255,255,255,0.03)' }}
                       >
                         <MenuItem value="">
@@ -315,6 +338,14 @@ export default function IngestView({ onIngestComplete }) {
                   </Grid>
                 ))}
               </Grid>
+
+              <Button
+                size="small"
+                onClick={() => setShowAllColumns((v) => !v)}
+                sx={{ mt: 2, textTransform: 'none', color: '#94a3b8' }}
+              >
+                {showAllColumns ? 'Hide column details' : 'Review / change matched columns (optional)'}
+              </Button>
 
               {/* Sample Preview */}
               <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
