@@ -137,17 +137,28 @@ export default function PdfViewer() {
 
   // Auto-fit to container width on screen resize
   useEffect(() => {
+    let timer = null;
+    let lastWidth = window.innerWidth;
     const handleAutoFit = () => {
-      if (containerRef.current && pageDimensions.width > 0) {
-        const containerWidth = containerRef.current.clientWidth - 40;
-        if (containerWidth < pageDimensions.width) {
-          const autoScale = Number(Math.max(0.35, Math.min(1.0, containerWidth / pageDimensions.width)).toFixed(2));
-          setZoom(autoScale);
+      // Mobile URL-bar show/hide fires height-only resizes; ignore them
+      if (window.innerWidth === lastWidth) return;
+      lastWidth = window.innerWidth;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (containerRef.current && pageDimensions.width > 0) {
+          const containerWidth = containerRef.current.clientWidth - 40;
+          if (containerWidth < pageDimensions.width) {
+            const autoScale = Number(Math.max(0.35, Math.min(1.0, containerWidth / pageDimensions.width)).toFixed(2));
+            setZoom((prev) => (prev === autoScale ? prev : autoScale));
+          }
         }
-      }
+      }, 200);
     };
     window.addEventListener('resize', handleAutoFit);
-    return () => window.removeEventListener('resize', handleAutoFit);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleAutoFit);
+    };
   }, [pageDimensions.width, setZoom]);
 
   const getRelativeCoords = (e) => {
@@ -436,7 +447,7 @@ export default function PdfViewer() {
         sx={{
           p: { xs: 1.2, sm: 1.5 },
           bgcolor: 'rgba(255, 255, 255, 0.04)',
-          backdropFilter: 'blur(10px)',
+          backdropFilter: { xs: 'none', md: 'blur(10px)' },
           borderRadius: 3,
           border: '1px solid rgba(255, 255, 255, 0.08)',
           display: 'flex',
@@ -823,6 +834,7 @@ export default function PdfViewer() {
               pageNumber={currentPage}
               scale={zoom}
               rotate={rotation}
+              devicePixelRatio={Math.min(window.devicePixelRatio || 1, 2)}
               onLoadSuccess={onPageLoadSuccess}
               onRenderError={(err) => console.error('Page Render Error:', err)}
               renderAnnotationLayer={false}
@@ -843,7 +855,10 @@ export default function PdfViewer() {
                 width: `${selection.widthRatio * 100}%`,
                 height: `${selection.heightRatio * 100}%`,
                 border: `2px solid ${cropMode !== 'other' ? MARKETPLACE_PRESETS[cropMode]?.color || '#00c9ff' : '#00c9ff'}`,
-                boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 15px rgba(0, 201, 255, 0.5)',
+                boxShadow: interactionMode
+                  ? '0 0 0 9999px rgba(0, 0, 0, 0.55)'
+                  : '0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 15px rgba(0, 201, 255, 0.5)',
+                willChange: interactionMode ? 'left, top, width, height' : 'auto',
                 cursor: 'move',
                 zIndex: 10,
                 boxSizing: 'border-box',
