@@ -107,7 +107,7 @@ function PnlAppContent() {
     { key: 'products', label: 'Products & COGS', icon: <Package size={16} /> },
     { key: 'rules', label: 'Fee Cards', icon: <Layers size={16} /> },
     { key: 'bridge', label: 'Profit Bridge & Simulators', icon: <GitCommit size={16} /> },
-    { key: 'admin', label: 'Admin Console', icon: <ShieldAlert size={16} />, adminOnly: false },
+    ...(isAdmin ? [{ key: 'admin', label: 'Admin Console', icon: <ShieldAlert size={16} /> }] : []),
   ];
 
   return (
@@ -239,9 +239,11 @@ function PnlAppContent() {
                 <MenuItem onClick={() => { setAnchorEl(null); setPricingModalOpen(true); }} sx={{ fontSize: '0.85rem' }}>
                   Manage Subscription (₹199 / ₹499)
                 </MenuItem>
-                <MenuItem onClick={() => { setAnchorEl(null); setActiveTab('admin'); }} sx={{ fontSize: '0.85rem' }}>
-                  Admin Dashboard
-                </MenuItem>
+                {isAdmin && (
+                  <MenuItem onClick={() => { setAnchorEl(null); setActiveTab('admin'); }} sx={{ fontSize: '0.85rem' }}>
+                    Admin Dashboard
+                  </MenuItem>
+                )}
                 <MenuItem onClick={() => { setAnchorEl(null); logout(); }} sx={{ color: '#ff4d6d', fontSize: '0.85rem' }}>
                   Sign Out
                 </MenuItem>
@@ -274,7 +276,7 @@ function PnlAppContent() {
         {activeTab === 'products' && <ProductsView missingSkus={missingSkus} />}
         {activeTab === 'rules' && <RulesView />}
         {activeTab === 'bridge' && <BridgeView orders={orders} />}
-        {activeTab === 'admin' && <AdminView />}
+        {activeTab === 'admin' && (isAdmin ? <AdminView /> : <DashboardView orders={orders} onNavigateTab={setActiveTab} />)}
       </Box>
 
       {/* Modals */}
