@@ -30,6 +30,9 @@ import {
   X,
   Wand2,
   Maximize2,
+  Move,
+  Minus,
+  Plus,
 } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 
@@ -197,6 +200,7 @@ export default function PdfViewer() {
     try {
       e.currentTarget.setPointerCapture?.(e.pointerId);
     } catch {}
+    setCropMode('other');
     setInteractionMode('draw');
     interactionModeRef.current = 'draw';
     dragStartRef.current = coords;
@@ -210,15 +214,141 @@ export default function PdfViewer() {
     setSelection(currentBoxRef.current);
   };
 
+  const handleScaleSelection = useCallback((factor) => {
+    const current = currentBoxRef.current || selection;
+    if (!current) return;
+    if (cropMode !== 'other') {
+      setCropMode('other');
+    }
+    const centerCX = current.xRatio + current.widthRatio / 2;
+    const centerCY = current.yRatio + current.heightRatio / 2;
+    const newW = Math.max(0.02, Math.min(1.0, current.widthRatio * factor));
+    const newH = Math.max(0.02, Math.min(1.0, current.heightRatio * factor));
+    const newX = Math.max(0, Math.min(1 - newW, centerCX - newW / 2));
+    const newY = Math.max(0, Math.min(1 - newH, centerCY - newH / 2));
+    const nextBox = { xRatio: newX, yRatio: newY, widthRatio: newW, heightRatio: newH };
+    currentBoxRef.current = nextBox;
+    setSelection(nextBox);
+    if (boxRef.current) {
+      boxRef.current.style.left = `${nextBox.xRatio * 100}%`;
+      boxRef.current.style.top = `${nextBox.yRatio * 100}%`;
+      boxRef.current.style.width = `${nextBox.widthRatio * 100}%`;
+      boxRef.current.style.height = `${nextBox.heightRatio * 100}%`;
+    }
+    if (badgeTextRef.current) {
+      const ptW = Math.round(nextBox.widthRatio * (pageDimensions.width || 612));
+      const ptH = Math.round(nextBox.heightRatio * (pageDimensions.height || 792));
+      const inW = (ptW / 72).toFixed(2);
+      const inH = (ptH / 72).toFixed(2);
+      badgeTextRef.current.textContent = `${inW}" × ${inH}"`;
+    }
+  }, [selection, cropMode, setCropMode, pageDimensions.width, pageDimensions.height, setSelection]);
+
+  const applyQuickSize = useCallback((wInches, hInches) => {
+    const pageW = pageDimensions.width || 612;
+    const pageH = pageDimensions.height || 792;
+    const targetW = (wInches * 72) / pageW;
+    const targetH = (hInches * 72) / pageH;
+    const current = currentBoxRef.current || selection || { xRatio: 0.1, yRatio: 0.1, widthRatio: 0.5, heightRatio: 0.5 };
+    const centerCX = current.xRatio + current.widthRatio / 2;
+    const centerCY = current.yRatio + current.heightRatio / 2;
+    const wRatio = Math.max(0.02, Math.min(1.0, targetW));
+    const hRatio = Math.max(0.02, Math.min(1.0, targetH));
+    const xRatio = Math.max(0, Math.min(1 - wRatio, centerCX - wRatio / 2));
+    const yRatio = Math.max(0, Math.min(1 - hRatio, centerCY - hRatio / 2));
+    const nextBox = { xRatio, yRatio, widthRatio: wRatio, heightRatio: hRatio };
+    setCropMode('other');
+    currentBoxRef.current = nextBox;
+    setSelection(nextBox);
+    if (boxRef.current) {
+      boxRef.current.style.left = `${nextBox.xRatio * 100}%`;
+      boxRef.current.style.top = `${nextBox.yRatio * 100}%`;
+      boxRef.current.style.width = `${nextBox.widthRatio * 100}%`;
+      boxRef.current.style.height = `${nextBox.heightRatio * 100}%`;
+    }
+    if (badgeTextRef.current) {
+      badgeTextRef.current.textContent = `${wInches.toFixed(2)}" × ${hInches.toFixed(2)}"`;
+    }
+  }, [selection, setCropMode, pageDimensions.width, pageDimensions.height, setSelection]);
+
+  const handleStartRedraw = useCallback(() => {
+    setSelection(null);
+    setSelectionMode('select');
+    setCropMode('other');
+  }, [setSelection, setSelectionMode, setCropMode]);
+
   const handleBoxPointerDown = (e) => {
+    // If user clicked or touched directly on a handle, let handleResizePointerStart handle it
+    if (e.target.dataset?.handle || e.target.closest('[data-handle]')) {
+      return;
+    }
+
     e.stopPropagation();
-    try {
-      e.currentTarget.setPointerCapture?.(e.pointerId);
-    } catch {}
+
     if (pageWrapperRef.current) {
       pageRectRef.current = pageWrapperRef.current.getBoundingClientRect();
     }
     const coords = getRelativeCoords(e);
+
+    // If user touches near corners or edges of the box,
+    // seamlessly treat it as a resize instead of moving the whole box!
+    // This allows effortless mobile touch resizing to make the box small without missing tiny handles.
+    if (boxRef.current) {
+      const boxRect = boxRef.current.getBoundingClientRect();
+      const clientX = e.clientX !== undefined ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+      const clientY = e.clientY !== undefined ? e.clientY : (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+      const offsetX = clientX - boxRect.left;
+      const offsetY = clientY - boxRect.top;
+      const w = boxRect.width;
+      const h = boxRect.height;
+
+      // Generous corner threshold (up to 44px, or 35% of dimension for smaller boxes)
+      const cornerThresh = Math.min(44, Math.max(16, Math.min(w, h) * 0.35));
+      const edgeThresh = Math.min(28, Math.max(12, Math.min(w, h) * 0.25));
+
+      let autoHandle = null;
+
+      // 4 Corners
+      if (offsetX <= cornerThresh && offsetY <= cornerThresh) {
+        autoHandle = 'nw';
+      } else if (offsetX >= w - cornerThresh && offsetY <= cornerThresh) {
+        autoHandle = 'ne';
+      } else if (offsetX >= w - cornerThresh && offsetY >= h - cornerThresh) {
+        autoHandle = 'se';
+      } else if (offsetX <= cornerThresh && offsetY >= h - cornerThresh) {
+        autoHandle = 'sw';
+      }
+      // 4 Edges
+      else if (offsetY <= edgeThresh) {
+        autoHandle = 'n';
+      } else if (offsetY >= h - edgeThresh) {
+        autoHandle = 's';
+      } else if (offsetX <= edgeThresh) {
+        autoHandle = 'w';
+      } else if (offsetX >= w - edgeThresh) {
+        autoHandle = 'e';
+      }
+
+      if (autoHandle) {
+        try {
+          e.currentTarget.setPointerCapture?.(e.pointerId);
+        } catch {}
+        if (cropMode !== 'other') {
+          setCropMode('other');
+        }
+        const mode = `resize-${autoHandle}`;
+        setInteractionMode(mode);
+        interactionModeRef.current = mode;
+        dragStartRef.current = coords;
+        const box = { ...(currentBoxRef.current || selection) };
+        initialBoxRef.current = box;
+        return;
+      }
+    }
+
+    try {
+      e.currentTarget.setPointerCapture?.(e.pointerId);
+    } catch {}
     setInteractionMode('move');
     interactionModeRef.current = 'move';
     dragStartRef.current = coords;
@@ -241,6 +371,9 @@ export default function PdfViewer() {
     dragStartRef.current = coords;
     const box = { ...(currentBoxRef.current || selection) };
     initialBoxRef.current = box;
+    if (cropMode !== 'other') {
+      setCropMode('other');
+    }
   };
 
   // Perform direct DOM updates at 60fps/120fps without React re-render lag
@@ -283,37 +416,37 @@ export default function PdfViewer() {
       const dy = current.y - start.y;
 
       if (handle === 'se') {
-        widthRatio = Math.max(0.04, Math.min(1 - xRatio, box.widthRatio + dx));
-        heightRatio = Math.max(0.04, Math.min(1 - yRatio, box.heightRatio + dy));
+        widthRatio = Math.max(0.02, Math.min(1 - xRatio, box.widthRatio + dx));
+        heightRatio = Math.max(0.02, Math.min(1 - yRatio, box.heightRatio + dy));
       } else if (handle === 'sw') {
-        const potentialX = Math.max(0, box.xRatio + dx);
-        widthRatio = Math.max(0.04, (box.xRatio + box.widthRatio) - potentialX);
-        xRatio = (box.xRatio + box.widthRatio) - widthRatio;
-        heightRatio = Math.max(0.04, Math.min(1 - yRatio, box.heightRatio + dy));
+        const potentialX = Math.max(0, Math.min(box.xRatio + box.widthRatio - 0.02, box.xRatio + dx));
+        widthRatio = (box.xRatio + box.widthRatio) - potentialX;
+        xRatio = potentialX;
+        heightRatio = Math.max(0.02, Math.min(1 - yRatio, box.heightRatio + dy));
       } else if (handle === 'ne') {
-        const potentialY = Math.max(0, box.yRatio + dy);
-        heightRatio = Math.max(0.04, (box.yRatio + box.heightRatio) - potentialY);
-        yRatio = (box.yRatio + box.heightRatio) - heightRatio;
-        widthRatio = Math.max(0.04, Math.min(1 - xRatio, box.widthRatio + dx));
+        const potentialY = Math.max(0, Math.min(box.yRatio + box.heightRatio - 0.02, box.yRatio + dy));
+        heightRatio = (box.yRatio + box.heightRatio) - potentialY;
+        yRatio = potentialY;
+        widthRatio = Math.max(0.02, Math.min(1 - xRatio, box.widthRatio + dx));
       } else if (handle === 'nw') {
-        const potentialX = Math.max(0, box.xRatio + dx);
-        const potentialY = Math.max(0, box.yRatio + dy);
-        widthRatio = Math.max(0.04, (box.xRatio + box.widthRatio) - potentialX);
-        xRatio = (box.xRatio + box.widthRatio) - widthRatio;
-        heightRatio = Math.max(0.04, (box.yRatio + box.heightRatio) - potentialY);
-        yRatio = (box.yRatio + box.heightRatio) - heightRatio;
+        const potentialX = Math.max(0, Math.min(box.xRatio + box.widthRatio - 0.02, box.xRatio + dx));
+        const potentialY = Math.max(0, Math.min(box.yRatio + box.heightRatio - 0.02, box.yRatio + dy));
+        widthRatio = (box.xRatio + box.widthRatio) - potentialX;
+        xRatio = potentialX;
+        heightRatio = (box.yRatio + box.heightRatio) - potentialY;
+        yRatio = potentialY;
       } else if (handle === 'n') {
-        const potentialY = Math.max(0, box.yRatio + dy);
-        heightRatio = Math.max(0.04, (box.yRatio + box.heightRatio) - potentialY);
-        yRatio = (box.yRatio + box.heightRatio) - heightRatio;
+        const potentialY = Math.max(0, Math.min(box.yRatio + box.heightRatio - 0.02, box.yRatio + dy));
+        heightRatio = (box.yRatio + box.heightRatio) - potentialY;
+        yRatio = potentialY;
       } else if (handle === 's') {
-        heightRatio = Math.max(0.04, Math.min(1 - yRatio, box.heightRatio + dy));
+        heightRatio = Math.max(0.02, Math.min(1 - yRatio, box.heightRatio + dy));
       } else if (handle === 'w') {
-        const potentialX = Math.max(0, box.xRatio + dx);
-        widthRatio = Math.max(0.04, (box.xRatio + box.widthRatio) - potentialX);
-        xRatio = (box.xRatio + box.widthRatio) - widthRatio;
+        const potentialX = Math.max(0, Math.min(box.xRatio + box.widthRatio - 0.02, box.xRatio + dx));
+        widthRatio = (box.xRatio + box.widthRatio) - potentialX;
+        xRatio = potentialX;
       } else if (handle === 'e') {
-        widthRatio = Math.max(0.04, Math.min(1 - xRatio, box.widthRatio + dx));
+        widthRatio = Math.max(0.02, Math.min(1 - xRatio, box.widthRatio + dx));
       }
 
       nextBox = { xRatio, yRatio, widthRatio, heightRatio };
@@ -339,6 +472,7 @@ export default function PdfViewer() {
 
   const handlePointerMove = useCallback((e) => {
     if (!interactionModeRef.current || !dragStartRef.current) return;
+    if (e.cancelable) e.preventDefault();
     pendingCoordsRef.current = getRelativeCoords(e);
     if (!moveRafRef.current) {
       moveRafRef.current = requestAnimationFrame(applyMove);
@@ -389,7 +523,7 @@ export default function PdfViewer() {
   }, [selection, setSelection, clearSelection]);
 
   useEffect(() => {
-    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointermove', handlePointerMove, { passive: false });
     window.addEventListener('pointerup', handlePointerUp);
     window.addEventListener('pointercancel', handlePointerUp);
     window.addEventListener('keydown', handleKeyDown);
@@ -737,18 +871,142 @@ export default function PdfViewer() {
         </Typography>
 
         {selection && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: { xs: 'space-between', sm: 'flex-end' },
+              gap: 1,
+              flexWrap: 'wrap',
+              width: { xs: '100%', md: 'auto' },
+            }}
+          >
             <Chip
               size="small"
-              label={`${cropMode !== 'other' ? `🔒 ${MARKETPLACE_PRESETS[cropMode]?.name} • ` : ''}${inchWidth}" × ${inchHeight}" (${pointWidth} × ${pointHeight} pt)`}
+              label={`${cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? `🔒 ${MARKETPLACE_PRESETS[cropMode].name} • ` : '📐 Custom • '}${inchWidth}" × ${inchHeight}" (${pointWidth} × ${pointHeight} pt)`}
               sx={{
-                bgcolor: cropMode !== 'other' ? `${MARKETPLACE_PRESETS[cropMode]?.color}25` : 'rgba(0, 201, 255, 0.15)',
-                color: cropMode !== 'other' ? MARKETPLACE_PRESETS[cropMode]?.color : '#00c9ff',
+                bgcolor: cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? `${MARKETPLACE_PRESETS[cropMode].color}25` : 'rgba(0, 201, 255, 0.15)',
+                color: cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? MARKETPLACE_PRESETS[cropMode].color : '#00c9ff',
                 fontWeight: 700,
                 fontSize: '0.75rem',
-                border: `1px solid ${cropMode !== 'other' ? MARKETPLACE_PRESETS[cropMode]?.color : 'rgba(0, 201, 255, 0.3)'}`,
+                border: `1px solid ${cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? MARKETPLACE_PRESETS[cropMode].color : 'rgba(0, 201, 255, 0.3)'}`,
               }}
             />
+
+            {/* Quick Sizing Buttons - Always available so mobile users can easily shrink/enlarge */}
+            <ButtonGroup size="small" variant="outlined" sx={{ height: 26 }}>
+              <Tooltip title="Make Crop Box 15% Smaller (Shrink for small label/barcode area)">
+                <Button
+                  onClick={() => handleScaleSelection(0.85)}
+                  startIcon={<Minus size={12} />}
+                  sx={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    px: 0.8,
+                    py: 0,
+                    borderColor: 'rgba(0, 201, 255, 0.4)',
+                    color: '#00c9ff',
+                    textTransform: 'none',
+                    '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.12)' },
+                  }}
+                >
+                  − Shrink
+                </Button>
+              </Tooltip>
+              <Tooltip title="Make Crop Box 15% Larger">
+                <Button
+                  onClick={() => handleScaleSelection(1.15)}
+                  startIcon={<Plus size={12} />}
+                  sx={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    px: 0.8,
+                    py: 0,
+                    borderColor: 'rgba(0, 201, 255, 0.4)',
+                    color: '#00c9ff',
+                    textTransform: 'none',
+                    '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.12)' },
+                  }}
+                >
+                  + Enlarge
+                </Button>
+              </Tooltip>
+            </ButtonGroup>
+
+            {/* Quick Presets (Small 2"x2" is ideal for small areas/barcodes on mobile) */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => applyQuickSize(2.2, 2.2)}
+                sx={{
+                  fontSize: '0.68rem',
+                  height: 26,
+                  px: 0.8,
+                  py: 0,
+                  fontWeight: 700,
+                  borderColor: 'rgba(0, 201, 255, 0.3)',
+                  color: '#00c9ff',
+                  textTransform: 'none',
+                  bgcolor: 'rgba(0, 201, 255, 0.05)',
+                  '&:hover': { borderColor: '#00c9ff', bgcolor: 'rgba(0, 201, 255, 0.15)' },
+                }}
+              >
+                Small 2"×2"
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => applyQuickSize(3.0, 5.0)}
+                sx={{
+                  fontSize: '0.68rem',
+                  height: 26,
+                  px: 0.7,
+                  py: 0,
+                  borderColor: 'divider',
+                  color: 'text.secondary',
+                  textTransform: 'none',
+                  '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
+                }}
+              >
+                3"×5"
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => applyQuickSize(4.0, 6.0)}
+                sx={{
+                  fontSize: '0.68rem',
+                  height: 26,
+                  px: 0.7,
+                  py: 0,
+                  borderColor: 'divider',
+                  color: 'text.secondary',
+                  textTransform: 'none',
+                  '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
+                }}
+              >
+                4"×6"
+              </Button>
+              <Button
+                size="small"
+                variant="text"
+                onClick={handleStartRedraw}
+                sx={{
+                  fontSize: '0.68rem',
+                  height: 26,
+                  px: 0.8,
+                  py: 0,
+                  color: '#ff4d6d',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  '&:hover': { bgcolor: 'rgba(255, 77, 109, 0.1)' },
+                }}
+              >
+                ✏️ Redraw
+              </Button>
+            </Box>
+
             <Button
               size="small"
               variant="contained"
@@ -758,11 +1016,13 @@ export default function PdfViewer() {
                 background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
                 color: '#ffffff',
                 fontWeight: 800,
-                fontSize: '0.75rem',
+                fontSize: { xs: '0.8rem', sm: '0.75rem' },
                 textTransform: 'none',
-                px: 1.5,
-                py: 0.3,
+                px: { xs: 2, sm: 1.5 },
+                py: { xs: 0.6, sm: 0.3 },
                 borderRadius: 2,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
                 boxShadow: '0 2px 10px rgba(0, 201, 255, 0.35)',
                 '&:hover': {
                   background: 'linear-gradient(135deg, #00b4e6 0%, #0066dd 100%)',
@@ -794,7 +1054,7 @@ export default function PdfViewer() {
           borderColor: 'divider',
           overflow: 'auto',
           userSelect: 'none',
-          touchAction: 'pan-y',
+          touchAction: interactionMode ? 'none' : 'pan-y',
         }}
       >
         <Box
@@ -806,7 +1066,7 @@ export default function PdfViewer() {
             boxShadow: theme === 'dark' ? '0 16px 40px rgba(0,0,0,0.6)' : '0 12px 30px rgba(0,0,0,0.15)',
             cursor: selectionMode === 'select' ? 'crosshair' : 'default',
             lineHeight: 0,
-            touchAction: 'pan-y',
+            touchAction: interactionMode ? 'none' : 'pan-y',
             userSelect: 'none',
           }}
         >
@@ -875,7 +1135,7 @@ export default function PdfViewer() {
                   position: 'absolute',
                   top: -24,
                   left: 0,
-                  bgcolor: cropMode !== 'other' ? MARKETPLACE_PRESETS[cropMode]?.color || '#00c9ff' : '#00c9ff',
+                  bgcolor: cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? MARKETPLACE_PRESETS[cropMode].color : '#00c9ff',
                   color: '#ffffff',
                   px: 1,
                   py: 0.2,
@@ -890,102 +1150,145 @@ export default function PdfViewer() {
                   boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
                 }}
               >
-                <span>{cropMode !== 'other' ? `🔒 ${MARKETPLACE_PRESETS[cropMode]?.name}` : '📐 Custom'}</span>
+                <span>{cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? `🔒 ${MARKETPLACE_PRESETS[cropMode].name}` : '📐 Custom'}</span>
                 <span>•</span>
                 <span ref={badgeTextRef}>{inchWidth}" × {inchHeight}"</span>
               </Box>
 
-              {/* 8 Drag Handles – available in 'other' (Adjustable) mode with generous touch hit areas */}
-              {cropMode === 'other' && (
-                <>
-                  {/* 4 Corner Handles */}
-                  {[
-                    { id: 'nw', top: -12, left: -12, cursor: 'nw-resize' },
-                    { id: 'ne', top: -12, left: 'calc(100% - 12px)', cursor: 'ne-resize' },
-                    { id: 'se', top: 'calc(100% - 12px)', left: 'calc(100% - 12px)', cursor: 'se-resize' },
-                    { id: 'sw', top: 'calc(100% - 12px)', left: -12, cursor: 'sw-resize' },
-                  ].map((h) => (
-                    <Box
-                      key={h.id}
-                      data-handle={h.id}
-                      onPointerDown={(e) => handleResizePointerStart(e, h.id)}
-                      sx={{
-                        position: 'absolute',
-                        width: 24,
-                        height: 24,
-                        bgcolor: '#ffffff',
-                        border: '2.5px solid #00c9ff',
-                        borderRadius: '50%',
-                        top: h.top,
-                        left: h.left,
-                        cursor: h.cursor,
-                        zIndex: 25,
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-                        touchAction: 'none',
-                        userSelect: 'none',
-                        '&:hover': {
-                          transform: 'scale(1.15)',
-                          bgcolor: '#e6f9ff',
-                        },
-                        '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          top: -12,
-                          left: -12,
-                          width: 48,
-                          height: 48,
-                          borderRadius: '50%',
-                        },
-                      }}
-                    />
-                  ))}
+              {/* Center Move Badge - hide on small boxes to keep interior clean */}
+              {selection.widthRatio >= 0.16 && selection.heightRatio >= 0.10 && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    pointerEvents: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    bgcolor: 'rgba(0, 0, 0, 0.45)',
+                    backdropFilter: 'blur(4px)',
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    px: 1,
+                    py: 0.3,
+                    borderRadius: 2,
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    opacity: interactionMode === 'move' ? 0.95 : 0.4,
+                    transition: 'opacity 0.2s',
+                    userSelect: 'none',
+                  }}
+                >
+                  <Move size={12} />
+                  <span>Move</span>
+                </Box>
+              )}
 
-                  {/* 4 Edge Handles (Top, Bottom, Left, Right) */}
-                  {[
-                    { id: 'n', top: -10, left: 'calc(50% - 18px)', width: 36, height: 18, cursor: 'n-resize', borderRadius: '9px' },
-                    { id: 's', top: 'calc(100% - 8px)', left: 'calc(50% - 18px)', width: 36, height: 18, cursor: 's-resize', borderRadius: '9px' },
-                    { id: 'w', top: 'calc(50% - 18px)', left: -10, width: 18, height: 36, cursor: 'w-resize', borderRadius: '9px' },
-                    { id: 'e', top: 'calc(50% - 18px)', left: 'calc(100% - 8px)', width: 18, height: 36, cursor: 'e-resize', borderRadius: '9px' },
-                  ].map((h) => (
+              {/* 4 Corner Handles with 44px hit-test containers – always active on all modes so mobile users can easily resize */}
+              {[
+                { id: 'nw', top: -22, left: -22, cursor: 'nw-resize' },
+                { id: 'ne', top: -22, left: 'calc(100% - 22px)', cursor: 'ne-resize' },
+                { id: 'se', top: 'calc(100% - 22px)', left: 'calc(100% - 22px)', cursor: 'se-resize' },
+                { id: 'sw', top: 'calc(100% - 22px)', left: -22, cursor: 'sw-resize' },
+              ].map((h) => (
+                <Box
+                  key={h.id}
+                  data-handle={h.id}
+                  onPointerDown={(e) => handleResizePointerStart(e, h.id)}
+                  sx={{
+                    position: 'absolute',
+                    width: 44,
+                    height: 44,
+                    top: h.top,
+                    left: h.left,
+                    cursor: h.cursor,
+                    zIndex: 35,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    touchAction: 'none',
+                    userSelect: 'none',
+                    bgcolor: 'transparent',
+                    '&:hover > div': {
+                      transform: 'scale(1.2)',
+                      bgcolor: '#e6f9ff',
+                    },
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 22,
+                      height: 22,
+                      bgcolor: '#ffffff',
+                      border: '2.5px solid #00c9ff',
+                      borderRadius: '50%',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                      pointerEvents: 'none',
+                      transition: 'transform 0.15s ease',
+                    }}
+                  />
+                </Box>
+              ))}
+
+              {/* 4 Edge Handles (Top, Bottom, Left, Right) – only render when box is large enough to avoid crowding corners */}
+              {selection.widthRatio >= 0.18 && selection.heightRatio >= 0.14 && (
+                [
+                  { id: 'n', top: -22, left: 'calc(50% - 30px)', width: 60, height: 44, cursor: 'n-resize', isH: true },
+                  { id: 's', top: 'calc(100% - 22px)', left: 'calc(50% - 30px)', width: 60, height: 44, cursor: 's-resize', isH: true },
+                  { id: 'w', top: 'calc(50% - 30px)', left: -22, width: 44, height: 60, cursor: 'w-resize', isH: false },
+                  { id: 'e', top: 'calc(50% - 30px)', left: 'calc(100% - 22px)', width: 44, height: 60, cursor: 'e-resize', isH: false },
+                ].map((h) => (
+                  <Box
+                    key={h.id}
+                    data-handle={h.id}
+                    onPointerDown={(e) => handleResizePointerStart(e, h.id)}
+                    sx={{
+                      position: 'absolute',
+                      width: h.width,
+                      height: h.height,
+                      top: h.top,
+                      left: h.left,
+                      cursor: h.cursor,
+                      zIndex: 32,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      touchAction: 'none',
+                      userSelect: 'none',
+                      bgcolor: 'transparent',
+                      '&:hover > div': {
+                        transform: 'scale(1.15)',
+                        bgcolor: '#e6f9ff',
+                      },
+                    }}
+                  >
                     <Box
-                      key={h.id}
-                      data-handle={h.id}
-                      onPointerDown={(e) => handleResizePointerStart(e, h.id)}
                       sx={{
-                        position: 'absolute',
-                        width: h.width,
-                        height: h.height,
+                        width: h.isH ? 32 : 12,
+                        height: h.isH ? 12 : 32,
                         bgcolor: '#ffffff',
                         border: '2px solid #00c9ff',
-                        borderRadius: h.borderRadius,
-                        top: h.top,
-                        left: h.left,
-                        cursor: h.cursor,
-                        zIndex: 24,
+                        borderRadius: '6px',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                        touchAction: 'none',
-                        userSelect: 'none',
+                        pointerEvents: 'none',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        '&:hover': {
-                          transform: 'scale(1.1)',
-                          bgcolor: '#e6f9ff',
-                        },
-                        '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          top: -10,
-                          left: -10,
-                          width: 'calc(100% + 20px)',
-                          height: 'calc(100% + 20px)',
-                        },
+                        transition: 'transform 0.15s ease',
                       }}
                     >
-                      <Box sx={{ width: h.width > h.height ? 14 : 3, height: h.width > h.height ? 3 : 14, bgcolor: '#00c9ff', borderRadius: 1 }} />
+                      <Box
+                        sx={{
+                          width: h.isH ? 12 : 3,
+                          height: h.isH ? 3 : 12,
+                          bgcolor: '#00c9ff',
+                          borderRadius: 1,
+                        }}
+                      />
                     </Box>
-                  ))}
-                </>
+                  </Box>
+                ))
               )}
             </Box>
           )}

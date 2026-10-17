@@ -166,8 +166,10 @@ export default function CropProcessor() {
         </Box>
 
         <RadioGroup
-          value={cropMode}
-          onChange={(e) => selectCropMode(e.target.value)}
+          value={cropMode || 'amazon'}
+          onChange={(e) => {
+            if (e.target.value) selectCropMode(e.target.value);
+          }}
           sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1 }}
         >
           {Object.values(MARKETPLACE_PRESETS).map((p) => {
@@ -197,6 +199,7 @@ export default function CropProcessor() {
                 }}
               >
                 <Radio
+                  value={p.id}
                   checked={isSelected}
                   size="small"
                   sx={{

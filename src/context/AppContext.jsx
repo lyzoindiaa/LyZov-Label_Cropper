@@ -396,21 +396,23 @@ export const AppProvider = ({ children }) => {
 
   const clearSelection = useCallback(() => {
     setSelection(null);
-    setSelectionMode('inspect');
+    setSelectionMode('select');
+    setCropMode('other');
     setSplitMode('none');
   }, []);
 
   const selectCropMode = useCallback((mode) => {
-    setCropMode(mode);
+    const validMode = (mode && MARKETPLACE_PRESETS[mode]) ? mode : 'other';
+    setCropMode(validMode);
     setSelectionMode('select');
     setSplitMode('none');
-    if (mode === 'amazon') {
+    if (validMode === 'amazon') {
       // Amazon: always force full-page selection on first page
       setCropOptions((prev) => ({ ...prev, pagesToCrop: 'first' }));
       setSelection({ xRatio: 0.0, yRatio: 0.0, widthRatio: 1.0, heightRatio: 1.0 });
       return;
     }
-    const preset = MARKETPLACE_PRESETS[mode];
+    const preset = MARKETPLACE_PRESETS[validMode];
     if (preset) {
       // Always apply fixed presets so they snap to the correct position
       setSelection({ ...preset.selection });
