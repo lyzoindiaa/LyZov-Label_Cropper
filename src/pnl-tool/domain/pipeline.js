@@ -7,6 +7,9 @@ import { Money } from './money.js';
 import { QualityFlags, createFlag } from './flags.js';
 import { normalizeStatus, parseDate } from '../utils/mapper.js';
 
+// Exports often wrap text in literal quotes ("""abc""")
+const cleanText = (v) => String(v ?? '').trim().replace(/^["'\s]+|["'\s]+$/g, '').trim();
+
 export function normalizeRows({
   rawRows,
   channelId,
@@ -30,8 +33,8 @@ export function normalizeRows({
     const flags = [];
 
     // 1. Extract Order ID
-    const rawOrderId = rawValues[columnMap.orderId];
-    if (!rawOrderId || !String(rawOrderId).trim()) {
+    const rawOrderId = cleanText(rawValues[columnMap.orderId]);
+    if (!rawOrderId) {
       rejected.push({
         rowIndex,
         rawValues,
@@ -39,11 +42,11 @@ export function normalizeRows({
       });
       return;
     }
-    const orderId = String(rawOrderId).trim();
+    const orderId = rawOrderId;
 
     // 2. Extract SKU
-    const rawSku = rawValues[columnMap.sku];
-    let sku = rawSku ? String(rawSku).trim().toUpperCase() : '';
+    const rawSku = cleanText(rawValues[columnMap.sku]).replace(/^sku\s*:\s*/i, '');
+    let sku = rawSku ? rawSku.toUpperCase() : '';
     if (!sku) {
       flags.push(createFlag(QualityFlags.MISSING_SKU));
       sku = 'UNKNOWN-SKU';
@@ -73,6 +76,7 @@ export function normalizeRows({
 
     const rawDiscount = rawValues[columnMap.discounts];
     const discounts = Money.fromMajor(rawDiscount || 0, template.currency || 'INR');
+    discounts.amount = Math.abs(discounts.amount); // some exports store discounts as negatives
 
     const rawShipping = rawValues[columnMap.shippingCharged];
     const shippingCharged = Money.fromMajor(rawShipping || 0, template.currency || 'INR');
@@ -96,7 +100,13 @@ export function normalizeRows({
     }
 
     // 8. Deduplication check
-    const naturalKey = `${channelId}_${orderId}_${sku}_${orderDate || 'nodate'}`;
+    // Include item id + event/status so Sale and Return rows of one order are not treated as duplicates
+    const rawItemId = columnMap.orderItemId ? String(rawValues[columnMap.orderItemId] ?? '').trim() : '';
+    const statusKey = String(rawStatus ?? '').trim().toLowerCase();
+    // With an Order Item ID, rows are line-level: only fully identical rows are true duplicates
+    // (the same item can legitimately be invoiced more than once, e.g. qty 2 split into 2 invoices).
+    const rowSignature = rawItemId ? Object.values(rawValues).join('\u0001') : '';
+    const naturalKey = `${channelId}_${orderId}_${rawItemId}_${sku}_${orderDate || 'nodate'}_${statusKey}_${rowSignature}`;
     if (seenKeys.has(naturalKey)) {
       flags.push(createFlag(QualityFlags.DUPLICATE_ORDER_LINE, `Order: ${orderId}`));
       if (dedupStrategy === 'keep_first') {
@@ -117,6 +127,10 @@ export function normalizeRows({
       flagCounts[f.code] = (flagCounts[f.code] || 0) + 1;
     });
 
+    // Event-style reports (e.g. Flipkart 'Event Type') list a Return as its own row
+    // that reverses an earlier Sale row, so it must only contribute a refund.
+    const isEventReturn = status === 'returned' && /event/i.test(String(columnMap.status || ''));
+
     const orderLine = {
       id: `line_${batchId}_${rowIndex}`,
       batchId,
@@ -125,14 +139,18 @@ export function normalizeRows({
       orderId,
       orderDate: orderDate || '1970-01-01',
       sku,
-      productTitle: String(rawValues[columnMap.productTitle] || '').trim(),
+      productTitle: cleanText(rawValues[columnMap.productTitle]),
       quantity,
       status,
       currency: template.currency || 'INR',
-      grossSales: grossSales.amount,
-      discounts: discounts.amount,
-      shippingCharged: shippingCharged.amount,
-      refundAmount: status === 'returned' ? grossSales.amount : 0,
+      grossSales: isEventReturn ? 0 : grossSales.amount,
+      discounts: isEventReturn ? 0 : discounts.amount,
+      shippingCharged: isEventReturn ? 0 : shippingCharged.amount,
+      refundAmount: status === 'returned'
+        ? (isEventReturn
+          ? Math.max(0, Math.abs(grossSales.amount) - Math.abs(discounts.amount) + Math.abs(shippingCharged.amount))
+          : Math.abs(grossSales.amount))
+        : 0,
       cogsUnitPaise: cogsUnit,
       cogsSource,
       flags,
