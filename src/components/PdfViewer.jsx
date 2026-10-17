@@ -58,6 +58,7 @@ export default function PdfViewer() {
     setSelectionMode,
     clearSelection,
     cropMode,
+    setCropMode,
     selectCropMode,
     MARKETPLACE_PRESETS,
     autoDetectLabel,
