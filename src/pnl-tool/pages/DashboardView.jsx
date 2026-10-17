@@ -40,23 +40,37 @@ export default function DashboardView({ orders = [], onNavigateTab }) {
   const totalShippingCharged = filteredOrders.reduce((acc, o) => acc + (o.shippingCharged || 0), 0);
   const totalRefunds = filteredOrders.reduce((acc, o) => acc + (o.refundAmount || 0), 0);
 
+  // Default fee-card rates per channel (same as Fee Cards tab defaults)
+  const FEE_CARD = {
+    flipkart: { pct: 12, flatPaise: 0 },
+    amazon: { pct: 15, flatPaise: 2500 },
+    meesho: { pct: 0, flatPaise: 0 },
+  };
+  const lineFee = (o) => {
+    if (o.feesTotal) return o.feesTotal;
+    if (!(o.grossSales > 0)) return 0; // refund rows carry no new fee
+    const card = FEE_CARD[(o.channelId || '').toLowerCase()] || { pct: 12, flatPaise: 0 };
+    return Math.round(((o.grossSales - (o.discounts || 0)) * card.pct) / 100) + card.flatPaise;
+  };
+  // Only real product-master cost; never an invented percentage. Returned units are assumed restocked.
+  const lineCogs = (o) =>
+    o.status === 'returned' || !o.cogsUnitPaise ? 0 : o.cogsUnitPaise * (o.quantity || 1);
+  const lineNetRevenue = (o) =>
+    (o.grossSales || 0) - (o.discounts || 0) + (o.shippingCharged || 0) - (o.refundAmount || 0);
+
   const netRevenuePaise = totalGross - totalDiscounts + totalShippingCharged - totalRefunds;
-
-  // Approximate default fees if not loaded from rules
-  const totalFeesPaise = filteredOrders.reduce((acc, o) => {
-    if (o.feesTotal) return acc + o.feesTotal;
-    return acc + Math.round((o.grossSales || 0) * 0.16); // ~16% avg marketplace fee
-  }, 0);
-
-  const totalCogsPaise = filteredOrders.reduce((acc, o) => {
-    if (o.cogsUnitPaise) return acc + (o.cogsUnitPaise * (o.quantity || 1));
-    return acc + Math.round((o.grossSales || 0) * 0.35); // sample 35% COGS fallback
-  }, 0);
+  const totalFeesPaise = filteredOrders.reduce((acc, o) => acc + lineFee(o), 0);
+  const totalCogsPaise = filteredOrders.reduce((acc, o) => acc + lineCogs(o), 0);
+  const missingCogsSkus = new Set(
+    filteredOrders.filter((o) => o.status !== 'returned' && !o.cogsUnitPaise).map((o) => o.sku)
+  ).size;
 
   const netContributionPaise = netRevenuePaise - totalFeesPaise - totalCogsPaise;
   const marginPct = netRevenuePaise > 0 ? ((netContributionPaise / netRevenuePaise) * 100).toFixed(1) : 0;
 
-  const totalUnits = filteredOrders.reduce((acc, o) => acc + (o.quantity || 1), 0);
+  const totalUnits = filteredOrders
+    .filter((o) => o.status !== 'returned' && o.status !== 'rto')
+    .reduce((acc, o) => acc + (o.quantity || 1), 0);
   const returnUnits = filteredOrders.filter(o => o.status === 'returned' || o.status === 'rto').reduce((acc, o) => acc + (o.quantity || 1), 0);
   const returnRatePct = totalUnits > 0 ? ((returnUnits / totalUnits) * 100).toFixed(1) : 0;
 
@@ -67,30 +81,28 @@ export default function DashboardView({ orders = [], onNavigateTab }) {
     if (!channelMap[ch]) {
       channelMap[ch] = { channelId: ch, count: 0, revenue: 0, profit: 0, lines: [] };
     }
-    const rev = (o.grossSales || 0) - (o.discounts || 0);
-    const profit = Math.round(rev * 0.45); // estimated
-    channelMap[ch].count += 1;
+    const rev = lineNetRevenue(o);
+    const profit = rev - lineFee(o) - lineCogs(o);
+    if (o.status !== 'returned') channelMap[ch].count += 1;
     channelMap[ch].revenue += rev;
     channelMap[ch].profit += profit;
     channelMap[ch].lines.push(o);
   });
   const channelBreakdown = Object.values(channelMap);
 
-  // Group by SKU to detect loss-makers
+  // Group by SKU to detect loss-makers (only SKUs with a known cost can be judged)
   const skuMap = {};
   filteredOrders.forEach(o => {
     const s = o.sku || 'UNKNOWN';
     if (!skuMap[s]) {
-      skuMap[s] = { sku: s, title: o.productTitle || s, units: 0, revenue: 0, profit: 0, lines: [] };
+      skuMap[s] = { sku: s, title: o.productTitle || s, units: 0, revenue: 0, profit: 0, hasCogs: false, lines: [] };
     }
-    const rev = (o.grossSales || 0) - (o.discounts || 0);
-    const fee = Math.round(rev * 0.16);
-    const cost = o.cogsUnitPaise ? o.cogsUnitPaise * (o.quantity || 1) : Math.round(rev * 0.50);
-    const contrib = rev - fee - cost;
+    const rev = lineNetRevenue(o);
+    if (o.cogsUnitPaise) skuMap[s].hasCogs = true;
 
-    skuMap[s].units += o.quantity || 1;
+    if (o.status !== 'returned') skuMap[s].units += o.quantity || 1;
     skuMap[s].revenue += rev;
-    skuMap[s].profit += contrib;
+    skuMap[s].profit += rev - lineFee(o) - lineCogs(o);
     skuMap[s].lines.push(o);
   });
   const skuList = Object.values(skuMap);
@@ -235,7 +247,9 @@ export default function DashboardView({ orders = [], onNavigateTab }) {
               {Money.fromMinor(totalCogsPaise, 'INR').toFormatted()}
             </Typography>
             <Typography variant="caption" sx={{ color: '#64748b' }}>
-              Direct manufactured/purchased costs
+              {missingCogsSkus > 0
+                ? `${missingCogsSkus} SKU(s) have no cost yet - profit is before their product cost`
+                : 'Direct manufactured/purchased costs'}
             </Typography>
           </Box>
         </Grid>

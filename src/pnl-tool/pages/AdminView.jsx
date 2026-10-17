@@ -31,7 +31,7 @@ import { pnlApi } from '../api/client.js';
 import { usePnlAuth } from '../auth/AuthContext.jsx';
 
 export default function AdminView() {
-  const { user } = usePnlAuth();
+  const { user, isAdmin } = usePnlAuth();
   const [activeTab, setActiveTab] = useState(0); // 0: Overview, 1: Users, 2: Payments, 3: Templates
   const [stats, setStats] = useState({
     totalUsers: 1,
@@ -50,6 +50,7 @@ export default function AdminView() {
   const [error, setError] = useState('');
 
   const loadAdminData = async () => {
+    if (!isAdmin) return;
     setLoading(true);
     setError('');
     try {
@@ -69,8 +70,20 @@ export default function AdminView() {
   };
 
   useEffect(() => {
-    loadAdminData();
-  }, []);
+    if (isAdmin) {
+      loadAdminData();
+    }
+  }, [isAdmin]);
+
+  if (!isAdmin) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Alert severity="warning" sx={{ maxWidth: 500, mx: 'auto', borderRadius: '10px' }}>
+          Access restricted. The Admin Management Console is only accessible to authorized administrator accounts.
+        </Alert>
+      </Box>
+    );
+  }
 
   const handleExtendTrial = async (userId) => {
     try {
