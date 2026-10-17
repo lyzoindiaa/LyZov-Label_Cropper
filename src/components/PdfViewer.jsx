@@ -115,13 +115,16 @@ export default function PdfViewer() {
   };
 
   const onPageLoadSuccess = (page) => {
-    const { width, height } = page;
-    setPageDimensions({ width, height });
-    if (containerRef.current && width > 0) {
+    // Crucial: page.width in react-pdf returns getViewport({ scale: zoom }).width
+    // Using page.originalWidth prevents infinite scale-oscillation loops and recalculation jitter on mobile
+    const origWidth = page.originalWidth || (page.getViewport ? page.getViewport({ scale: 1 }).width : page.width);
+    const origHeight = page.originalHeight || (page.getViewport ? page.getViewport({ scale: 1 }).height : page.height);
+    setPageDimensions({ width: origWidth, height: origHeight });
+    if (containerRef.current && origWidth > 0) {
       const containerWidth = containerRef.current.clientWidth - 32;
-      if (containerWidth < width) {
-        const autoScale = Number(Math.max(0.35, Math.min(1.0, containerWidth / width)).toFixed(2));
-        setZoom(autoScale);
+      if (containerWidth < origWidth) {
+        const autoScale = Number(Math.max(0.35, Math.min(1.0, containerWidth / origWidth)).toFixed(2));
+        setZoom((prev) => (Math.abs(prev - autoScale) > 0.03 ? autoScale : prev));
       }
     }
   };
@@ -129,8 +132,8 @@ export default function PdfViewer() {
   // Fit to container width helper
   const handleFitWidth = useCallback(() => {
     if (containerRef.current && pageDimensions.width > 0) {
-      const containerWidth = containerRef.current.clientWidth - 48; // padding
-      const targetScale = Math.min(2.0, Math.max(0.4, containerWidth / pageDimensions.width));
+      const containerWidth = containerRef.current.clientWidth - 32;
+      const targetScale = Math.min(2.0, Math.max(0.35, containerWidth / pageDimensions.width));
       setZoom(Number(targetScale.toFixed(2)));
     }
   }, [pageDimensions.width, setZoom]);
@@ -146,10 +149,10 @@ export default function PdfViewer() {
       clearTimeout(timer);
       timer = setTimeout(() => {
         if (containerRef.current && pageDimensions.width > 0) {
-          const containerWidth = containerRef.current.clientWidth - 40;
+          const containerWidth = containerRef.current.clientWidth - 32;
           if (containerWidth < pageDimensions.width) {
             const autoScale = Number(Math.max(0.35, Math.min(1.0, containerWidth / pageDimensions.width)).toFixed(2));
-            setZoom((prev) => (prev === autoScale ? prev : autoScale));
+            setZoom((prev) => (Math.abs(prev - autoScale) > 0.03 ? autoScale : prev));
           }
         }
       }, 200);
