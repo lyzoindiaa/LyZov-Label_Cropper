@@ -59,7 +59,6 @@ export default function PdfViewer() {
     clearSelection,
     cropMode,
     setCropMode,
-    selectCropMode,
     MARKETPLACE_PRESETS,
     autoDetectLabel,
     rotation,
@@ -649,37 +648,19 @@ export default function PdfViewer() {
             Auto-Detect Label
           </Button>
 
-          {/* Marketplace Label Mode Buttons */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, ml: 0.5, flexWrap: 'wrap' }}>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: { xs: 'none', sm: 'block' } }}>
-              MARKETPLACE:
-            </Typography>
-            {Object.values(MARKETPLACE_PRESETS).map((p) => {
-              const active = cropMode === p.id;
-              return (
-                <Button
-                  key={p.id}
-                  size="small"
-                  variant={active ? 'contained' : 'outlined'}
-                  onClick={() => selectCropMode(p.id)}
-                  sx={{
-                    fontSize: '0.72rem',
-                    py: 0.2,
-                    px: 0.9,
-                    fontWeight: active ? 800 : 500,
-                    bgcolor: active ? p.color : 'transparent',
-                    color: active ? '#081420' : 'text.primary',
-                    borderColor: active ? p.color : 'rgba(255, 255, 255, 0.15)',
-                    '&:hover': {
-                      borderColor: p.color,
-                      bgcolor: active ? p.color : `${p.color}20`,
-                    },
-                  }}
-                >
-                  {p.name} {p.fixed ? '(Fixed)' : '(Adjust)'}
-                </Button>
-              );
-            })}
+          {/* Active Marketplace Badge */}
+          <Chip
+            size="small"
+            label={`${MARKETPLACE_PRESETS[cropMode]?.name || 'Store'} Active`}
+            sx={{
+              height: 24,
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              bgcolor: `${MARKETPLACE_PRESETS[cropMode]?.color || '#00c9ff'}25`,
+              color: MARKETPLACE_PRESETS[cropMode]?.color || '#00c9ff',
+              border: `1px solid ${MARKETPLACE_PRESETS[cropMode]?.color || '#00c9ff'}40`,
+            }}
+          />
 
             {/* Custom Saved Presets */}
             {customPresets.map((preset) => (
@@ -720,7 +701,6 @@ export default function PdfViewer() {
                 </Button>
               </Tooltip>
             )}
-          </Box>
         </Box>
 
         {/* Rotation, Zoom & Page Nav */}
@@ -884,7 +864,7 @@ export default function PdfViewer() {
           >
             <Chip
               size="small"
-              label={`${cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? `🔒 ${MARKETPLACE_PRESETS[cropMode].name} • ` : '📐 Custom • '}${inchWidth}" × ${inchHeight}" (${pointWidth} × ${pointHeight} pt)`}
+              label={`${cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? `🔒 ${MARKETPLACE_PRESETS[cropMode].name} • ` : '📐 Custom • '}${inchWidth}" × ${inchHeight}"`}
               sx={{
                 bgcolor: cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? `${MARKETPLACE_PRESETS[cropMode].color}25` : 'rgba(0, 201, 255, 0.15)',
                 color: cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? MARKETPLACE_PRESETS[cropMode].color : '#00c9ff',
@@ -894,126 +874,110 @@ export default function PdfViewer() {
               }}
             />
 
-            {/* Quick Sizing Buttons - Always available so mobile users can easily shrink/enlarge */}
-            <ButtonGroup size="small" variant="outlined" sx={{ height: 26 }}>
-              <Tooltip title="Make Crop Box 15% Smaller (Shrink for small label/barcode area)">
+            {/* Quick Sizing Buttons - only shown in Custom Adjust mode */}
+            {cropMode === 'other' && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                <ButtonGroup size="small" variant="outlined" sx={{ height: 26 }}>
+                  <Tooltip title="Make Crop Box 15% Smaller">
+                    <Button
+                      onClick={() => handleScaleSelection(0.85)}
+                      startIcon={<Minus size={12} />}
+                      sx={{
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        px: 0.8,
+                        py: 0,
+                        borderColor: 'rgba(0, 201, 255, 0.4)',
+                        color: '#00c9ff',
+                        textTransform: 'none',
+                        '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.12)' },
+                      }}
+                    >
+                      − Shrink
+                    </Button>
+                  </Tooltip>
+                  <Tooltip title="Make Crop Box 15% Larger">
+                    <Button
+                      onClick={() => handleScaleSelection(1.15)}
+                      startIcon={<Plus size={12} />}
+                      sx={{
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        px: 0.8,
+                        py: 0,
+                        borderColor: 'rgba(0, 201, 255, 0.4)',
+                        color: '#00c9ff',
+                        textTransform: 'none',
+                        '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.12)' },
+                      }}
+                    >
+                      + Enlarge
+                    </Button>
+                  </Tooltip>
+                </ButtonGroup>
+
                 <Button
-                  onClick={() => handleScaleSelection(0.85)}
-                  startIcon={<Minus size={12} />}
+                  size="small"
+                  variant="outlined"
+                  onClick={() => applyQuickSize(3.0, 5.0)}
                   sx={{
-                    fontSize: '0.7rem',
-                    fontWeight: 700,
-                    px: 0.8,
+                    fontSize: '0.68rem',
+                    height: 26,
+                    px: 0.7,
                     py: 0,
-                    borderColor: 'rgba(0, 201, 255, 0.4)',
-                    color: '#00c9ff',
+                    borderColor: 'divider',
+                    color: 'text.secondary',
                     textTransform: 'none',
-                    '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.12)' },
+                    '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
                   }}
                 >
-                  − Shrink
+                  3"×5"
                 </Button>
-              </Tooltip>
-              <Tooltip title="Make Crop Box 15% Larger">
                 <Button
-                  onClick={() => handleScaleSelection(1.15)}
-                  startIcon={<Plus size={12} />}
+                  size="small"
+                  variant="outlined"
+                  onClick={() => applyQuickSize(4.0, 6.0)}
                   sx={{
-                    fontSize: '0.7rem',
-                    fontWeight: 700,
-                    px: 0.8,
+                    fontSize: '0.68rem',
+                    height: 26,
+                    px: 0.7,
                     py: 0,
-                    borderColor: 'rgba(0, 201, 255, 0.4)',
-                    color: '#00c9ff',
+                    borderColor: 'divider',
+                    color: 'text.secondary',
                     textTransform: 'none',
-                    '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.12)' },
+                    '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
                   }}
                 >
-                  + Enlarge
+                  4"×6"
                 </Button>
-              </Tooltip>
-            </ButtonGroup>
+                <Button
+                  size="small"
+                  variant="text"
+                  onClick={handleStartRedraw}
+                  sx={{
+                    fontSize: '0.68rem',
+                    height: 26,
+                    px: 0.8,
+                    py: 0,
+                    color: '#ff4d6d',
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    '&:hover': { bgcolor: 'rgba(255, 77, 109, 0.1)' },
+                  }}
+                >
+                  ✏️ Redraw
+                </Button>
+              </Box>
+            )}
 
-            {/* Quick Presets (Small 2"x2" is ideal for small areas/barcodes on mobile) */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => applyQuickSize(2.2, 2.2)}
-                sx={{
-                  fontSize: '0.68rem',
-                  height: 26,
-                  px: 0.8,
-                  py: 0,
-                  fontWeight: 700,
-                  borderColor: 'rgba(0, 201, 255, 0.3)',
-                  color: '#00c9ff',
-                  textTransform: 'none',
-                  bgcolor: 'rgba(0, 201, 255, 0.05)',
-                  '&:hover': { borderColor: '#00c9ff', bgcolor: 'rgba(0, 201, 255, 0.15)' },
-                }}
-              >
-                Small 2"×2"
-              </Button>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => applyQuickSize(3.0, 5.0)}
-                sx={{
-                  fontSize: '0.68rem',
-                  height: 26,
-                  px: 0.7,
-                  py: 0,
-                  borderColor: 'divider',
-                  color: 'text.secondary',
-                  textTransform: 'none',
-                  '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
-                }}
-              >
-                3"×5"
-              </Button>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => applyQuickSize(4.0, 6.0)}
-                sx={{
-                  fontSize: '0.68rem',
-                  height: 26,
-                  px: 0.7,
-                  py: 0,
-                  borderColor: 'divider',
-                  color: 'text.secondary',
-                  textTransform: 'none',
-                  '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
-                }}
-              >
-                4"×6"
-              </Button>
-              <Button
-                size="small"
-                variant="text"
-                onClick={handleStartRedraw}
-                sx={{
-                  fontSize: '0.68rem',
-                  height: 26,
-                  px: 0.8,
-                  py: 0,
-                  color: '#ff4d6d',
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  '&:hover': { bgcolor: 'rgba(255, 77, 109, 0.1)' },
-                }}
-              >
-                ✏️ Redraw
-              </Button>
-            </Box>
-
+            {/* Quick Action Button on Mobile */}
             <Button
               size="small"
               variant="contained"
               disabled={isProcessing}
               onClick={processBatchCrop}
               sx={{
+                display: { xs: 'inline-flex', md: 'none' },
                 background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
                 color: '#ffffff',
                 fontWeight: 800,
