@@ -610,6 +610,45 @@ export default function PdfViewer() {
             Auto-Detect Label
           </Button>
 
+          {/* Active Selection Details & Size (placed in top box where other details show) */}
+          {selection && (
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.75,
+                px: 1.2,
+                py: 0.4,
+                borderRadius: 2,
+                bgcolor:
+                  cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode]
+                    ? `${MARKETPLACE_PRESETS[cropMode].color}18`
+                    : 'rgba(0, 201, 255, 0.12)',
+                border: `1.5px solid ${
+                  cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode]
+                    ? MARKETPLACE_PRESETS[cropMode].color
+                    : '#00c9ff'
+                }`,
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                color:
+                  cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode]
+                    ? MARKETPLACE_PRESETS[cropMode].color
+                    : '#00c9ff',
+              }}
+            >
+              <span>
+                {cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode]
+                  ? `🔒 ${MARKETPLACE_PRESETS[cropMode].name}`
+                  : '📐 Custom'}
+              </span>
+              <span style={{ opacity: 0.4 }}>•</span>
+              <span style={{ color: theme === 'dark' ? '#ffffff' : '#081420', fontWeight: 800 }}>
+                Size: <span ref={badgeTextRef}>{inchWidth}" × {inchHeight}"</span>
+              </span>
+            </Box>
+          )}
+
             {/* Custom Saved Presets */}
             {customPresets.map((preset) => (
               <Chip
@@ -970,32 +1009,6 @@ export default function PdfViewer() {
                 transition: interactionMode ? 'none' : 'border-color 0.15s ease',
               }}
             >
-              {/* Header Badge */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: selection.yRatio < 0.04 ? 8 : -28,
-                  left: 8,
-                  bgcolor: cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? MARKETPLACE_PRESETS[cropMode].color : '#00c9ff',
-                  color: '#ffffff',
-                  px: 1.2,
-                  py: 0.35,
-                  borderRadius: '16px',
-                  fontSize: '0.72rem',
-                  fontWeight: 800,
-                  pointerEvents: 'none',
-                  whiteSpace: 'nowrap',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  boxShadow: '0 3px 10px rgba(0,0,0,0.45)',
-                  zIndex: 20,
-                }}
-              >
-                <span>{cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? `🔒 ${MARKETPLACE_PRESETS[cropMode].name}` : '📐 Custom'}</span>
-                <span>•</span>
-                <span ref={badgeTextRef}>{inchWidth}" × {inchHeight}"</span>
-              </Box>
 
               {/* Center Move Badge - hide on small boxes to keep interior clean */}
               {selection.widthRatio >= 0.16 && selection.heightRatio >= 0.10 && (
