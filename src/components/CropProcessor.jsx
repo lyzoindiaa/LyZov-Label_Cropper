@@ -239,7 +239,7 @@ export default function CropProcessor() {
             '&:hover': { color: 'text.primary', bgcolor: 'transparent' },
           }}
         >
-          {showAdvanced ? 'Hide options' : '⚙️ Filename format'}
+          {showAdvanced ? 'Hide filename options' : 'Filename format'}
         </Button>
 
         <Collapse in={showAdvanced}>
