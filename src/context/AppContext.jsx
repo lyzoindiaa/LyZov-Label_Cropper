@@ -214,6 +214,9 @@ export const AppProvider = ({ children }) => {
     ? Math.max(0, Math.ceil((new Date(user.trialEndsAt) - new Date()) / (1000 * 60 * 60 * 24)))
     : 0;
 
+  const isGuestOrExpired = !user || (user.plan === 'trial' && user.trialEndsAt && new Date(user.trialEndsAt) < new Date());
+  const isGuestLimitReached = isGuestOrExpired && (guestUsage?.count || 0) >= GUEST_DAILY_LIMIT;
+
   const requireCropperAccess = useCallback((countToCrop = 1) => {
     const current = getActiveUser();
     if (current) {
@@ -223,10 +226,11 @@ export const AppProvider = ({ children }) => {
       const expired = current.plan === 'trial' && current.trialEndsAt && new Date(current.trialEndsAt) < new Date();
       if (!expired) return true; // Active 30-day free trial -> UNLIMITED access!
 
-      // Option A from plan: expired trial fallback to 5 free daily crops
+      // Expired trial fallback to 5 free daily crops
       const usage = getGuestUsage();
       if (usage.count + countToCrop > GUEST_DAILY_LIMIT) {
         setAuthModalMode('paywall');
+        setAuthModalDefaultTab(0);
         setAuthModalOpen(true);
         return false;
       }
@@ -237,6 +241,7 @@ export const AppProvider = ({ children }) => {
     const usage = getGuestUsage();
     if (usage.count + countToCrop > GUEST_DAILY_LIMIT) {
       setAuthModalMode('auth');
+      setAuthModalDefaultTab(1); // Always default to Create Account (Free Trial) for new guests!
       setAuthModalOpen(true);
       return false;
     }
@@ -621,6 +626,7 @@ export const AppProvider = ({ children }) => {
     logoutUser,
     GUEST_DAILY_LIMIT,
     guestUsage,
+    isGuestLimitReached,
     recordCropUsage,
     theme,
     toggleTheme,

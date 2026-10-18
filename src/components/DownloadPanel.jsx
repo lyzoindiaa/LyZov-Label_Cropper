@@ -31,7 +31,7 @@ import { AppContext } from '../context/AppContext';
 import { mergePdfBlobs, printPdfBlob } from '../utils/pdfUtils';
 
 export default function DownloadPanel() {
-  const { croppedBlobs, setCroppedBlobs, user, setAuthModalMode, setAuthModalOpen, theme } = useContext(AppContext);
+  const { croppedBlobs, setCroppedBlobs, user, setAuthModalMode, setAuthModalOpen, setAuthModalDefaultTab, theme } = useContext(AppContext);
   const [previewItem, setPreviewItem] = useState(null);
   const [isZipping, setIsZipping] = useState(false);
   const [isMerging, setIsMerging] = useState(false);
@@ -256,6 +256,7 @@ export default function DownloadPanel() {
             variant="contained"
             onClick={() => {
               setAuthModalMode('auth');
+              setAuthModalDefaultTab(1);
               setAuthModalOpen(true);
             }}
             sx={{

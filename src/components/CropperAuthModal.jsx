@@ -10,31 +10,27 @@ import {
   Tab,
   Alert,
   CircularProgress,
-  Divider,
   Chip,
   IconButton,
 } from '@mui/material';
 import {
-  Scissors,
-  CheckCircle2,
   Sparkles,
   Lock,
-  Zap,
   ShieldCheck,
   CreditCard,
   LogOut,
   X,
 } from 'lucide-react';
-import { gstApi, setAuthSession } from '../gst-tool/api/client';
+import { gstApi } from '../gst-tool/api/client';
 
 export default function CropperAuthModal({
   open,
   mode = 'auth', // 'auth' | 'paywall'
-  defaultTab = 0, // 0 = Login, 1 = Signup
+  defaultTab = 1, // 0 = Login, 1 = Signup
   user,
   onAuthSuccess,
   onClose,
-  canDismiss = false,
+  canDismiss = true,
 }) {
   const [tab, setTab] = useState(defaultTab); // 0 = Login, 1 = Signup
   const [selectedPlan, setSelectedPlan] = useState('cropper_monthly'); // 'cropper_monthly' | 'cropper_yearly'
@@ -171,7 +167,7 @@ export default function CropperAuthModal({
     <Dialog
       open={open}
       onClose={canDismiss ? onClose : undefined}
-      maxWidth="sm"
+      maxWidth="xs"
       fullWidth
       slotProps={{
         paper: {
@@ -181,7 +177,7 @@ export default function CropperAuthModal({
             borderRadius: 4,
             border: '1px solid',
             borderColor: 'divider',
-            boxShadow: '0 24px 60px rgba(0, 0, 0, 0.35)',
+            boxShadow: '0 24px 60px rgba(0, 0, 0, 0.4)',
             overflow: 'hidden',
             m: { xs: 1.5, sm: 2 },
           },
@@ -191,91 +187,76 @@ export default function CropperAuthModal({
       {/* Top Banner Header */}
       <Box
         sx={{
-          background: 'linear-gradient(135deg, rgba(0, 201, 255, 0.2) 0%, rgba(255, 110, 199, 0.2) 100%)',
-          p: { xs: 2.5, sm: 3 },
+          background: 'linear-gradient(135deg, rgba(0, 201, 255, 0.18) 0%, rgba(0, 114, 255, 0.15) 100%)',
+          p: { xs: 2.2, sm: 2.5 },
           borderBottom: '1px solid',
           borderColor: 'divider',
           position: 'relative',
         }}
       >
-        {canDismiss && (
-          <IconButton
-            onClick={onClose}
-            size="small"
-            sx={{ position: 'absolute', top: 12, right: 12, color: 'text.secondary' }}
-          >
-            <X size={18} />
-          </IconButton>
-        )}
+        <IconButton
+          onClick={onClose}
+          size="small"
+          sx={{ position: 'absolute', top: 12, right: 12, color: 'text.secondary', '&:hover': { color: 'text.primary' } }}
+        >
+          <X size={18} />
+        </IconButton>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box
             sx={{
-              width: 44,
-              height: 44,
+              width: 40,
+              height: 40,
               borderRadius: '12px',
-              background: 'linear-gradient(135deg, #00c9ff 0%, #a78bfa 100%)',
+              background: 'linear-gradient(135deg, #00c9ff 0%, #0072ff 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 16px rgba(0, 201, 255, 0.4)',
+              boxShadow: '0 4px 14px rgba(0, 201, 255, 0.4)',
+              flexShrink: 0,
             }}
           >
-            <Scissors size={22} color="#ffffff" />
+            <Sparkles size={20} color="#ffffff" />
           </Box>
           <Box>
-            <Typography variant="h6" fontWeight={800} sx={{ letterSpacing: '-0.5px' }}>
-              LyZov <span style={{ color: '#00c9ff' }}>Cropper</span> Studio
+            <Typography variant="subtitle1" fontWeight={800} sx={{ letterSpacing: '-0.3px', lineHeight: 1.25 }}>
+              {mode === 'auth'
+                ? tab === 1
+                  ? '🎉 5 Free Crops Used Today!'
+                  : 'Sign In to LyZov'
+                : '30-Day Free Trial Expired'}
             </Typography>
-            <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-              Batch PDF Shipping Label Cropper &amp; Thermal Printer
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.3 }}>
+              {mode === 'auth'
+                ? tab === 1
+                  ? 'Start 30-day free trial for unlimited daily cropping.'
+                  : 'Sign in to access your saved presets.'
+                : 'Subscribe to keep cropping unlimited labels.'}
             </Typography>
           </Box>
         </Box>
 
-        {mode === 'auth' ? (
-          <Box sx={{ mt: 1.5, display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
+        {mode === 'auth' && tab === 1 && (
+          <Box sx={{ mt: 1.5 }}>
             <Chip
-              icon={<Sparkles size={14} color="#00c9ff" />}
-              label="30 Days Unlimited Free Trial Included"
+              icon={<ShieldCheck size={13} color="#00c9ff" />}
+              label="100% Free • No Credit Card Required"
               size="small"
               sx={{
-                bgcolor: 'rgba(0, 201, 255, 0.15)',
+                bgcolor: 'rgba(0, 201, 255, 0.12)',
                 color: '#00c9ff',
                 fontWeight: 700,
-                border: '1px solid rgba(0, 201, 255, 0.3)',
-              }}
-            />
-            <Chip
-              label="Then only ₹99/month"
-              size="small"
-              sx={{
-                bgcolor: 'rgba(255, 255, 255, 0.08)',
-                color: '#e2e8f0',
-                fontWeight: 600,
-              }}
-            />
-          </Box>
-        ) : (
-          <Box sx={{ mt: 1 }}>
-            <Chip
-              icon={<Lock size={14} color="#ff4d6d" />}
-              label="30-Day Free Trial Expired"
-              size="small"
-              sx={{
-                bgcolor: 'rgba(255, 77, 109, 0.15)',
-                color: '#ff4d6d',
-                fontWeight: 700,
-                border: '1px solid rgba(255, 77, 109, 0.3)',
+                fontSize: '0.72rem',
+                border: '1px solid rgba(0, 201, 255, 0.28)',
               }}
             />
           </Box>
         )}
       </Box>
 
-      <DialogContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+      <DialogContent sx={{ p: { xs: 2.2, sm: 2.5 } }}>
         {error && (
-          <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2 }} onClose={() => setError('')}>
+          <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setError('')}>
             {error}
           </Alert>
         )}
@@ -291,17 +272,18 @@ export default function CropperAuthModal({
               }}
               variant="fullWidth"
               sx={{
-                mb: 2.5,
-                bgcolor: 'rgba(255, 255, 255, 0.03)',
-                borderRadius: 2.5,
-                p: 0.5,
+                mb: 2,
+                bgcolor: 'rgba(255, 255, 255, 0.04)',
+                borderRadius: 2,
+                p: 0.4,
                 '& .MuiTabs-indicator': { display: 'none' },
                 '& .MuiTab-root': {
-                  borderRadius: 2,
+                  borderRadius: 1.8,
                   textTransform: 'none',
                   fontWeight: 700,
-                  fontSize: '0.88rem',
-                  minHeight: 40,
+                  fontSize: '0.82rem',
+                  minHeight: 36,
+                  py: 0.6,
                   color: 'text.secondary',
                   '&.Mui-selected': {
                     bgcolor: 'rgba(0, 201, 255, 0.15)',
@@ -311,16 +293,82 @@ export default function CropperAuthModal({
                 },
               }}
             >
-              <Tab label="Sign In" />
-              <Tab label="Create Account (Free Trial)" />
+              <Tab label="Create Free Account" value={1} />
+              <Tab label="Sign In" value={0} />
             </Tabs>
+
+            {/* TAB 1: SIGNUP (Default for new sellers) */}
+            {tab === 1 && (
+              <Box component="form" onSubmit={handleSignup} sx={{ display: 'flex', flexDirection: 'column', gap: 1.6 }}>
+                <TextField
+                  label="Full Name / Store Name"
+                  size="small"
+                  fullWidth
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. LyZov Store"
+                  required
+                />
+                <TextField
+                  label="Email Address"
+                  type="email"
+                  size="small"
+                  fullWidth
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seller@example.com"
+                  required
+                />
+                <TextField
+                  label="Create Password (min 6 chars)"
+                  type="password"
+                  size="small"
+                  fullWidth
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
+
+                <Button
+                  type="submit"
+                  variant="contained"
+                  fullWidth
+                  disabled={loading}
+                  startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <Sparkles size={16} />}
+                  sx={{
+                    mt: 0.5,
+                    py: 1.2,
+                    fontWeight: 800,
+                    fontSize: '0.92rem',
+                    borderRadius: 2.2,
+                    background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
+                    boxShadow: '0 4px 16px rgba(0, 201, 255, 0.35)',
+                    textTransform: 'none',
+                  }}
+                >
+                  {loading ? 'Activating Trial...' : '🚀 Start Free 30-Day Trial'}
+                </Button>
+
+                <Box sx={{ textAlign: 'center', mt: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Already have an account?{' '}
+                    <Button
+                      variant="text"
+                      size="small"
+                      onClick={() => setTab(0)}
+                      sx={{ p: 0, minWidth: 'auto', fontSize: '0.76rem', fontWeight: 700, color: '#00c9ff', textTransform: 'none' }}
+                    >
+                      Sign In here
+                    </Button>
+                  </Typography>
+                </Box>
+              </Box>
+            )}
 
             {/* TAB 0: LOGIN */}
             {tab === 0 && (
-              <Box component="form" onSubmit={handleLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Sign in with your email and password to access the label cropper.
-                </Typography>
+              <Box component="form" onSubmit={handleLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 1.6 }}>
                 <TextField
                   label="Email Address"
                   type="email"
@@ -348,11 +396,11 @@ export default function CropperAuthModal({
                   disabled={loading}
                   startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <Lock size={16} />}
                   sx={{
-                    mt: 1,
+                    mt: 0.5,
                     py: 1.2,
                     fontWeight: 800,
-                    fontSize: '0.95rem',
-                    borderRadius: 2.5,
+                    fontSize: '0.92rem',
+                    borderRadius: 2.2,
                     background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
                     boxShadow: '0 4px 16px rgba(0, 201, 255, 0.35)',
                     textTransform: 'none',
@@ -360,98 +408,29 @@ export default function CropperAuthModal({
                 >
                   {loading ? 'Signing In...' : 'Sign In & Start Cropping'}
                 </Button>
+
+                <Box sx={{ textAlign: 'center', mt: 0.5 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    New seller?{' '}
+                    <Button
+                      variant="text"
+                      size="small"
+                      onClick={() => setTab(1)}
+                      sx={{ p: 0, minWidth: 'auto', fontSize: '0.76rem', fontWeight: 700, color: '#00c9ff', textTransform: 'none' }}
+                    >
+                      Create Free Account (30 Days)
+                    </Button>
+                  </Typography>
+                </Box>
               </Box>
             )}
 
-            {/* TAB 1: SIGNUP */}
-            {tab === 1 && (
-              <Box component="form" onSubmit={handleSignup} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box sx={{ p: 1.5, borderRadius: 2, bgcolor: 'rgba(0, 201, 255, 0.08)', border: '1px solid rgba(0, 201, 255, 0.2)' }}>
-                  <Typography variant="caption" sx={{ color: '#00c9ff', fontWeight: 700, display: 'block', mb: 0.3 }}>
-                    🎉 30-Day Free Trial Activates Automatically
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem', lineHeight: 1.3 }}>
-                    Full unlimited access for 30 days. No credit card required upfront. Pay only ₹99/month after your trial ends.
-                  </Typography>
-                </Box>
-
-                <TextField
-                  label="Full Name / Store Name"
-                  size="small"
-                  fullWidth
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. LyZov Fashion"
-                  required
-                />
-                <TextField
-                  label="Email Address"
-                  type="email"
-                  size="small"
-                  fullWidth
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seller@example.com"
-                  required
-                />
-                <TextField
-                  label="Create Password (min 6 chars)"
-                  type="password"
-                  size="small"
-                  fullWidth
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                />
-                <TextField
-                  label="Phone / WhatsApp (Optional)"
-                  size="small"
-                  fullWidth
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+91 98765 43210"
-                />
-
-                <Button
-                  type="submit"
-                  variant="contained"
-                  fullWidth
-                  disabled={loading}
-                  startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <Sparkles size={16} />}
-                  sx={{
-                    mt: 1,
-                    py: 1.2,
-                    fontWeight: 800,
-                    fontSize: '0.95rem',
-                    borderRadius: 2.5,
-                    background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
-                    boxShadow: '0 4px 18px rgba(0, 201, 255, 0.35)',
-                    textTransform: 'none',
-                  }}
-                >
-                  {loading ? 'Creating Account...' : 'Start Free 30-Day Trial'}
-                </Button>
-              </Box>
-            )}
-
-            <Divider sx={{ my: 2.5, borderColor: 'divider' }} />
-
-            {/* Feature Checklist */}
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1 }}>
-              {[
-                'Amazon 4"×6" & 2-Page Auto-Extract',
-                'Flipkart 3.22"×5.13" Precision Crop',
-                'Meesho & Free Adjust Presets',
-                'Batch Thermal Printer Ready',
-              ].map((feat, idx) => (
-                <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                  <CheckCircle2 size={14} color="#00c9ff" />
-                  <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
-                    {feat}
-                  </Typography>
-                </Box>
-              ))}
+            {/* Clean Privacy Footer (replacing bulky feature checklist) */}
+            <Box sx={{ mt: 2.5, pt: 1.5, borderTop: '1px solid', borderColor: 'divider', textAlign: 'center' }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.8, fontSize: '0.72rem' }}>
+                <ShieldCheck size={14} color="#00c9ff" />
+                100% Private &amp; Secure — Processed locally in your browser
+              </Typography>
             </Box>
           </Box>
         )}
