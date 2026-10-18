@@ -22,8 +22,6 @@ import {
   Trash2,
   RotateCw,
   RotateCcw,
-  Hand,
-  Crosshair,
   Layers,
   BookmarkPlus,
   Bookmark,
@@ -73,8 +71,6 @@ export default function PdfViewer() {
     currentPage,
     setCurrentPage,
     theme,
-    processBatchCrop,
-    isProcessing,
   } = useContext(AppContext);
 
   const [numPages, setNumPages] = useState(null);
@@ -595,42 +591,8 @@ export default function PdfViewer() {
           width: '100%',
         }}
       >
-        {/* Mode Selector & Auto-Detect */}
+        {/* Auto-Detect & Custom Presets */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
-          <ButtonGroup size="small">
-            <Button
-              variant={selectionMode === 'inspect' ? 'contained' : 'outlined'}
-              startIcon={<Hand size={15} />}
-              onClick={() => setSelectionMode('inspect')}
-              sx={{
-                fontSize: '0.75rem',
-                textTransform: 'none',
-                fontWeight: 600,
-                ...(selectionMode === 'inspect'
-                  ? { bgcolor: theme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)', color: 'text.primary' }
-                  : { color: 'text.secondary', borderColor: 'divider' }),
-              }}
-            >
-              Inspect Mode
-            </Button>
-            <Button
-              variant={selectionMode === 'select' ? 'contained' : 'outlined'}
-              startIcon={<Crosshair size={15} />}
-              onClick={() => setSelectionMode('select')}
-              sx={{
-                fontSize: '0.75rem',
-                textTransform: 'none',
-                fontWeight: 600,
-                ...(selectionMode === 'select'
-                  ? { bgcolor: '#00c9ff', color: '#081420', '&:hover': { bgcolor: '#00b4e6' } }
-                  : { color: '#00c9ff', borderColor: 'rgba(0, 201, 255, 0.4)' }),
-              }}
-            >
-              Select Crop Area
-            </Button>
-          </ButtonGroup>
-
-          {/* Auto-Detect Label Button */}
           <Button
             size="small"
             variant="contained"
@@ -647,20 +609,6 @@ export default function PdfViewer() {
           >
             Auto-Detect Label
           </Button>
-
-          {/* Active Marketplace Badge */}
-          <Chip
-            size="small"
-            label={`${MARKETPLACE_PRESETS[cropMode]?.name || 'Store'} Active`}
-            sx={{
-              height: 24,
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              bgcolor: `${MARKETPLACE_PRESETS[cropMode]?.color || '#00c9ff'}25`,
-              color: MARKETPLACE_PRESETS[cropMode]?.color || '#00c9ff',
-              border: `1px solid ${MARKETPLACE_PRESETS[cropMode]?.color || '#00c9ff'}40`,
-            }}
-          />
 
             {/* Custom Saved Presets */}
             {customPresets.map((preset) => (
@@ -825,180 +773,107 @@ export default function PdfViewer() {
         </Box>
       </Box>
 
-      {/* Helpful Status Bar */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1 }}>
-        <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
-          {cropMode === 'amazon' && selection ? (
-            <>
-              📦 <b>Amazon — Full Page Auto-Selected:</b> Full page captured. Click <b>Crop &amp; Export</b> to extract your labels.
-            </>
-          ) : cropMode !== 'other' && selection ? (
-            <>
-              🛍️ <b>{MARKETPLACE_PRESETS[cropMode]?.name} Fixed Mode:</b> Locked to standard label size ({inchWidth}" × {inchHeight}"). Drag inside the box to align with your label.
-            </>
-          ) : selection ? (
-            <>
-              ✨ <b>Custom Adjust Mode:</b> Drag inside the box to move. Drag corner dots to resize width &amp; height. Use Arrow keys to nudge.
-            </>
-          ) : selectionMode === 'select' ? (
-            <>
-              🎯 <b>Selection Mode Active:</b> Tap &amp; drag on the PDF below, or choose a marketplace above.
-            </>
-          ) : (
-            <>
-              🔍 Select a marketplace above (Amazon, Flipkart, Meesho) or tap <b>&quot;Auto-Detect Label&quot;</b>.
-            </>
-          )}
-        </Typography>
+      {/* Custom Adjust Mode Controls Bar (only visible when in Custom mode) */}
+      {cropMode === 'other' && selection && (
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Typography variant="caption" color="text.secondary">
+            ✨ <b>Custom Mode:</b> Drag box to move. Drag corner dots to resize.
+          </Typography>
 
-        {selection && (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: { xs: 'space-between', sm: 'flex-end' },
-              gap: 1,
-              flexWrap: 'wrap',
-              width: { xs: '100%', md: 'auto' },
-            }}
-          >
-            <Chip
-              size="small"
-              label={`${cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? `🔒 ${MARKETPLACE_PRESETS[cropMode].name} • ` : '📐 Custom • '}${inchWidth}" × ${inchHeight}"`}
-              sx={{
-                bgcolor: cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? `${MARKETPLACE_PRESETS[cropMode].color}25` : 'rgba(0, 201, 255, 0.15)',
-                color: cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? MARKETPLACE_PRESETS[cropMode].color : '#00c9ff',
-                fontWeight: 700,
-                fontSize: '0.75rem',
-                border: `1px solid ${cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? MARKETPLACE_PRESETS[cropMode].color : 'rgba(0, 201, 255, 0.3)'}`,
-              }}
-            />
-
-            {/* Quick Sizing Buttons - only shown in Custom Adjust mode */}
-            {cropMode === 'other' && (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
-                <ButtonGroup size="small" variant="outlined" sx={{ height: 26 }}>
-                  <Tooltip title="Make Crop Box 15% Smaller">
-                    <Button
-                      onClick={() => handleScaleSelection(0.85)}
-                      startIcon={<Minus size={12} />}
-                      sx={{
-                        fontSize: '0.7rem',
-                        fontWeight: 700,
-                        px: 0.8,
-                        py: 0,
-                        borderColor: 'rgba(0, 201, 255, 0.4)',
-                        color: '#00c9ff',
-                        textTransform: 'none',
-                        '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.12)' },
-                      }}
-                    >
-                      − Shrink
-                    </Button>
-                  </Tooltip>
-                  <Tooltip title="Make Crop Box 15% Larger">
-                    <Button
-                      onClick={() => handleScaleSelection(1.15)}
-                      startIcon={<Plus size={12} />}
-                      sx={{
-                        fontSize: '0.7rem',
-                        fontWeight: 700,
-                        px: 0.8,
-                        py: 0,
-                        borderColor: 'rgba(0, 201, 255, 0.4)',
-                        color: '#00c9ff',
-                        textTransform: 'none',
-                        '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.12)' },
-                      }}
-                    >
-                      + Enlarge
-                    </Button>
-                  </Tooltip>
-                </ButtonGroup>
-
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+            <ButtonGroup size="small" variant="outlined" sx={{ height: 26 }}>
+              <Tooltip title="Make Crop Box 15% Smaller">
                 <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => applyQuickSize(3.0, 5.0)}
+                  onClick={() => handleScaleSelection(0.85)}
+                  startIcon={<Minus size={12} />}
                   sx={{
-                    fontSize: '0.68rem',
-                    height: 26,
-                    px: 0.7,
-                    py: 0,
-                    borderColor: 'divider',
-                    color: 'text.secondary',
-                    textTransform: 'none',
-                    '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
-                  }}
-                >
-                  3"×5"
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  onClick={() => applyQuickSize(4.0, 6.0)}
-                  sx={{
-                    fontSize: '0.68rem',
-                    height: 26,
-                    px: 0.7,
-                    py: 0,
-                    borderColor: 'divider',
-                    color: 'text.secondary',
-                    textTransform: 'none',
-                    '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
-                  }}
-                >
-                  4"×6"
-                </Button>
-                <Button
-                  size="small"
-                  variant="text"
-                  onClick={handleStartRedraw}
-                  sx={{
-                    fontSize: '0.68rem',
-                    height: 26,
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
                     px: 0.8,
                     py: 0,
-                    color: '#ff4d6d',
+                    borderColor: 'rgba(0, 201, 255, 0.4)',
+                    color: '#00c9ff',
                     textTransform: 'none',
-                    fontWeight: 700,
-                    '&:hover': { bgcolor: 'rgba(255, 77, 109, 0.1)' },
+                    '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.12)' },
                   }}
                 >
-                  ✏️ Redraw
+                  − Shrink
                 </Button>
-              </Box>
-            )}
+              </Tooltip>
+              <Tooltip title="Make Crop Box 15% Larger">
+                <Button
+                  onClick={() => handleScaleSelection(1.15)}
+                  startIcon={<Plus size={12} />}
+                  sx={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    px: 0.8,
+                    py: 0,
+                    borderColor: 'rgba(0, 201, 255, 0.4)',
+                    color: '#00c9ff',
+                    textTransform: 'none',
+                    '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.12)' },
+                  }}
+                >
+                  + Enlarge
+                </Button>
+              </Tooltip>
+            </ButtonGroup>
 
-            {/* Quick Action Button on Mobile */}
             <Button
               size="small"
-              variant="contained"
-              disabled={isProcessing}
-              onClick={processBatchCrop}
+              variant="outlined"
+              onClick={() => applyQuickSize(3.0, 5.0)}
               sx={{
-                display: { xs: 'inline-flex', md: 'none' },
-                background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
-                color: '#ffffff',
-                fontWeight: 800,
-                fontSize: { xs: '0.8rem', sm: '0.75rem' },
+                fontSize: '0.68rem',
+                height: 26,
+                px: 0.7,
+                py: 0,
+                borderColor: 'divider',
+                color: 'text.secondary',
                 textTransform: 'none',
-                px: { xs: 2, sm: 1.5 },
-                py: { xs: 0.6, sm: 0.3 },
-                borderRadius: 2,
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-                boxShadow: '0 2px 10px rgba(0, 201, 255, 0.35)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #00b4e6 0%, #0066dd 100%)',
-                },
+                '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
               }}
             >
-              {isProcessing ? 'Cropping...' : `✂️ Apply Crop (${pdfFiles.length} PDF${pdfFiles.length > 1 ? 's' : ''})`}
+              3"×5"
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => applyQuickSize(4.0, 6.0)}
+              sx={{
+                fontSize: '0.68rem',
+                height: 26,
+                px: 0.7,
+                py: 0,
+                borderColor: 'divider',
+                color: 'text.secondary',
+                textTransform: 'none',
+                '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
+              }}
+            >
+              4"×6"
+            </Button>
+            <Button
+              size="small"
+              variant="text"
+              onClick={handleStartRedraw}
+              sx={{
+                fontSize: '0.68rem',
+                height: 26,
+                px: 0.8,
+                py: 0,
+                color: '#ff4d6d',
+                textTransform: 'none',
+                fontWeight: 700,
+                '&:hover': { bgcolor: 'rgba(255, 77, 109, 0.1)' },
+              }}
+            >
+              ✏️ Redraw
             </Button>
           </Box>
-        )}
-      </Box>
+        </Box>
+      )}
 
       {/* Interactive Full-Width PDF Canvas Container */}
       <Box
