@@ -639,7 +639,7 @@ export default function PdfViewer() {
             >
               <span>
                 {cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode]
-                  ? `🔒 ${MARKETPLACE_PRESETS[cropMode].name}`
+                  ? `🔒 ${MARKETPLACE_PRESETS[cropMode].name}${cropMode === 'amazon' ? ' (Page 1 Only)' : ''}`
                   : '📐 Custom'}
               </span>
               <span style={{ opacity: 0.4 }}>•</span>

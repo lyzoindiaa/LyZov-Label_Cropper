@@ -9,10 +9,10 @@ export const MARKETPLACE_PRESETS = {
     id: 'amazon',
     name: 'Amazon',
     label: 'Amazon',
-    badge: 'Full Page',
-    description: 'Amazon shipping label — full page auto-selected',
+    badge: 'Page 1 Only',
+    description: 'Amazon shipping label — full first page only (excludes invoice on page 2)',
     color: '#ff9900',
-    // Full page: grab the entire page
+    // Full page: grab the entire first page (shipping label)
     selection: {
       xRatio: 0.0,
       yRatio: 0.0,
@@ -86,7 +86,7 @@ export const AppProvider = ({ children }) => {
   const [processProgress, setProcessProgress] = useState({ current: 0, total: 0 });
   const [zoom, setZoom] = useState(1.0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [cropOptions, setCropOptions] = useState({ pagesToCrop: 'all' });
+  const [cropOptions, setCropOptions] = useState({ pagesToCrop: 'first' });
   const [namingPattern, setNamingPattern] = useState('original_label');
   const [activeTab, setActiveTab] = useState(0);
 
@@ -345,9 +345,10 @@ export const AppProvider = ({ children }) => {
       setCropMode(detectedMode);
       setSelectionMode('select');
       if (detectedMode === 'amazon') {
-        setCropOptions((opts) => ({ ...opts, pagesToCrop: 'all' }));
+        setCropOptions((opts) => ({ ...opts, pagesToCrop: 'first' }));
         setSelection({ xRatio: 0.0, yRatio: 0.0, widthRatio: 1.0, heightRatio: 1.0 });
       } else {
+        setCropOptions((opts) => ({ ...opts, pagesToCrop: 'all' }));
         const preset = MARKETPLACE_PRESETS[detectedMode];
         if (preset) {
           setSelection({ ...preset.selection });
@@ -407,11 +408,12 @@ export const AppProvider = ({ children }) => {
     setSelectionMode('select');
     setSplitMode('none');
     if (validMode === 'amazon') {
-      // Amazon: always force full-page selection on all pages
-      setCropOptions((prev) => ({ ...prev, pagesToCrop: 'all' }));
+      // Amazon: always force full-page selection on first page only (excludes invoice on page 2)
+      setCropOptions((prev) => ({ ...prev, pagesToCrop: 'first' }));
       setSelection({ xRatio: 0.0, yRatio: 0.0, widthRatio: 1.0, heightRatio: 1.0 });
       return;
     }
+    setCropOptions((prev) => ({ ...prev, pagesToCrop: 'all' }));
     const preset = MARKETPLACE_PRESETS[validMode];
     if (preset) {
       // Always apply fixed presets so they snap to the correct position
@@ -423,6 +425,8 @@ export const AppProvider = ({ children }) => {
     setSelectionMode('select');
     setSplitMode('none');
     if (presetType === 'amazon') {
+      setCropOptions((prev) => ({ ...prev, pagesToCrop: 'first' }));
+    } else {
       setCropOptions((prev) => ({ ...prev, pagesToCrop: 'all' }));
     }
     if (MARKETPLACE_PRESETS[presetType]) {
@@ -522,8 +526,10 @@ export const AppProvider = ({ children }) => {
           await new Promise((resolve) => setTimeout(resolve, 5));
         }
 
+        const effectivePagesToCrop = cropMode === 'amazon' ? 'first' : (cropOptions.pagesToCrop || 'all');
         const croppedItems = await cropPdfBlob(item.file, selection, {
           ...cropOptions,
+          pagesToCrop: effectivePagesToCrop,
           rotation,
         });
 
@@ -552,7 +558,7 @@ export const AppProvider = ({ children }) => {
     } finally {
       setIsProcessing(false);
     }
-  }, [requireCropperAccess, selection, pdfFiles, cropOptions, rotation, namingPattern, recordCropUsage, setActiveTab]);
+  }, [requireCropperAccess, selection, pdfFiles, cropOptions, cropMode, rotation, namingPattern, recordCropUsage, setActiveTab]);
 
   const value = {
     processBatchCrop,
