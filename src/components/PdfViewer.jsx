@@ -958,9 +958,10 @@ export default function PdfViewer() {
                 width: `${selection.widthRatio * 100}%`,
                 height: `${selection.heightRatio * 100}%`,
                 border: `2px solid ${cropMode !== 'other' ? MARKETPLACE_PRESETS[cropMode]?.color || '#00c9ff' : '#00c9ff'}`,
+                borderRadius: '4px',
                 boxShadow: interactionMode
                   ? '0 0 0 9999px rgba(0, 0, 0, 0.55)'
-                  : '0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 15px rgba(0, 201, 255, 0.5)',
+                  : `0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 16px ${cropMode !== 'other' ? (MARKETPLACE_PRESETS[cropMode]?.color || '#00c9ff') + '55' : 'rgba(0, 201, 255, 0.5)'}`,
                 willChange: interactionMode ? 'left, top, width, height' : 'auto',
                 cursor: 'move',
                 zIndex: 10,
@@ -973,21 +974,22 @@ export default function PdfViewer() {
               <Box
                 sx={{
                   position: 'absolute',
-                  top: -24,
-                  left: 0,
+                  top: selection.yRatio < 0.04 ? 8 : -28,
+                  left: 8,
                   bgcolor: cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? MARKETPLACE_PRESETS[cropMode].color : '#00c9ff',
                   color: '#ffffff',
-                  px: 1,
-                  py: 0.2,
-                  borderRadius: '4px 4px 0 0',
-                  fontSize: '0.7rem',
+                  px: 1.2,
+                  py: 0.35,
+                  borderRadius: '16px',
+                  fontSize: '0.72rem',
                   fontWeight: 800,
                   pointerEvents: 'none',
                   whiteSpace: 'nowrap',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 0.5,
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                  boxShadow: '0 3px 10px rgba(0,0,0,0.45)',
+                  zIndex: 20,
                 }}
               >
                 <span>{cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? `🔒 ${MARKETPLACE_PRESETS[cropMode].name}` : '📐 Custom'}</span>
