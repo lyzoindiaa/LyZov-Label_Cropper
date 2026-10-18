@@ -200,7 +200,7 @@ export default function PdfViewer() {
 
     try {
       e.currentTarget.setPointerCapture?.(e.pointerId);
-    } catch {}
+    } catch { }
     setCropMode('other');
     setInteractionMode('draw');
     interactionModeRef.current = 'draw';
@@ -333,7 +333,7 @@ export default function PdfViewer() {
       if (autoHandle) {
         try {
           e.currentTarget.setPointerCapture?.(e.pointerId);
-        } catch {}
+        } catch { }
         if (cropMode !== 'other') {
           setCropMode('other');
         }
@@ -349,7 +349,7 @@ export default function PdfViewer() {
 
     try {
       e.currentTarget.setPointerCapture?.(e.pointerId);
-    } catch {}
+    } catch { }
     setInteractionMode('move');
     interactionModeRef.current = 'move';
     dragStartRef.current = coords;
@@ -361,7 +361,7 @@ export default function PdfViewer() {
     e.stopPropagation();
     try {
       e.currentTarget.setPointerCapture?.(e.pointerId);
-    } catch {}
+    } catch { }
     if (pageWrapperRef.current) {
       pageRectRef.current = pageWrapperRef.current.getBoundingClientRect();
     }
@@ -850,7 +850,7 @@ export default function PdfViewer() {
         <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
           {cropMode === 'amazon' && selection ? (
             <>
-              📦 <b>Amazon — Full Page Auto-Selected:</b> The entire first page is automatically captured. Click <b>Crop &amp; Export</b> to extract your label.
+              📦 <b>Amazon — Full Page Auto-Selected:</b> Full page captured. Click <b>Crop &amp; Export</b> to extract your labels.
             </>
           ) : cropMode !== 'other' && selection ? (
             <>

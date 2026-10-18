@@ -251,39 +251,6 @@ export default function CropProcessor() {
             );
           })}
         </RadioGroup>
-
-        {/* Informational Banner */}
-        <Box
-          sx={{
-            p: 1.2,
-            borderRadius: 1.8,
-            bgcolor: theme === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
-            border: '1px solid',
-            borderColor: 'divider',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-          }}
-        >
-          <Box sx={{ fontSize: 16 }}>
-            {cropMode === 'amazon' ? '📦' : cropMode === 'flipkart' ? '🛍️' : cropMode === 'meesho' ? '🏷️' : '📐'}
-          </Box>
-          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.72rem', lineHeight: 1.3 }}>
-            {cropMode === 'other' ? (
-              <>
-                <b style={{ color: theme === 'dark' ? '#00c9ff' : '#0284c7' }}>Custom Adjust Mode:</b> Drag corner dots on the viewer to resize width &amp; height. Drag inside the box to reposition.
-              </>
-            ) : cropMode === 'amazon' ? (
-              <>
-                <b style={{ color: MARKETPLACE_PRESETS.amazon.color }}>Amazon — Full Page Auto-Selected:</b> The entire first page is automatically selected. Just click <b>Crop &amp; Export</b> to extract your label.
-              </>
-            ) : (
-              <>
-                <b style={{ color: MARKETPLACE_PRESETS[cropMode]?.color }}>{MARKETPLACE_PRESETS[cropMode]?.name} Fixed Size:</b> Width &amp; height are locked to standard label dimensions. Drag inside the box on the viewer to position it over your label.
-              </>
-            )}
-          </Typography>
-        </Box>
       </Box>
 
       <Divider sx={{ borderColor: 'divider' }} />
@@ -295,28 +262,18 @@ export default function CropProcessor() {
         </Typography>
         <RadioGroup
           row
-          value={cropOptions.pagesToCrop}
+          value={cropOptions.pagesToCrop || 'all'}
           onChange={(e) => setCropOptions({ ...cropOptions, pagesToCrop: e.target.value })}
           sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}
         >
           <FormControlLabel
-            value="first"
-            control={<Radio size="small" sx={{ color: theme === 'dark' ? '#00c9ff' : '#0284c7', '&.Mui-checked': { color: theme === 'dark' ? '#00c9ff' : '#0284c7' } }} />}
-            label={
-              <Typography variant="caption" sx={{ fontWeight: cropOptions.pagesToCrop === 'first' ? 700 : 500, color: cropOptions.pagesToCrop === 'first' ? (theme === 'dark' ? '#00c9ff' : '#0284c7') : 'text.primary' }}>
-                Page 1 Only {cropMode === 'amazon' ? '(Amazon Label)' : ''}
-              </Typography>
-            }
-          />
-          <FormControlLabel
             value="all"
             control={<Radio size="small" sx={{ color: theme === 'dark' ? '#00c9ff' : '#0284c7', '&.Mui-checked': { color: theme === 'dark' ? '#00c9ff' : '#0284c7' } }} />}
-            label={<Typography variant="caption">All Pages</Typography>}
-          />
-          <FormControlLabel
-            value="page2"
-            control={<Radio size="small" sx={{ color: theme === 'dark' ? '#00c9ff' : '#0284c7', '&.Mui-checked': { color: theme === 'dark' ? '#00c9ff' : '#0284c7' } }} />}
-            label={<Typography variant="caption">Page 2 Only</Typography>}
+            label={
+              <Typography variant="caption" sx={{ fontWeight: 700, color: theme === 'dark' ? '#00c9ff' : '#0284c7' }}>
+                All Pages
+              </Typography>
+            }
           />
         </RadioGroup>
       </Box>

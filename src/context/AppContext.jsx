@@ -9,10 +9,10 @@ export const MARKETPLACE_PRESETS = {
     id: 'amazon',
     name: 'Amazon',
     label: 'Amazon',
-    badge: 'Full First Page',
-    description: 'Amazon shipping label — full first page auto-selected',
+    badge: 'Full Page',
+    description: 'Amazon shipping label — full page auto-selected',
     color: '#ff9900',
-    // Full page: Amazon labels are printed one per page; grab the entire first page
+    // Full page: grab the entire page
     selection: {
       xRatio: 0.0,
       yRatio: 0.0,
@@ -86,7 +86,7 @@ export const AppProvider = ({ children }) => {
   const [processProgress, setProcessProgress] = useState({ current: 0, total: 0 });
   const [zoom, setZoom] = useState(1.0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [cropOptions, setCropOptions] = useState({ pagesToCrop: 'first' });
+  const [cropOptions, setCropOptions] = useState({ pagesToCrop: 'all' });
   const [namingPattern, setNamingPattern] = useState('original_label');
   const [activeTab, setActiveTab] = useState(0);
 
@@ -345,7 +345,7 @@ export const AppProvider = ({ children }) => {
       setCropMode(detectedMode);
       setSelectionMode('select');
       if (detectedMode === 'amazon') {
-        setCropOptions((opts) => ({ ...opts, pagesToCrop: 'first' }));
+        setCropOptions((opts) => ({ ...opts, pagesToCrop: 'all' }));
         setSelection({ xRatio: 0.0, yRatio: 0.0, widthRatio: 1.0, heightRatio: 1.0 });
       } else {
         const preset = MARKETPLACE_PRESETS[detectedMode];
@@ -407,8 +407,8 @@ export const AppProvider = ({ children }) => {
     setSelectionMode('select');
     setSplitMode('none');
     if (validMode === 'amazon') {
-      // Amazon: always force full-page selection on first page
-      setCropOptions((prev) => ({ ...prev, pagesToCrop: 'first' }));
+      // Amazon: always force full-page selection on all pages
+      setCropOptions((prev) => ({ ...prev, pagesToCrop: 'all' }));
       setSelection({ xRatio: 0.0, yRatio: 0.0, widthRatio: 1.0, heightRatio: 1.0 });
       return;
     }
@@ -423,7 +423,7 @@ export const AppProvider = ({ children }) => {
     setSelectionMode('select');
     setSplitMode('none');
     if (presetType === 'amazon') {
-      setCropOptions((prev) => ({ ...prev, pagesToCrop: 'first' }));
+      setCropOptions((prev) => ({ ...prev, pagesToCrop: 'all' }));
     }
     if (MARKETPLACE_PRESETS[presetType]) {
       setCropMode(presetType);
