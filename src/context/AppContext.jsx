@@ -9,10 +9,10 @@ export const MARKETPLACE_PRESETS = {
     id: 'amazon',
     name: 'Amazon',
     label: 'Amazon',
-    badge: 'Full First Page',
-    description: 'Amazon shipping label — full first page auto-selected',
+    badge: 'Page 1 Only',
+    description: 'Amazon shipping label — full first page only (excludes invoice on page 2)',
     color: '#ff9900',
-    // Full page: Amazon labels are printed one per page; grab the entire first page
+    // Full page: grab the entire first page (shipping label)
     selection: {
       xRatio: 0.0,
       yRatio: 0.0,
@@ -214,6 +214,9 @@ export const AppProvider = ({ children }) => {
     ? Math.max(0, Math.ceil((new Date(user.trialEndsAt) - new Date()) / (1000 * 60 * 60 * 24)))
     : 0;
 
+  const isGuestOrExpired = !user || (user.plan === 'trial' && user.trialEndsAt && new Date(user.trialEndsAt) < new Date());
+  const isGuestLimitReached = isGuestOrExpired && (guestUsage?.count || 0) >= GUEST_DAILY_LIMIT;
+
   const requireCropperAccess = useCallback((countToCrop = 1) => {
     const current = getActiveUser();
     if (current) {
@@ -223,10 +226,11 @@ export const AppProvider = ({ children }) => {
       const expired = current.plan === 'trial' && current.trialEndsAt && new Date(current.trialEndsAt) < new Date();
       if (!expired) return true; // Active 30-day free trial -> UNLIMITED access!
 
-      // Option A from plan: expired trial fallback to 5 free daily crops
+      // Expired trial fallback to 5 free daily crops
       const usage = getGuestUsage();
       if (usage.count + countToCrop > GUEST_DAILY_LIMIT) {
         setAuthModalMode('paywall');
+        setAuthModalDefaultTab(0);
         setAuthModalOpen(true);
         return false;
       }
@@ -237,6 +241,7 @@ export const AppProvider = ({ children }) => {
     const usage = getGuestUsage();
     if (usage.count + countToCrop > GUEST_DAILY_LIMIT) {
       setAuthModalMode('auth');
+      setAuthModalDefaultTab(1); // Always default to Create Account (Free Trial) for new guests!
       setAuthModalOpen(true);
       return false;
     }
@@ -348,6 +353,7 @@ export const AppProvider = ({ children }) => {
         setCropOptions((opts) => ({ ...opts, pagesToCrop: 'first' }));
         setSelection({ xRatio: 0.0, yRatio: 0.0, widthRatio: 1.0, heightRatio: 1.0 });
       } else {
+        setCropOptions((opts) => ({ ...opts, pagesToCrop: 'all' }));
         const preset = MARKETPLACE_PRESETS[detectedMode];
         if (preset) {
           setSelection({ ...preset.selection });
@@ -407,11 +413,12 @@ export const AppProvider = ({ children }) => {
     setSelectionMode('select');
     setSplitMode('none');
     if (validMode === 'amazon') {
-      // Amazon: always force full-page selection on first page
+      // Amazon: always force full-page selection on first page only (excludes invoice on page 2)
       setCropOptions((prev) => ({ ...prev, pagesToCrop: 'first' }));
       setSelection({ xRatio: 0.0, yRatio: 0.0, widthRatio: 1.0, heightRatio: 1.0 });
       return;
     }
+    setCropOptions((prev) => ({ ...prev, pagesToCrop: 'all' }));
     const preset = MARKETPLACE_PRESETS[validMode];
     if (preset) {
       // Always apply fixed presets so they snap to the correct position
@@ -424,6 +431,8 @@ export const AppProvider = ({ children }) => {
     setSplitMode('none');
     if (presetType === 'amazon') {
       setCropOptions((prev) => ({ ...prev, pagesToCrop: 'first' }));
+    } else {
+      setCropOptions((prev) => ({ ...prev, pagesToCrop: 'all' }));
     }
     if (MARKETPLACE_PRESETS[presetType]) {
       setCropMode(presetType);
@@ -522,8 +531,10 @@ export const AppProvider = ({ children }) => {
           await new Promise((resolve) => setTimeout(resolve, 5));
         }
 
+        const effectivePagesToCrop = cropMode === 'amazon' ? 'first' : (cropOptions.pagesToCrop || 'all');
         const croppedItems = await cropPdfBlob(item.file, selection, {
           ...cropOptions,
+          pagesToCrop: effectivePagesToCrop,
           rotation,
         });
 
@@ -552,7 +563,7 @@ export const AppProvider = ({ children }) => {
     } finally {
       setIsProcessing(false);
     }
-  }, [requireCropperAccess, selection, pdfFiles, cropOptions, rotation, namingPattern, recordCropUsage, setActiveTab]);
+  }, [requireCropperAccess, selection, pdfFiles, cropOptions, cropMode, rotation, namingPattern, recordCropUsage, setActiveTab]);
 
   const value = {
     processBatchCrop,
@@ -615,6 +626,7 @@ export const AppProvider = ({ children }) => {
     logoutUser,
     GUEST_DAILY_LIMIT,
     guestUsage,
+    isGuestLimitReached,
     recordCropUsage,
     theme,
     toggleTheme,

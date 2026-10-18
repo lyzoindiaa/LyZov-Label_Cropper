@@ -22,8 +22,6 @@ import {
   Trash2,
   RotateCw,
   RotateCcw,
-  Hand,
-  Crosshair,
   Layers,
   BookmarkPlus,
   Bookmark,
@@ -59,7 +57,6 @@ export default function PdfViewer() {
     clearSelection,
     cropMode,
     setCropMode,
-    selectCropMode,
     MARKETPLACE_PRESETS,
     autoDetectLabel,
     rotation,
@@ -74,8 +71,6 @@ export default function PdfViewer() {
     currentPage,
     setCurrentPage,
     theme,
-    processBatchCrop,
-    isProcessing,
   } = useContext(AppContext);
 
   const [numPages, setNumPages] = useState(null);
@@ -200,7 +195,7 @@ export default function PdfViewer() {
 
     try {
       e.currentTarget.setPointerCapture?.(e.pointerId);
-    } catch {}
+    } catch { }
     setCropMode('other');
     setInteractionMode('draw');
     interactionModeRef.current = 'draw';
@@ -333,7 +328,7 @@ export default function PdfViewer() {
       if (autoHandle) {
         try {
           e.currentTarget.setPointerCapture?.(e.pointerId);
-        } catch {}
+        } catch { }
         if (cropMode !== 'other') {
           setCropMode('other');
         }
@@ -349,7 +344,7 @@ export default function PdfViewer() {
 
     try {
       e.currentTarget.setPointerCapture?.(e.pointerId);
-    } catch {}
+    } catch { }
     setInteractionMode('move');
     interactionModeRef.current = 'move';
     dragStartRef.current = coords;
@@ -361,7 +356,7 @@ export default function PdfViewer() {
     e.stopPropagation();
     try {
       e.currentTarget.setPointerCapture?.(e.pointerId);
-    } catch {}
+    } catch { }
     if (pageWrapperRef.current) {
       pageRectRef.current = pageWrapperRef.current.getBoundingClientRect();
     }
@@ -596,42 +591,8 @@ export default function PdfViewer() {
           width: '100%',
         }}
       >
-        {/* Mode Selector & Auto-Detect */}
+        {/* Auto-Detect & Custom Presets */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
-          <ButtonGroup size="small">
-            <Button
-              variant={selectionMode === 'inspect' ? 'contained' : 'outlined'}
-              startIcon={<Hand size={15} />}
-              onClick={() => setSelectionMode('inspect')}
-              sx={{
-                fontSize: '0.75rem',
-                textTransform: 'none',
-                fontWeight: 600,
-                ...(selectionMode === 'inspect'
-                  ? { bgcolor: theme === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)', color: 'text.primary' }
-                  : { color: 'text.secondary', borderColor: 'divider' }),
-              }}
-            >
-              Inspect Mode
-            </Button>
-            <Button
-              variant={selectionMode === 'select' ? 'contained' : 'outlined'}
-              startIcon={<Crosshair size={15} />}
-              onClick={() => setSelectionMode('select')}
-              sx={{
-                fontSize: '0.75rem',
-                textTransform: 'none',
-                fontWeight: 600,
-                ...(selectionMode === 'select'
-                  ? { bgcolor: '#00c9ff', color: '#081420', '&:hover': { bgcolor: '#00b4e6' } }
-                  : { color: '#00c9ff', borderColor: 'rgba(0, 201, 255, 0.4)' }),
-              }}
-            >
-              Select Crop Area
-            </Button>
-          </ButtonGroup>
-
-          {/* Auto-Detect Label Button */}
           <Button
             size="small"
             variant="contained"
@@ -649,37 +610,44 @@ export default function PdfViewer() {
             Auto-Detect Label
           </Button>
 
-          {/* Marketplace Label Mode Buttons */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, ml: 0.5, flexWrap: 'wrap' }}>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: { xs: 'none', sm: 'block' } }}>
-              MARKETPLACE:
-            </Typography>
-            {Object.values(MARKETPLACE_PRESETS).map((p) => {
-              const active = cropMode === p.id;
-              return (
-                <Button
-                  key={p.id}
-                  size="small"
-                  variant={active ? 'contained' : 'outlined'}
-                  onClick={() => selectCropMode(p.id)}
-                  sx={{
-                    fontSize: '0.72rem',
-                    py: 0.2,
-                    px: 0.9,
-                    fontWeight: active ? 800 : 500,
-                    bgcolor: active ? p.color : 'transparent',
-                    color: active ? '#081420' : 'text.primary',
-                    borderColor: active ? p.color : 'rgba(255, 255, 255, 0.15)',
-                    '&:hover': {
-                      borderColor: p.color,
-                      bgcolor: active ? p.color : `${p.color}20`,
-                    },
-                  }}
-                >
-                  {p.name} {p.fixed ? '(Fixed)' : '(Adjust)'}
-                </Button>
-              );
-            })}
+          {/* Active Selection Details & Size (placed in top box where other details show) */}
+          {selection && (
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.75,
+                px: 1.2,
+                py: 0.4,
+                borderRadius: 2,
+                bgcolor:
+                  cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode]
+                    ? `${MARKETPLACE_PRESETS[cropMode].color}18`
+                    : 'rgba(0, 201, 255, 0.12)',
+                border: `1.5px solid ${
+                  cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode]
+                    ? MARKETPLACE_PRESETS[cropMode].color
+                    : '#00c9ff'
+                }`,
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                color:
+                  cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode]
+                    ? MARKETPLACE_PRESETS[cropMode].color
+                    : '#00c9ff',
+              }}
+            >
+              <span>
+                {cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode]
+                  ? `🔒 ${MARKETPLACE_PRESETS[cropMode].name}${cropMode === 'amazon' ? ' (Page 1 Only)' : ''}`
+                  : '📐 Custom'}
+              </span>
+              <span style={{ opacity: 0.4 }}>•</span>
+              <span style={{ color: theme === 'dark' ? '#ffffff' : '#081420', fontWeight: 800 }}>
+                Size: <span ref={badgeTextRef}>{inchWidth}" × {inchHeight}"</span>
+              </span>
+            </Box>
+          )}
 
             {/* Custom Saved Presets */}
             {customPresets.map((preset) => (
@@ -720,7 +688,6 @@ export default function PdfViewer() {
                 </Button>
               </Tooltip>
             )}
-          </Box>
         </Box>
 
         {/* Rotation, Zoom & Page Nav */}
@@ -845,58 +812,16 @@ export default function PdfViewer() {
         </Box>
       </Box>
 
-      {/* Helpful Status Bar */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1 }}>
-        <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
-          {cropMode === 'amazon' && selection ? (
-            <>
-              📦 <b>Amazon — Full Page Auto-Selected:</b> The entire first page is automatically captured. Click <b>Crop &amp; Export</b> to extract your label.
-            </>
-          ) : cropMode !== 'other' && selection ? (
-            <>
-              🛍️ <b>{MARKETPLACE_PRESETS[cropMode]?.name} Fixed Mode:</b> Locked to standard label size ({inchWidth}" × {inchHeight}"). Drag inside the box to align with your label.
-            </>
-          ) : selection ? (
-            <>
-              ✨ <b>Custom Adjust Mode:</b> Drag inside the box to move. Drag corner dots to resize width &amp; height. Use Arrow keys to nudge.
-            </>
-          ) : selectionMode === 'select' ? (
-            <>
-              🎯 <b>Selection Mode Active:</b> Tap &amp; drag on the PDF below, or choose a marketplace above.
-            </>
-          ) : (
-            <>
-              🔍 Select a marketplace above (Amazon, Flipkart, Meesho) or tap <b>&quot;Auto-Detect Label&quot;</b>.
-            </>
-          )}
-        </Typography>
+      {/* Custom Adjust Mode Controls Bar (only visible when in Custom mode) */}
+      {cropMode === 'other' && selection && (
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1, flexWrap: 'wrap', gap: 1 }}>
+          <Typography variant="caption" color="text.secondary">
+            ✨ <b>Custom Mode:</b> Drag box to move. Drag corner dots to resize.
+          </Typography>
 
-        {selection && (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: { xs: 'space-between', sm: 'flex-end' },
-              gap: 1,
-              flexWrap: 'wrap',
-              width: { xs: '100%', md: 'auto' },
-            }}
-          >
-            <Chip
-              size="small"
-              label={`${cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? `🔒 ${MARKETPLACE_PRESETS[cropMode].name} • ` : '📐 Custom • '}${inchWidth}" × ${inchHeight}" (${pointWidth} × ${pointHeight} pt)`}
-              sx={{
-                bgcolor: cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? `${MARKETPLACE_PRESETS[cropMode].color}25` : 'rgba(0, 201, 255, 0.15)',
-                color: cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? MARKETPLACE_PRESETS[cropMode].color : '#00c9ff',
-                fontWeight: 700,
-                fontSize: '0.75rem',
-                border: `1px solid ${cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? MARKETPLACE_PRESETS[cropMode].color : 'rgba(0, 201, 255, 0.3)'}`,
-              }}
-            />
-
-            {/* Quick Sizing Buttons - Always available so mobile users can easily shrink/enlarge */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
             <ButtonGroup size="small" variant="outlined" sx={{ height: 26 }}>
-              <Tooltip title="Make Crop Box 15% Smaller (Shrink for small label/barcode area)">
+              <Tooltip title="Make Crop Box 15% Smaller">
                 <Button
                   onClick={() => handleScaleSelection(0.85)}
                   startIcon={<Minus size={12} />}
@@ -934,107 +859,60 @@ export default function PdfViewer() {
               </Tooltip>
             </ButtonGroup>
 
-            {/* Quick Presets (Small 2"x2" is ideal for small areas/barcodes on mobile) */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => applyQuickSize(2.2, 2.2)}
-                sx={{
-                  fontSize: '0.68rem',
-                  height: 26,
-                  px: 0.8,
-                  py: 0,
-                  fontWeight: 700,
-                  borderColor: 'rgba(0, 201, 255, 0.3)',
-                  color: '#00c9ff',
-                  textTransform: 'none',
-                  bgcolor: 'rgba(0, 201, 255, 0.05)',
-                  '&:hover': { borderColor: '#00c9ff', bgcolor: 'rgba(0, 201, 255, 0.15)' },
-                }}
-              >
-                Small 2"×2"
-              </Button>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => applyQuickSize(3.0, 5.0)}
-                sx={{
-                  fontSize: '0.68rem',
-                  height: 26,
-                  px: 0.7,
-                  py: 0,
-                  borderColor: 'divider',
-                  color: 'text.secondary',
-                  textTransform: 'none',
-                  '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
-                }}
-              >
-                3"×5"
-              </Button>
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => applyQuickSize(4.0, 6.0)}
-                sx={{
-                  fontSize: '0.68rem',
-                  height: 26,
-                  px: 0.7,
-                  py: 0,
-                  borderColor: 'divider',
-                  color: 'text.secondary',
-                  textTransform: 'none',
-                  '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
-                }}
-              >
-                4"×6"
-              </Button>
-              <Button
-                size="small"
-                variant="text"
-                onClick={handleStartRedraw}
-                sx={{
-                  fontSize: '0.68rem',
-                  height: 26,
-                  px: 0.8,
-                  py: 0,
-                  color: '#ff4d6d',
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  '&:hover': { bgcolor: 'rgba(255, 77, 109, 0.1)' },
-                }}
-              >
-                ✏️ Redraw
-              </Button>
-            </Box>
-
             <Button
               size="small"
-              variant="contained"
-              disabled={isProcessing}
-              onClick={processBatchCrop}
+              variant="outlined"
+              onClick={() => applyQuickSize(3.0, 5.0)}
               sx={{
-                background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
-                color: '#ffffff',
-                fontWeight: 800,
-                fontSize: { xs: '0.8rem', sm: '0.75rem' },
+                fontSize: '0.68rem',
+                height: 26,
+                px: 0.7,
+                py: 0,
+                borderColor: 'divider',
+                color: 'text.secondary',
                 textTransform: 'none',
-                px: { xs: 2, sm: 1.5 },
-                py: { xs: 0.6, sm: 0.3 },
-                borderRadius: 2,
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-                boxShadow: '0 2px 10px rgba(0, 201, 255, 0.35)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #00b4e6 0%, #0066dd 100%)',
-                },
+                '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
               }}
             >
-              {isProcessing ? 'Cropping...' : `✂️ Apply Crop (${pdfFiles.length} PDF${pdfFiles.length > 1 ? 's' : ''})`}
+              3"×5"
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => applyQuickSize(4.0, 6.0)}
+              sx={{
+                fontSize: '0.68rem',
+                height: 26,
+                px: 0.7,
+                py: 0,
+                borderColor: 'divider',
+                color: 'text.secondary',
+                textTransform: 'none',
+                '&:hover': { borderColor: '#00c9ff', color: '#00c9ff' },
+              }}
+            >
+              4"×6"
+            </Button>
+            <Button
+              size="small"
+              variant="text"
+              onClick={handleStartRedraw}
+              sx={{
+                fontSize: '0.68rem',
+                height: 26,
+                px: 0.8,
+                py: 0,
+                color: '#ff4d6d',
+                textTransform: 'none',
+                fontWeight: 700,
+                '&:hover': { bgcolor: 'rgba(255, 77, 109, 0.1)' },
+              }}
+            >
+              ✏️ Redraw
             </Button>
           </Box>
-        )}
-      </Box>
+        </Box>
+      )}
 
       {/* Interactive Full-Width PDF Canvas Container */}
       <Box
@@ -1119,9 +997,10 @@ export default function PdfViewer() {
                 width: `${selection.widthRatio * 100}%`,
                 height: `${selection.heightRatio * 100}%`,
                 border: `2px solid ${cropMode !== 'other' ? MARKETPLACE_PRESETS[cropMode]?.color || '#00c9ff' : '#00c9ff'}`,
+                borderRadius: '4px',
                 boxShadow: interactionMode
                   ? '0 0 0 9999px rgba(0, 0, 0, 0.55)'
-                  : '0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 15px rgba(0, 201, 255, 0.5)',
+                  : `0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 16px ${cropMode !== 'other' ? (MARKETPLACE_PRESETS[cropMode]?.color || '#00c9ff') + '55' : 'rgba(0, 201, 255, 0.5)'}`,
                 willChange: interactionMode ? 'left, top, width, height' : 'auto',
                 cursor: 'move',
                 zIndex: 10,
@@ -1130,31 +1009,6 @@ export default function PdfViewer() {
                 transition: interactionMode ? 'none' : 'border-color 0.15s ease',
               }}
             >
-              {/* Header Badge */}
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: -24,
-                  left: 0,
-                  bgcolor: cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? MARKETPLACE_PRESETS[cropMode].color : '#00c9ff',
-                  color: '#ffffff',
-                  px: 1,
-                  py: 0.2,
-                  borderRadius: '4px 4px 0 0',
-                  fontSize: '0.7rem',
-                  fontWeight: 800,
-                  pointerEvents: 'none',
-                  whiteSpace: 'nowrap',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.5,
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-                }}
-              >
-                <span>{cropMode !== 'other' && MARKETPLACE_PRESETS[cropMode] ? `🔒 ${MARKETPLACE_PRESETS[cropMode].name}` : '📐 Custom'}</span>
-                <span>•</span>
-                <span ref={badgeTextRef}>{inchWidth}" × {inchHeight}"</span>
-              </Box>
 
               {/* Center Move Badge - hide on small boxes to keep interior clean */}
               {selection.widthRatio >= 0.16 && selection.heightRatio >= 0.10 && (
