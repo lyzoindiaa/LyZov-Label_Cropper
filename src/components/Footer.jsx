@@ -139,7 +139,7 @@ export default function Footer() {
         color="text.secondary"
         sx={{ display: 'block', textAlign: 'center', opacity: 0.8 }}
       >
-        © {new Date().getFullYear()} LyZov Cropper Studio. All rights reserved. &nbsp;·&nbsp; Built for label professionals worldwide.
+        © {new Date().getFullYear()} LyZov Cropper Studio. All rights reserved.
       </Typography>
     </Box>
   );
