@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../gst.css';
+import SEOHead from '../../components/SEOHead';
 import {
   FileText, CheckCircle2, ArrowRight, Upload, Download,
   ShieldCheck, Zap, Star, ChevronRight, Building2,
@@ -51,7 +52,11 @@ export default function GstLanding() {
 
   return (
     <div className="gst-root" style={{ background: 'var(--gst-bg)' }}>
-
+      <SEOHead
+        title="Free GSTR-1 Excel to JSON Converter & GST Return Generator | LyZov"
+        description="Convert Amazon MTR & Flipkart GST reports into portal-ready GSTR-1 JSON and CA Excel reconciliations in minutes. Built for Indian e-commerce sellers."
+        canonical="https://tools.lyzov.com/gst-tool"
+      />
       {/* ── Navbar ── */}
       <header style={{
         position: 'sticky', top: 0, zIndex: 100,

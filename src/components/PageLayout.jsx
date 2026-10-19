@@ -4,34 +4,21 @@ import { Box, Typography, Tooltip, IconButton, Button } from '@mui/material';
 import { Sparkles, Sun, Moon, Scissors, FileText, ArrowRight } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import Footer from './Footer';
+import SEOHead from './SEOHead';
 
 /**
  * PageLayout – shared unified wrapper for all informational & blog pages.
  * Matches the official LyZov Tools header and emerald green design system.
  */
-export default function PageLayout({ title, description, maxWidth = 1000, children }) {
+export default function PageLayout({ title, description, schema, maxWidth = 1000, children }) {
   const { theme, toggleTheme } = useContext(AppContext);
   const location = useLocation();
 
   const emerald = theme === 'dark' ? '#00d68f' : '#00a86b';
 
-  useEffect(() => {
-    const siteName = 'LyZov Tools';
-    document.title = title ? `${title} | ${siteName}` : siteName;
-
-    let meta = document.querySelector('meta[name="description"]');
-    if (!meta) {
-      meta = document.createElement('meta');
-      meta.name = 'description';
-      document.head.appendChild(meta);
-    }
-    if (description) meta.setAttribute('content', description);
-
-    window.scrollTo(0, 0);
-  }, [title, description]);
-
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default', color: 'text.primary' }}>
+      <SEOHead title={title} description={description} schema={schema} />
       {/* Unified Navbar Header – Identical to localhost:5173 */}
       <Box
         component="header"

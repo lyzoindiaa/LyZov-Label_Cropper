@@ -11,6 +11,8 @@ import {
   Menu, X,
 } from "lucide-react";
 
+import SEOHead from "../components/SEOHead";
+
 const TOOLS = [
   {
     id: "cropper",
@@ -138,6 +140,11 @@ export default function HubPage() {
 
   return (
     <div className="gst-root" style={{ background: "var(--gst-bg)", minHeight: "100vh", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
+      <SEOHead
+        title="LyZov Tools — Free E-Commerce Seller Tools & Shipping Label Cropper"
+        description="Free, private, browser-based tools for e-commerce sellers. Batch crop shipping labels for Meesho, Flipkart & Amazon, generate GSTR-1 returns, and analyze marketplace profits."
+        canonical="https://tools.lyzov.com/"
+      />
 
       {/* NAVBAR */}
       <header style={{

@@ -38,6 +38,7 @@ import PdfViewer from './components/PdfViewer';
 import CropProcessor from './components/CropProcessor';
 import DownloadPanel from './components/DownloadPanel';
 import Footer from './components/Footer';
+import SEOHead from './components/SEOHead';
 
 // Informational pages
 import AboutPage from './pages/AboutPage';
@@ -112,6 +113,11 @@ function MainContent() {
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', width: '100%', bgcolor: 'background.default', color: 'text.primary' }}>
+      <SEOHead
+        title="Free Batch Shipping Label Cropper & 4x6 Thermal Printer Tool | LyZov"
+        description="Free, 100% private client-side batch PDF shipping label cropper for Meesho, Flipkart & Amazon. Crop 4x6 thermal labels instantly with zero uploads."
+        canonical="https://tools.lyzov.com/cropper"
+      />
       {/* Top Navbar */}
       <Box
         component="header"

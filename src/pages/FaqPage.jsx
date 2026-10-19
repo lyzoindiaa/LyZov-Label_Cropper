@@ -217,10 +217,24 @@ export default function FaqPage() {
     });
   }, [selectedCat, searchQuery]);
 
+  const faqSchema = useMemo(() => ({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(item => ({
+      '@type': 'Question',
+      name: item.q,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.a,
+      },
+    })),
+  }), []);
+
   return (
     <PageLayout
       title="FAQ & Help Center"
       description="Frequently asked questions about LyZov Cropper Studio — file privacy, supported thermal printers, batch limits, and troubleshooting."
+      schema={faqSchema}
       maxWidth={1240}
     >
       {/* Hero Header */}

@@ -38,6 +38,7 @@ import IngestView from './pages/IngestView.jsx';
 import QualityView from './pages/QualityView.jsx';
 import ProductsView from './pages/ProductsView.jsx';
 import RulesView from './pages/RulesView.jsx';
+import SEOHead from '../components/SEOHead.jsx';
 import BridgeView from './pages/BridgeView.jsx';
 import AdminView from './pages/AdminView.jsx';
 
@@ -112,6 +113,11 @@ function PnlAppContent() {
 
   return (
     <Box className="pnl-container">
+      <SEOHead
+        title="Free E-Commerce P&L Analyzer & Marketplace Profit Calculator | LyZov"
+        description="Analyze real net margins, returns, and profits across Amazon, Flipkart, Meesho & Shopify. 100% private financial intelligence for Indian e-commerce sellers."
+        canonical="https://tools.lyzov.com/pnl"
+      />
       {/* Top Application Header */}
       <Box
         sx={{

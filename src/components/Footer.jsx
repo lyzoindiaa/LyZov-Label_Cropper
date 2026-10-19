@@ -131,6 +131,44 @@ export default function Footer() {
         })}
       </Box>
 
+      {/* Popular Solutions & SEO Internal Links */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: { xs: 'flex-start', sm: 'center' },
+          gap: { xs: 1, sm: 1.5 },
+          mb: 2.5,
+          fontSize: '0.74rem',
+          color: 'text.secondary',
+          opacity: 0.85,
+        }}
+      >
+        <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'text.secondary' }}>
+          Popular Solutions:
+        </Typography>
+        <Link to="/cropper" style={{ color: inactiveTextColor, textDecoration: 'none' }}>
+          Meesho Label Cropper
+        </Link>
+        <span>·</span>
+        <Link to="/blog/crop-amazon-flipkart-labels-fast" style={{ color: inactiveTextColor, textDecoration: 'none' }}>
+          Flipkart &amp; Amazon Cropper Guide
+        </Link>
+        <span>·</span>
+        <Link to="/blog/thermal-printer-shipping-label-guide" style={{ color: inactiveTextColor, textDecoration: 'none' }}>
+          4×6 Thermal Label Printing
+        </Link>
+        <span>·</span>
+        <Link to="/gst-tool" style={{ color: inactiveTextColor, textDecoration: 'none' }}>
+          GSTR-1 Return Generator
+        </Link>
+        <span>·</span>
+        <Link to="/pnl" style={{ color: inactiveTextColor, textDecoration: 'none' }}>
+          E-Commerce P&amp;L Calculator
+        </Link>
+      </Box>
+
       <Divider sx={{ borderColor: 'divider', mb: 2.5 }} />
 
       {/* Copyright */}
