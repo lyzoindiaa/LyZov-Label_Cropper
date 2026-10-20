@@ -302,7 +302,7 @@ export default function HubPage() {
           <h2 style={{ fontSize: "clamp(1.8rem,3.5vw,2.6rem)", fontWeight: 800, letterSpacing: "-0.8px", margin: "0 0 14px", color: "var(--gst-text)" }}>Pick your <span className="gst-gradient-text">tool</span></h2>
           <p style={{ color: "var(--gst-text-sec)", maxWidth: 520, margin: "0 auto", lineHeight: 1.75 }}>Each tool is fully self-contained, works offline after first load, and keeps your data completely private on your device.</p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%, 280px), 1fr))", gap: "clamp(16px, 3vw, 28px)", maxWidth: 920, margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: "clamp(16px, 2.5vw, 24px)", maxWidth: 1200, margin: "0 auto" }}>
           {TOOLS.map((tool) => {
             const Icon = tool.icon;
             const isH = hoveredTool === tool.id;
@@ -326,17 +326,21 @@ export default function HubPage() {
                 onMouseEnter={() => setHoveredTool(tool.id)} onMouseLeave={() => setHoveredTool(null)} onClick={() => navigate(tool.route)}>
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,transparent,${tool.accent},transparent)`, opacity: isH ? 1 : 0.25, transition: "opacity 0.28s" }} />
 
-                {/* Compact Header: Icon + Title & Badges */}
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 11, marginBottom: 10 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: `${tool.accent}15`, border: `1px solid ${tool.accent}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: isH ? `0 0 16px ${tool.glowColor}` : "none", transition: "box-shadow 0.28s" }}>
+                {/* Header: Icon + Title & Badges */}
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+                  <div style={{ width: 42, height: 42, borderRadius: 10, background: `${tool.accent}15`, border: `1px solid ${tool.accent}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: isH ? `0 0 16px ${tool.glowColor}` : "none", transition: "box-shadow 0.28s" }}>
                     <Icon size={20} color={tool.accent} />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, marginBottom: 2 }}>
-                      <div style={{ fontWeight: 800, fontSize: "1.05rem", letterSpacing: "-0.3px", color: "var(--gst-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tool.name}</div>
-                      <span className={`gst-badge ${tool.badgeClass}`} style={{ fontSize: "0.6rem", padding: "2px 6px", whiteSpace: "nowrap", flexShrink: 0 }}>{tool.badge}</span>
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 6, marginBottom: 3, flexWrap: "wrap" }}>
+                      <div style={{ fontWeight: 800, fontSize: "1.05rem", letterSpacing: "-0.3px", color: "var(--gst-text)", lineHeight: 1.25 }}>
+                        {tool.name}
+                      </div>
+                      <span className={`gst-badge ${tool.badgeClass}`} style={{ fontSize: "0.62rem", padding: "2px 7px", whiteSpace: "nowrap", flexShrink: 0, marginTop: 1 }}>
+                        {tool.badge}
+                      </span>
                     </div>
-                    <div style={{ fontSize: "0.72rem", color: tool.accent, fontWeight: 600 }}>{tool.tagline}</div>
+                    <div style={{ fontSize: "0.75rem", color: tool.accent, fontWeight: 600 }}>{tool.tagline}</div>
                   </div>
                 </div>
 
