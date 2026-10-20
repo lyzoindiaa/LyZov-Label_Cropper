@@ -61,6 +61,9 @@ import {
   simulateExtract,
 } from './mockData';
 
+const rawBase = import.meta.env.VITE_API_BASE_URL || '/api';
+const API_BASE = rawBase.replace(/\/+$/, '');
+
 export default function ProductImageTool() {
   const { theme, toggleTheme, user, setUser } = useContext(AppContext);
   const fileInputRef = useRef(null);
@@ -193,7 +196,7 @@ export default function ProductImageTool() {
       let result = null;
       try {
         const token = localStorage.getItem('token');
-        const apiRes = await fetch('/api/product-image/extract', {
+        const apiRes = await fetch(`${API_BASE}/product-image/extract`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -337,7 +340,7 @@ export default function ProductImageTool() {
           saveAs(blob, `${cleanName}${angleSuffix}.${format === 'jpeg' ? 'jpg' : 'png'}`);
         } else {
           const directUrl = /^https?:\/\//i.test(targetUrl)
-            ? `/api/product-image/proxy?url=${encodeURIComponent(targetUrl)}`
+            ? `${API_BASE}/product-image/proxy?url=${encodeURIComponent(targetUrl)}`
             : targetUrl;
           saveAs(directUrl, `${cleanName}${angleSuffix}.${format === 'jpeg' ? 'jpg' : 'png'}`);
         }
@@ -350,7 +353,7 @@ export default function ProductImageTool() {
 
     const img = new Image();
     const sourceSrc = /^https?:\/\//i.test(targetUrl)
-      ? `/api/product-image/proxy?url=${encodeURIComponent(targetUrl)}`
+      ? `${API_BASE}/product-image/proxy?url=${encodeURIComponent(targetUrl)}`
       : targetUrl;
 
     if (/^https?:\/\//i.test(sourceSrc)) {
@@ -411,7 +414,7 @@ export default function ProductImageTool() {
         const blob = await new Promise((resolve) => {
           const img = new Image();
           const proxySrc = /^https?:\/\//i.test(url)
-            ? `/api/product-image/proxy?url=${encodeURIComponent(url)}`
+            ? `${API_BASE}/product-image/proxy?url=${encodeURIComponent(url)}`
             : url;
 
           if (/^https?:\/\//i.test(proxySrc)) {
@@ -486,7 +489,7 @@ export default function ProductImageTool() {
         let res = null;
         try {
           const token = localStorage.getItem('token');
-          const apiRes = await fetch('/api/product-image/extract', {
+          const apiRes = await fetch(`${API_BASE}/product-image/extract`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -557,7 +560,7 @@ export default function ProductImageTool() {
         const blob = await new Promise((resolve) => {
           const img = new Image();
           const proxySrc = /^https?:\/\//i.test(item.imageUrl)
-            ? `/api/product-image/proxy?url=${encodeURIComponent(item.imageUrl)}`
+            ? `${API_BASE}/product-image/proxy?url=${encodeURIComponent(item.imageUrl)}`
             : item.imageUrl;
 
           if (/^https?:\/\//i.test(proxySrc)) {
