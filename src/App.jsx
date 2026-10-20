@@ -51,6 +51,7 @@ import FaqPage from './pages/FaqPage';
 import HubPage from './pages/HubPage';
 import BlogListPage from './pages/BlogListPage';
 import BlogPostPage from './pages/BlogPostPage';
+import ProductImageTool from './image-extractor/ProductImageTool';
 
 const getAppTheme = (mode = 'dark') =>
   createTheme({
@@ -438,6 +439,27 @@ function MainContent() {
             ✦ P&L Analyzer
           </Button>
 
+          <Button
+            component={Link}
+            to="/image-extractor"
+            variant="contained"
+            size="small"
+            sx={{
+              background: 'linear-gradient(135deg, #a78bfa 0%, #ec4899 100%)',
+              color: '#ffffff',
+              fontWeight: 800,
+              fontSize: '0.8rem',
+              borderRadius: '10px',
+              textTransform: 'none',
+              px: 1.8,
+              py: 0.6,
+              boxShadow: '0 4px 14px rgba(167, 139, 250, 0.4)',
+              display: { xs: 'none', md: 'inline-flex' },
+            }}
+          >
+            ✦ Image Extractor
+          </Button>
+
           {/* Theme Toggle Button */}
           <Tooltip title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
             <IconButton
@@ -736,6 +758,8 @@ function ThemedApp() {
         {/* LyZov P&L Analyzer — lives at /pnl and /pnl/* */}
         <Route path="/pnl" element={<PnlApp />} />
         <Route path="/pnl/*" element={<PnlApp />} />
+        {/* Product Image Extractor — lives at /image-extractor */}
+        <Route path="/image-extractor" element={<ProductImageTool />} />
         {/* Informational pages */}
         <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage />} />
