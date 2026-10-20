@@ -2,11 +2,12 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 
 const execFileAsync = promisify(execFile);
+const CURL_BIN = process.platform === 'win32' ? 'curl.exe' : 'curl';
 
 /**
  * Robust HTTP text fetcher.
- * Uses curl.exe on Windows as the primary engine for high-speed, reliable fetching
- * that bypasses Windows Node socket timeouts, falling back to global fetch.
+ * Uses curl / curl.exe as the primary engine for high-speed, reliable fetching
+ * that bypasses Node socket timeouts, falling back to global fetch.
  */
 export async function safeFetchText(url, options = {}) {
   const timeoutMs = options.timeoutMs || 8000;
@@ -14,7 +15,7 @@ export async function safeFetchText(url, options = {}) {
     options.userAgent ||
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 
-  // Strategy 1: curl.exe (built into modern Windows)
+  // Strategy 1: curl (works on Linux, Mac, and Windows)
   try {
     const args = ['-s', '-L', '--max-time', String(Math.ceil(timeoutMs / 1000)), '-A', userAgent];
     if (options.headers) {
@@ -24,7 +25,7 @@ export async function safeFetchText(url, options = {}) {
     }
     args.push(url);
 
-    const { stdout } = await execFileAsync('curl.exe', args, {
+    const { stdout } = await execFileAsync(CURL_BIN, args, {
       maxBuffer: 20 * 1024 * 1024,
       timeout: timeoutMs + 1000,
     });
@@ -68,10 +69,10 @@ export async function safeFetchText(url, options = {}) {
 export async function safeFetchBinary(url, options = {}) {
   const timeoutMs = options.timeoutMs || 10000;
 
-  // Try curl.exe with buffer encoding
+  // Try curl with buffer encoding
   try {
     const { stdout } = await execFileAsync(
-      'curl.exe',
+      CURL_BIN,
       ['-s', '-L', '--max-time', String(Math.ceil(timeoutMs / 1000)), url],
       {
         encoding: 'buffer',

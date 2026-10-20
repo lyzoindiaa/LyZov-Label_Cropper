@@ -3,6 +3,7 @@ import { promisify } from 'util';
 import { validateSafeUrl } from './ssrfGuard.js';
 
 const execFileAsync = promisify(execFile);
+const CURL_BIN = process.platform === 'win32' ? 'curl.exe' : 'curl';
 
 const KNOWN_SHORTENERS = [
   'amzn.in',
@@ -14,7 +15,7 @@ const KNOWN_SHORTENERS = [
 ];
 
 /**
- * Resolves redirects safely up to maxHops using curl.exe for high speed and reliability.
+ * Resolves redirects safely up to maxHops using curl for high speed and reliability.
  */
 export async function resolveSafeRedirects(initialUrl, maxHops = 3) {
   let currentUrl = await validateSafeUrl(initialUrl);
@@ -31,7 +32,7 @@ export async function resolveSafeRedirects(initialUrl, maxHops = 3) {
     try {
       // Use curl to get Location header quickly
       const { stdout } = await execFileAsync(
-        'curl.exe',
+        CURL_BIN,
         ['-s', '-I', '--max-time', '4', currentUrl],
         { timeout: 5000 }
       );
