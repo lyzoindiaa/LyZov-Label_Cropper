@@ -16,6 +16,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import gstr3bRoutes from './routes/gstr3bRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
 import pnlRoutes from './routes/pnlRoutes.js';
+import productImageRoutes from './routes/productImageRoutes.js';
 
 dotenv.config();
 
@@ -89,6 +90,7 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/products', express.static(path.resolve(__dirname, '..', 'public', 'products')));
 
 // Health Check (both /health and /api/health)
 const healthHandler = (req, res) => {
@@ -113,6 +115,7 @@ const mountRoutes = (prefix = '') => {
   app.use(`${prefix}/gstr3b`, gstr3bRoutes);
   app.use(`${prefix}/blogs`, blogRoutes);
   app.use(`${prefix}/pnl`, pnlRoutes);
+  app.use(`${prefix}/product-image`, productImageRoutes);
 };
 
 mountRoutes('/api');

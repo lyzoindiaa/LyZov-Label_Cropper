@@ -4,15 +4,15 @@
   <!-- Hub / Homepage -->
   <url>
     <loc>https://tools.lyzov.com/</loc>
-    <lastmod>2026-10-13</lastmod>
-    <changefreq>weekly</changefreq>
+    <lastmod>2026-10-19</lastmod>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
 
   <!-- Label Cropper Tool -->
   <url>
     <loc>https://tools.lyzov.com/cropper</loc>
-    <lastmod>2026-10-13</lastmod>
+    <lastmod>2026-10-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
@@ -20,7 +20,15 @@
   <!-- GST Tool -->
   <url>
     <loc>https://tools.lyzov.com/gst-tool</loc>
-    <lastmod>2026-10-13</lastmod>
+    <lastmod>2026-10-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- LyZov P&L Analyzer -->
+  <url>
+    <loc>https://tools.lyzov.com/pnl</loc>
+    <lastmod>2026-10-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
@@ -28,7 +36,7 @@
   <!-- How To Use Guide -->
   <url>
     <loc>https://tools.lyzov.com/how-to-use</loc>
-    <lastmod>2026-10-13</lastmod>
+    <lastmod>2026-10-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -36,15 +44,15 @@
   <!-- FAQ -->
   <url>
     <loc>https://tools.lyzov.com/faq</loc>
-    <lastmod>2026-10-13</lastmod>
+    <lastmod>2026-10-19</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.85</priority>
   </url>
 
   <!-- About -->
   <url>
     <loc>https://tools.lyzov.com/about</loc>
-    <lastmod>2026-10-13</lastmod>
+    <lastmod>2026-10-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -52,7 +60,7 @@
   <!-- Contact -->
   <url>
     <loc>https://tools.lyzov.com/contact</loc>
-    <lastmod>2026-10-13</lastmod>
+    <lastmod>2026-10-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -60,7 +68,7 @@
   <!-- Privacy Policy -->
   <url>
     <loc>https://tools.lyzov.com/privacy-policy</loc>
-    <lastmod>2026-10-13</lastmod>
+    <lastmod>2026-10-19</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -68,7 +76,7 @@
   <!-- Terms of Service -->
   <url>
     <loc>https://tools.lyzov.com/terms</loc>
-    <lastmod>2026-10-13</lastmod>
+    <lastmod>2026-10-19</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -76,7 +84,7 @@
   <!-- Disclaimer -->
   <url>
     <loc>https://tools.lyzov.com/disclaimer</loc>
-    <lastmod>2026-10-13</lastmod>
+    <lastmod>2026-10-19</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
@@ -84,7 +92,7 @@
   <!-- Seller Blog & Guides Index -->
   <url>
     <loc>https://tools.lyzov.com/blog</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -92,7 +100,7 @@
   <!-- Thermal Printer Guide -->
   <url>
     <loc>https://tools.lyzov.com/blog/thermal-printer-shipping-label-guide</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
@@ -100,7 +108,7 @@
   <!-- Batch Crop Amazon & Flipkart Labels -->
   <url>
     <loc>https://tools.lyzov.com/blog/crop-amazon-flipkart-labels-fast</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
@@ -108,7 +116,7 @@
   <!-- E-Commerce GST Compliance -->
   <url>
     <loc>https://tools.lyzov.com/blog/ecommerce-gst-compliance-gstr1-gstr3b</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
@@ -116,7 +124,7 @@
   <!-- Thermal vs Laser Printer Guide -->
   <url>
     <loc>https://tools.lyzov.com/blog/thermal-vs-laser-printer-for-sellers</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>

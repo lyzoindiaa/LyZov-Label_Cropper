@@ -37,3 +37,6 @@ server/data/
 /data/
 !src/data/
 
+# Scratch & temporary test scripts
+scratch/
+

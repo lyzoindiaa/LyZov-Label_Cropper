@@ -8,8 +8,10 @@ import {
   Upload, Download, MousePointer, ChevronDown,
   Package, Clock, Lock, Cpu, Lightbulb, TrendingUp,
   Users, BarChart2, FileCheck, Printer, Sun, Moon,
-  Menu, X,
+  Menu, X, Image as ImageIcon,
 } from "lucide-react";
+
+import SEOHead from "../components/SEOHead";
 
 const TOOLS = [
   {
@@ -72,6 +74,27 @@ const TOOLS = [
       "What-If price & return-rate simulators",
     ],
     cta: "Launch P&L Analyzer",
+    status: "Live",
+    statusColor: "#00d68f",
+  },
+  {
+    id: "image-extractor",
+    icon: ImageIcon,
+    name: "Product Image Extractor",
+    tagline: "Link to HD Product Photo",
+    description: "Extract clean 4K product photos from Amazon, Flipkart, Meesho & Myntra links instantly.",
+    accent: "#a78bfa",
+    accentDim: "#8b5cf6",
+    glowColor: "rgba(167,139,250,0.22)",
+    route: "/image-extractor",
+    badge: "5 Daily • Quota",
+    badgeClass: "gst-badge-blue",
+    features: [
+      "Amazon, Flipkart, Meesho & Myntra",
+      "PNG & JPEG converter with quality slider",
+      "Batch multi-link & ZIP archive download",
+    ],
+    cta: "Open Image Extractor",
     status: "Live",
     statusColor: "#00d68f",
   },
@@ -138,6 +161,11 @@ export default function HubPage() {
 
   return (
     <div className="gst-root" style={{ background: "var(--gst-bg)", minHeight: "100vh", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
+      <SEOHead
+        title="LyZov Tools — Free E-Commerce Seller Tools & Shipping Label Cropper"
+        description="Free, private, browser-based tools for e-commerce sellers. Batch crop shipping labels for Meesho, Flipkart & Amazon, generate GSTR-1 returns, and analyze marketplace profits."
+        canonical="https://tools.lyzov.com/"
+      />
 
       {/* NAVBAR */}
       <header style={{

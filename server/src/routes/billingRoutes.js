@@ -39,6 +39,22 @@ const PLANS = {
     durationDays: 30,
     description: 'Up to 25 GSTINs with multi-client CA support',
   },
+  image_monthly: {
+    id: 'image_monthly',
+    name: 'Product Image Extractor Pro',
+    priceINR: 99,
+    amountPaise: 9900,
+    durationDays: 30,
+    description: 'Unlimited single & batch e-commerce product image extractions & ZIP exports',
+  },
+  image_yearly: {
+    id: 'image_yearly',
+    name: 'Product Image Extractor Pro (Annual)',
+    priceINR: 799,
+    amountPaise: 79900,
+    durationDays: 365,
+    description: '1 Full Year of Unlimited Product Image Extractions & Batch ZIP Downloads',
+  },
 };
 
 // GET /api/billing/plans (Public)

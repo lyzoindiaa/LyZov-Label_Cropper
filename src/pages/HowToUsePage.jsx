@@ -106,11 +106,25 @@ const printers = [
   'Standard Desktop Inkjet/Laser',
 ];
 
+const howToSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'HowTo',
+  name: 'How to Batch Crop Shipping Labels for Thermal Printers',
+  description: 'Step-by-step interactive guide to using LyZov Cropper Studio: upload PDFs, calibrate coordinates, and download batch-cropped labels ready for thermal printing.',
+  step: steps.map((s, idx) => ({
+    '@type': 'HowToStep',
+    position: idx + 1,
+    name: s.title,
+    text: s.body,
+  })),
+};
+
 export default function HowToUsePage() {
   return (
     <PageLayout
       title="How to Use"
       description="Step-by-step interactive guide to using LyZov Cropper Studio: upload PDFs, calibrate coordinates, and download batch-cropped labels ready for thermal printing."
+      schema={howToSchema}
       maxWidth={1240}
     >
       {/* Hero Header Banner */}
