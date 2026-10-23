@@ -1,0 +1,8 @@
+Order ID,Order Item ID,Order Date,FSN / SKU,Product Title,Quantity,Final Selling Price,Discount,Shipping Charge,Status,Event Type,Event Sub Type
+OD_2026_09_101,ITEM-SEP-101,2026-09-02,Ganesha_11,"Ganesha Idol 11cm Brass",1,599.00,50.00,0,DELIVERED,Sale,Main
+OD_2026_09_102,ITEM-SEP-102,2026-09-05,Buddha_Lotus_07,"Buddha Lotus Figurine White",1,1499.00,100.00,0,DELIVERED,Sale,Main
+OD_2026_09_103,ITEM-SEP-103,2026-09-10,Shiv_Trishul_03,"Lord Shiva Trishul Brass",2,1398.00,100.00,40,DELIVERED,Sale,Main
+OD_2026_09_104,ITEM-SEP-104,2026-09-15,Ganesah_11,"Ganesha Idol 11cm Typo",1,599.00,50.00,0,DELIVERED,Sale,Main
+OD_2026_09_105,ITEM-SEP-105,2026-09-20,Krishna_Flute_09,"Radha Krishna Idol with Flute",1,999.00,50.00,0,DELIVERED,Sale,Main
+OD_2026_08_001,ITEM-AUG-001,2026-09-12,Ganesha_11,"Ganesha Idol 11cm Brass",1,599.00,50.00,0,RETURN,Return,Main
+OD_2026_07_099,ITEM-OLD-JULY-99,2026-09-18,Buddha_Lotus_07,"Buddha Lotus Figurine White",1,1499.00,0,0,RETURN,Return,Main

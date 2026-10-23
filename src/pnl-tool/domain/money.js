@@ -88,6 +88,10 @@ export class Money {
     }).format(this.toMajor());
   }
 
+  format(locale = 'en-IN') {
+    return this.toFormatted(locale);
+  }
+
   toJSON() {
     return {
       amount: this.amount,

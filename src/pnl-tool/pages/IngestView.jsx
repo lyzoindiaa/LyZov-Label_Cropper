@@ -114,23 +114,50 @@ export default function IngestView({ onIngestComplete, sellerId = 'default_selle
     }
   };
 
-  const handleLoadSampleFile = () => {
-    const sampleCsv = `Order ID,Order Item ID,Order Date,FSN / SKU,Product Title,Quantity,Final Selling Price,Discount,Shipping Charge,Status,Event Type
-OD4028921102,ITEM-FK-101,2026-10-14,GANESHA_11,"Ganesha Idol 11cm Brass",2,1198.00,100.00,0,DELIVERED,Sale
-OD4027719201,ITEM-FK-102,2026-10-13,BUDDHA_LOTUS_07,"Buddha Lotus Figurine",1,2499.00,250.00,0,DELIVERED,Sale
-OD4021102938,ITEM-FK-103,2026-10-10,GANESHA_11,"Ganesha Idol 11cm Brass",1,599.00,50.00,0,DELIVERED,Sale
-OD4029918274,ITEM-FK-104,2026-10-07," BUDDHA_LOTUS_07","Buddha Lotus Figurine",1,2499.00,40.00,0,DELIVERED,Sale
-OD4025544332,ITEM-FK-105,2026-10-06,GANESHA_11,"Ganesha Idol 11cm Brass",1,599.00,0,0,RETURN,Return
-OD4028921102,ITEM-FK-101,2026-10-14,GANESHA_11,"Duplicate Row of Line 1",2,1198.00,100.00,0,DELIVERED,Sale`;
+  const handleLoadSampleAugust = async () => {
+    try {
+      const res = await fetch('/samples/pnl/Flipkart_Sales_2026_08_August.csv');
+      const text = await res.text();
+      setFile({ name: 'Flipkart_Sales_2026_08_August.csv' });
+      setChannel('flipkart');
+      const hash = await computeFileHash(text);
+      setFileHash(hash);
+      const existing = await checkFileHash(hash, sellerId);
+      if (existing) {
+        setDuplicateWarning(`Already imported on ${new Date(existing.uploadedAt).toLocaleDateString()} (${existing.rowsAdded || 0} rows).`);
+      } else {
+        setDuplicateWarning('');
+      }
+      const parsed = parseCsvText(text);
+      setParsedData(parsed);
+      const suggestions = suggestColumnMappings(parsed.headers);
+      setMappings(suggestions);
+    } catch (e) {
+      setError('Failed to fetch sample August file');
+    }
+  };
 
-    setFile({ name: 'Flipkart_Monthly_Sales_Report.csv' });
-    setChannel('flipkart');
-    setFileHash('hash_sample_fk_sales_demo_2026');
-    setDuplicateWarning('');
-    const parsed = parseCsvText(sampleCsv);
-    setParsedData(parsed);
-    const suggestions = suggestColumnMappings(parsed.headers);
-    setMappings(suggestions);
+  const handleLoadSampleSeptember = async () => {
+    try {
+      const res = await fetch('/samples/pnl/Flipkart_Sales_2026_09_September.csv');
+      const text = await res.text();
+      setFile({ name: 'Flipkart_Sales_2026_09_September.csv' });
+      setChannel('flipkart');
+      const hash = await computeFileHash(text);
+      setFileHash(hash);
+      const existing = await checkFileHash(hash, sellerId);
+      if (existing) {
+        setDuplicateWarning(`Already imported on ${new Date(existing.uploadedAt).toLocaleDateString()} (${existing.rowsAdded || 0} rows).`);
+      } else {
+        setDuplicateWarning('');
+      }
+      const parsed = parseCsvText(text);
+      setParsedData(parsed);
+      const suggestions = suggestColumnMappings(parsed.headers);
+      setMappings(suggestions);
+    } catch (e) {
+      setError('Failed to fetch sample September file');
+    }
   };
 
   const handleProcessImport = async () => {
@@ -334,24 +361,44 @@ OD4028921102,ITEM-FK-101,2026-10-14,GANESHA_11,"Duplicate Row of Line 1",2,1198.
               </Typography>
             </Box>
 
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={handleLoadSampleFile}
-              startIcon={<Sparkles size={14} color="#00c9ff" />}
-              sx={{
-                borderColor: 'rgba(0, 201, 255, 0.4)',
-                color: '#00c9ff',
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                borderRadius: '8px',
-                py: 0.8,
-                '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.1)', borderColor: '#00c9ff' },
-              }}
-            >
-              ⚡ Quick Demo: Load Sample Flipkart Export
-            </Button>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleLoadSampleAugust}
+                startIcon={<Sparkles size={14} color="#00c9ff" />}
+                sx={{
+                  borderColor: 'rgba(0, 201, 255, 0.4)',
+                  color: '#00c9ff',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                  borderRadius: '8px',
+                  py: 0.8,
+                  '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.1)', borderColor: '#00c9ff' },
+                }}
+              >
+                ⚡ Load Sample: August 2026 (6 Orders)
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleLoadSampleSeptember}
+                startIcon={<Sparkles size={14} color="#ffb703" />}
+                sx={{
+                  borderColor: 'rgba(255, 183, 3, 0.4)',
+                  color: '#ffb703',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                  borderRadius: '8px',
+                  py: 0.8,
+                  '&:hover': { bgcolor: 'rgba(255, 183, 3, 0.1)', borderColor: '#ffb703' },
+                }}
+              >
+                ⚡ Load Sample: September 2026 (Sales + Prior Month Return)
+              </Button>
+            </Box>
 
             {parsedData && (
               <Box sx={{ p: 2, bgcolor: 'rgba(0, 214, 143, 0.08)', borderRadius: '8px', border: '1px solid rgba(0, 214, 143, 0.25)' }}>

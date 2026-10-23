@@ -243,6 +243,23 @@ export default function ProductsView({ missingSkus = [], sellerId = 'default_sel
     }
   };
 
+  const handleLoadSampleProducts = async () => {
+    try {
+      const res = await fetch('/samples/pnl/Product_Master_Sample.csv');
+      const text = await res.text();
+      const parsed = parseCsvText(text);
+      const normalizedProducts = parseProductMasterRows(parsed.rows);
+      for (const prod of normalizedProducts) {
+        await saveLocalProduct({ ...prod, sellerId });
+      }
+      await saveLocalSkuAlias({ alias: 'Ganesah_11', targetSku: 'Ganesha_11', sellerId });
+      setSuccessNotice('Loaded sample product costs for Ganesha, Buddha, Shiv Trishul, etc. with aliases.');
+      await loadProductsAndAliases();
+    } catch (e) {
+      setError('Failed to load sample products');
+    }
+  };
+
   const handleEdit = (prod) => {
     setSku(prod.sku || prod.skuKey);
     setTitle(prod.title || '');
@@ -266,6 +283,15 @@ export default function ProductsView({ missingSkus = [], sellerId = 'default_sel
         </Box>
 
         <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+          <Button
+            variant="outlined"
+            onClick={handleLoadSampleProducts}
+            startIcon={<Sparkles size={15} color="#00c9ff" />}
+            sx={{ borderColor: 'rgba(0, 201, 255, 0.4)', color: '#00c9ff', textTransform: 'none' }}
+          >
+            ⚡ Load Sample Products
+          </Button>
+
           <Button
             variant="outlined"
             onClick={handleDownloadTemplate}
