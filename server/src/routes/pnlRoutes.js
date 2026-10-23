@@ -12,6 +12,8 @@ import {
   PnlTemplate,
   PnlFeeRule,
   PnlPayment,
+  PnlExpense,
+  PnlSkuAlias,
 } from '../models/PnlModels.js';
 
 const router = express.Router();
@@ -430,24 +432,127 @@ router.get('/batches/:id/rows', authenticatePnlUser, async (req, res) => {
 router.post('/orders/bulk', authenticatePnlUser, async (req, res) => {
   try {
     const { batchId, orderLines = [] } = req.body;
-    if (!orderLines.length) return res.json({ inserted: 0 });
+    if (!orderLines.length) return res.json({ upserted: 0 });
 
-    const docs = orderLines.map(line => ({
-      ...line,
-      batchId: batchId || line.batchId,
-      userId: req.pnlUser.id,
-    }));
+    const operations = orderLines.map((line) => {
+      const uniqueKey = line.uniqueKey || `${req.pnlUser.id}_${line.channelId}_${line.orderItemId || line.orderId}_${line.status || 'sale'}`.toLowerCase();
+      return {
+        updateOne: {
+          filter: { userId: req.pnlUser.id, uniqueKey },
+          update: {
+            $set: {
+              ...line,
+              uniqueKey,
+              batchId: batchId || line.batchId,
+              userId: req.pnlUser.id,
+              period: line.period || (line.orderDate ? line.orderDate.slice(0, 7) : 'all'),
+            },
+          },
+          upsert: true,
+        },
+      };
+    });
 
-    const result = await PnlOrderLine.insertMany(docs, { ordered: false });
-    
-    // Update batch accepted counts
+    const result = await PnlOrderLine.bulkWrite(operations, { ordered: false });
+
     if (batchId) {
       await PnlBatch.findByIdAndUpdate(batchId, {
-        rowCountAccepted: docs.length,
+        rowCountAccepted: orderLines.length,
+        rowsAdded: result.upsertedCount || 0,
+        rowsUpdated: result.modifiedCount || 0,
       });
     }
 
-    res.status(201).json({ inserted: result.length });
+    res.status(201).json({
+      upserted: result.upsertedCount,
+      modified: result.modifiedCount,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/orders/period/:period', authenticatePnlUser, async (req, res) => {
+  try {
+    const { period } = req.params;
+    const filter = { userId: req.pnlUser.id };
+    if (period && period !== 'all') {
+      filter.period = period;
+    }
+    const orders = await PnlOrderLine.find(filter).sort({ orderDate: -1 });
+    res.json({ orders, count: orders.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/batches/:id', authenticatePnlUser, async (req, res) => {
+  try {
+    const batch = await PnlBatch.findOne({ _id: req.params.id, userId: req.pnlUser.id });
+    if (!batch) return res.status(404).json({ error: 'Batch not found' });
+
+    await PnlOrderLine.deleteMany({ batchId: batch._id, userId: req.pnlUser.id });
+    await PnlRawRow.deleteMany({ batchId: batch._id });
+    await PnlBatch.deleteOne({ _id: batch._id });
+
+    res.json({ success: true, message: 'Batch and associated order lines deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/expenses/:period', authenticatePnlUser, async (req, res) => {
+  try {
+    const { period } = req.params;
+    const filter = { userId: req.pnlUser.id };
+    if (period && period !== 'all') filter.period = period;
+    const expenses = await PnlExpense.find(filter);
+    res.json({ expenses });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/expenses', authenticatePnlUser, async (req, res) => {
+  try {
+    const { period, type, amountPaise, notes } = req.body;
+    if (!period || !type) return res.status(400).json({ error: 'Period and type are required' });
+
+    const expense = await PnlExpense.findOneAndUpdate(
+      { userId: req.pnlUser.id, period, type },
+      { amountPaise: Math.round(Number(amountPaise) || 0), notes: notes || '', updatedAt: new Date() },
+      { upsert: true, new: true }
+    );
+    res.json({ expense });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/aliases', authenticatePnlUser, async (req, res) => {
+  try {
+    const aliases = await PnlSkuAlias.find({ userId: req.pnlUser.id });
+    res.json({ aliases });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/aliases', authenticatePnlUser, async (req, res) => {
+  try {
+    const { aliasKey, originalAlias, targetSkuKey, targetSku } = req.body;
+    if (!aliasKey || !targetSkuKey) return res.status(400).json({ error: 'Alias and target are required' });
+
+    const alias = await PnlSkuAlias.findOneAndUpdate(
+      { userId: req.pnlUser.id, aliasKey: aliasKey.toLowerCase().trim() },
+      {
+        originalAlias: originalAlias || aliasKey,
+        targetSkuKey: targetSkuKey.toLowerCase().trim(),
+        targetSku: targetSku || targetSkuKey,
+      },
+      { upsert: true, new: true }
+    );
+    res.json({ alias });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -455,11 +560,12 @@ router.post('/orders/bulk', authenticatePnlUser, async (req, res) => {
 
 router.get('/orders', authenticatePnlUser, async (req, res) => {
   try {
-    const { channelId, status, sku, limit = 500, skip = 0 } = req.query;
+    const { channelId, status, sku, period, limit = 500, skip = 0 } = req.query;
     const filter = { userId: req.pnlUser.id };
     if (channelId) filter.channelId = channelId;
     if (status) filter.status = status;
     if (sku) filter.sku = sku.toUpperCase();
+    if (period && period !== 'all') filter.period = period;
 
     const orders = await PnlOrderLine.find(filter)
       .sort({ orderDate: -1 })
