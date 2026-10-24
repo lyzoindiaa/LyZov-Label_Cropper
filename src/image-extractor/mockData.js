@@ -115,6 +115,14 @@ export const SHIRT_ART = `
   <line x1="0" y1="-25" x2="0" y2="48" stroke="#ffffff" stroke-width="2" stroke-dasharray="4 4"/>
 `;
 
+export const DECOR_ART = `
+  <!-- Decor / Figurine / Idol Artwork -->
+  <path d="M0,-44 C18,-44 30,-28 26,-8 C22,12 14,24 18,44 L-18,44 C-14,24 -22,12 -26,-8 C-30,-28 -18,-44 0,-44 Z" fill="#2d2212" stroke="#f59e0b" stroke-width="4"/>
+  <circle cx="0" cy="-14" r="10" fill="#f59e0b" fill-opacity="0.4" stroke="#f59e0b" stroke-width="2"/>
+  <path d="M-10,18 Q0,26 10,18" stroke="#f59e0b" stroke-width="3" fill="none"/>
+  <circle cx="0" cy="-28" r="4" fill="#fbbf24"/>
+`;
+
 export const GENERIC_ART = `
   <!-- Product Box Artwork -->
   <polygon points="0,-48 44,-24 44,24 0,48 -44,24 -44,-24" fill="#1e293b" stroke="#00c9ff" stroke-width="4"/>
@@ -340,11 +348,33 @@ export function detectCategoryAndIcon(titleOrUrl = '') {
     };
   }
 
+  // Home Decor, Idols, Showpieces & Figurines
+  if (/ganesh|idol|figurine|showpiece|statue|decor|sculpture|temple|pooja|mandir|flower|vase|curtain|candle|craft|show piece/i.test(text)) {
+    return {
+      category: 'Home & Decor / Showpiece',
+      artwork: DECOR_ART,
+      photoUrl: null,
+      gallery: [],
+      accentColor: '#f59e0b',
+    };
+  }
+
+  // Camera / Photography Equipment
+  if (/camera|polaroid|lens|tripod|dslr|nikon|canon|gopro/i.test(text)) {
+    return {
+      category: 'Cameras & Photography',
+      artwork: GENERIC_ART,
+      photoUrl: REAL_CATEGORY_GALLERIES.generic[0],
+      gallery: REAL_CATEGORY_GALLERIES.generic,
+      accentColor: '#00c9ff',
+    };
+  }
+
   return {
     category: 'E-Commerce Product',
     artwork: GENERIC_ART,
-    photoUrl: REAL_CATEGORY_GALLERIES.generic[0],
-    gallery: REAL_CATEGORY_GALLERIES.generic,
+    photoUrl: null,
+    gallery: [],
     accentColor: '#00c9ff',
   };
 }

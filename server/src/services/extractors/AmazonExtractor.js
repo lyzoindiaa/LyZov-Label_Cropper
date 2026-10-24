@@ -66,6 +66,30 @@ export class AmazonExtractor extends BaseExtractor {
     return imgUrl.replace(/\._[A-Z0-9_,-]+_\./i, '.');
   }
 
+  async fetchImagesFromSearch(query) {
+    if (!query || typeof query !== 'string') return [];
+    try {
+      const q = `${query} amazon`;
+      const searchUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(q)}&form=HDRSC2`;
+      const html = await safeFetchText(searchUrl, {
+        timeoutMs: 6000,
+        userAgent:
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      });
+      if (!html) return [];
+      const murls = [...html.matchAll(/&quot;murl&quot;:&quot;(https?:[^&]+?)&quot;/gi)].map((m) =>
+        m[1].replace(/\\/g, '')
+      );
+
+      const amazonImages = murls.filter((u) => /media-amazon\.com|ssl-images-amazon\.com/i.test(u));
+      const targetImages = amazonImages.length > 0 ? amazonImages : murls.slice(0, 6);
+
+      return targetImages.map((img) => this.upgradeAmazonResolution(img));
+    } catch {
+      return [];
+    }
+  }
+
   parseTitleFromSlug(url) {
     try {
       const parsed = new URL(url);
@@ -190,6 +214,15 @@ export class AmazonExtractor extends BaseExtractor {
           }
         } catch {}
       }
+    }
+
+    if (foundImages.length === 0 && (title || slugTitle)) {
+      try {
+        const searchImages = await this.fetchImagesFromSearch(title || slugTitle);
+        searchImages.forEach((img) => {
+          if (!foundImages.includes(img)) foundImages.push(img);
+        });
+      } catch {}
     }
 
     const finalImages = foundImages.length > 0 ? foundImages : fallbackGallery;

@@ -64,6 +64,18 @@ export const QualityFlags = {
     message: 'Gross sales value is zero (replacement, sample, or freebie).',
     impact: 'Margin calculation marked n/a.',
   },
+  BELONGS_TO_EARLIER_MONTH: {
+    code: 'BELONGS_TO_EARLIER_MONTH',
+    severity: FlagSeverity.INFO,
+    message: 'Return row belongs to a sale from an earlier month.',
+    impact: 'Loss displayed on separate line without distorting current month sale margins.',
+  },
+  PERIOD_MISMATCH: {
+    code: 'PERIOD_MISMATCH',
+    severity: FlagSeverity.WARNING,
+    message: 'Row order/settlement date differs from selected period.',
+    impact: 'Row partitioned to its actual occurrence month.',
+  },
 };
 
 export function createFlag(flagDef, customDetail = '') {

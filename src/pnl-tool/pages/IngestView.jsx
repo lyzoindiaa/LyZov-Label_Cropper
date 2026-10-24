@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -16,18 +16,35 @@ import {
   TableCell,
   TableBody,
   CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from '@mui/material';
-import { UploadCloud, FileSpreadsheet, CheckCircle2, ArrowRight, Sparkles, AlertTriangle } from 'lucide-react';
+import { UploadCloud, FileSpreadsheet, CheckCircle2, ArrowRight, Sparkles, AlertTriangle, Package, Calendar } from 'lucide-react';
 import { parseCsvText, parseXlsxFile, isXlsxFile, computeFileHash } from '../utils/parser.js';
 import { suggestColumnMappings, CANONICAL_FIELDS } from '../utils/mapper.js';
 import { normalizeRows } from '../domain/pipeline.js';
-import { saveLocalBatch, saveLocalRawRows, saveLocalOrderLines } from '../db/index.js';
+import {
+  openLocalDb,
+  saveLocalBatch,
+  saveLocalRawRows,
+  saveLocalOrderLines,
+  upsertOrderItems,
+  checkFileHash,
+  getLocalProducts,
+  saveLocalProduct,
+  getLocalSkuAliases,
+  getLocalOrderLines,
+} from '../db/index.js';
 import { pnlApi } from '../api/client.js';
 import { usePnlAuth } from '../auth/AuthContext.jsx';
+import { normalizeSkuKey } from '../domain/sku.js';
 
-export default function IngestView({ onIngestComplete }) {
+export default function IngestView({ onIngestComplete, sellerId = 'default_seller' }) {
   const { user, setAuthModalOpen } = usePnlAuth();
-  const [channel, setChannel] = useState('amazon');
+  const [channel, setChannel] = useState('flipkart');
   const [file, setFile] = useState(null);
   const [parsedData, setParsedData] = useState(null);
   const [mappings, setMappings] = useState({});
@@ -36,6 +53,13 @@ export default function IngestView({ onIngestComplete }) {
   const [error, setError] = useState('');
   const [duplicateWarning, setDuplicateWarning] = useState('');
   const [showAllColumns, setShowAllColumns] = useState(false);
+  const [detectedPeriod, setDetectedPeriod] = useState('');
+
+  // Quick SKU Cost entry modal
+  const [quickCostModalOpen, setQuickCostModalOpen] = useState(false);
+  const [missingSkusToFix, setMissingSkusToFix] = useState([]);
+  const [enteredCosts, setEnteredCosts] = useState({});
+  const [pendingNormResult, setPendingNormResult] = useState(null);
 
   const missingRequired = parsedData
     ? CANONICAL_FIELDS.filter((f) => f.required && !mappings[f.key])
@@ -57,6 +81,14 @@ export default function IngestView({ onIngestComplete }) {
       const hash = await computeFileHash(xlsx ? uploadedFile : text);
       setFileHash(hash);
 
+      // Check if file hash has already been imported
+      const existingImport = await checkFileHash(hash, sellerId);
+      if (existingImport) {
+        setDuplicateWarning(
+          `Already imported on ${new Date(existingImport.uploadedAt || Date.now()).toLocaleDateString()} (${existingImport.rowsAdded || existingImport.rowCountAccepted || 0} rows). Re-uploading this identical file will make no changes.`
+        );
+      }
+
       const parsed = xlsx ? await parseXlsxFile(uploadedFile) : parseCsvText(text);
       if (!parsed.headers.length) {
         throw new Error('Unable to extract headers from spreadsheet');
@@ -65,6 +97,16 @@ export default function IngestView({ onIngestComplete }) {
       setParsedData(parsed);
       const suggestions = suggestColumnMappings(parsed.headers);
       setMappings(suggestions);
+
+      // Auto-detect channel if headers indicate Flipkart or Amazon
+      const headerStr = parsed.headers.join(' ').toLowerCase();
+      if (headerStr.includes('fsn') || headerStr.includes('order item id') || headerStr.includes('event type')) {
+        setChannel('flipkart');
+      } else if (headerStr.includes('amazon') || headerStr.includes('seller sku') || headerStr.includes('asin')) {
+        setChannel('amazon');
+      } else if (headerStr.includes('sub order no') || headerStr.includes('supplier sku')) {
+        setChannel('meesho');
+      }
     } catch (err) {
       setError(err.message || 'File parsing failed');
     } finally {
@@ -72,37 +114,57 @@ export default function IngestView({ onIngestComplete }) {
     }
   };
 
-  const handleLoadSampleFile = () => {
-    const sampleCsv = `Order Id,Order Date,Seller SKU,Title,Quantity,Item Price,Promotion Discount,Shipping Price,Order Status
-402-8921102-1928301,2026-10-14,TSHIRT-SLIM-BLK,"Men Slim Fit Cotton T-Shirt (Black)",2,1198.00,100.00,0,Shipped
-402-7719201-9812402,2026-10-13,WIRELESS-EARBUDS,"Pro Active Noise-Cancelling Bluetooth Earbuds",1,2499.00,250.00,0,Shipped
-402-1102938-4491820,2026-10-10,PHONE-CASE-CLR,"Shockproof Hybrid Armor Phone Case (Clear)",1,199.00,50.00,0,Shipped
-402-9918274-1234981,2026-10-07,SMART-WATCH-STRAP,"Silicone Breathable Sport Strap for Smartwatch",1,399.00,40.00,0,Shipped
-402-5544332-9988112,2026-10-06,HOODIE-WNT-GRY,"Fleece Winter Pullover Hoodie (Heather Grey)",1,1699.00,0,0,Returned
-,2026-10-05,TSHIRT-SLIM-BLK,"Damaged Row Without Order ID",1,499.00,0,0,Shipped
-402-8921102-1928301,2026-10-14,TSHIRT-SLIM-BLK,"Duplicate Row of Line 1",2,1198.00,100.00,0,Shipped`;
+  const handleLoadSampleAugust = async () => {
+    try {
+      const res = await fetch('/samples/pnl/Flipkart_Sales_2026_08_August.csv');
+      const text = await res.text();
+      setFile({ name: 'Flipkart_Sales_2026_08_August.csv' });
+      setChannel('flipkart');
+      const hash = await computeFileHash(text);
+      setFileHash(hash);
+      const existing = await checkFileHash(hash, sellerId);
+      if (existing) {
+        setDuplicateWarning(`Already imported on ${new Date(existing.uploadedAt).toLocaleDateString()} (${existing.rowsAdded || 0} rows).`);
+      } else {
+        setDuplicateWarning('');
+      }
+      const parsed = parseCsvText(text);
+      setParsedData(parsed);
+      const suggestions = suggestColumnMappings(parsed.headers);
+      setMappings(suggestions);
+    } catch (e) {
+      setError('Failed to fetch sample August file');
+    }
+  };
 
-    setFile({ name: 'Amazon_Sample_MTR_Export.csv' });
-    setChannel('amazon');
-    setFileHash('hash_sample_amz_export_demo');
-    const parsed = parseCsvText(sampleCsv);
-    setParsedData(parsed);
-    const suggestions = suggestColumnMappings(parsed.headers);
-    setMappings(suggestions);
+  const handleLoadSampleSeptember = async () => {
+    try {
+      const res = await fetch('/samples/pnl/Flipkart_Sales_2026_09_September.csv');
+      const text = await res.text();
+      setFile({ name: 'Flipkart_Sales_2026_09_September.csv' });
+      setChannel('flipkart');
+      const hash = await computeFileHash(text);
+      setFileHash(hash);
+      const existing = await checkFileHash(hash, sellerId);
+      if (existing) {
+        setDuplicateWarning(`Already imported on ${new Date(existing.uploadedAt).toLocaleDateString()} (${existing.rowsAdded || 0} rows).`);
+      } else {
+        setDuplicateWarning('');
+      }
+      const parsed = parseCsvText(text);
+      setParsedData(parsed);
+      const suggestions = suggestColumnMappings(parsed.headers);
+      setMappings(suggestions);
+    } catch (e) {
+      setError('Failed to fetch sample September file');
+    }
   };
 
   const handleProcessImport = async () => {
     if (!parsedData || !file) return;
 
-    // Free guest exploration allows sample demo; real files require 1-Month Free Trial login
-    if (!user && file.name !== 'Amazon_Sample_MTR_Export.csv') {
-      setError('Please sign in or create an account for your 1-Month Free Trial to import and reconcile real store files.');
-      setAuthModalOpen(true);
-      return;
-    }
-
     // Verify required mappings
-    for (const reqField of CANONICAL_FIELDS.filter(f => f.required)) {
+    for (const reqField of CANONICAL_FIELDS.filter((f) => f.required)) {
       if (!mappings[reqField.key]) {
         setError(`Please map the required field: ${reqField.label}`);
         return;
@@ -113,6 +175,25 @@ export default function IngestView({ onIngestComplete }) {
     setError('');
 
     try {
+      // 1. Fetch current product master & aliases
+      const localProducts = await getLocalProducts(sellerId);
+      const cogsMap = {};
+      localProducts.forEach((p) => {
+        if (p.skuKey) cogsMap[p.skuKey] = p;
+        if (p.sku) cogsMap[p.sku.toUpperCase()] = p;
+      });
+
+      const aliasesMap = await getLocalSkuAliases(sellerId);
+
+      // 2. Build existing sales map for cross-month return linking
+      const allExisting = await getLocalOrderLines();
+      const existingSales = new Map();
+      allExisting.forEach((line) => {
+        if (line.orderItemId && line.status !== 'returned') {
+          existingSales.set(line.orderItemId, line.period || (line.orderDate ? line.orderDate.slice(0, 7) : 'prior'));
+        }
+      });
+
       const template = {
         currency: 'INR',
         columnMap: mappings,
@@ -121,47 +202,93 @@ export default function IngestView({ onIngestComplete }) {
       const normResult = normalizeRows({
         rawRows: parsedData.rows,
         channelId: channel,
+        sellerId,
+        batchId: `batch_${Date.now()}`,
         template,
+        cogsMap,
+        aliasesMap,
+        existingSales,
         dedupStrategy: 'keep_first',
       });
 
+      const detected = normResult.periodsDetected.length > 0 ? normResult.periodsDetected[0] : 'all';
+      setDetectedPeriod(detected);
+
       const batchObj = {
         id: `batch_${Date.now()}`,
+        sellerId,
         channelId: channel,
         fileName: file.name,
         fileHash,
+        period: normResult.periodsDetected.join(', ') || 'unknown',
         rowCountRaw: parsedData.rows.length,
         rowCountAccepted: normResult.acceptedCount,
         rowCountRejected: normResult.rejectedCount,
-        importedAt: Date.now(),
+        uploadedAt: Date.now(),
       };
 
-      // 1. Save locally in IndexedDB (Privacy & Speed)
+      // 3. Upsert order items by deterministic natural key into IndexedDB
+      const upsertStats = await upsertOrderItems({
+        items: normResult.accepted,
+        importRecord: batchObj,
+      });
+
+      // Save raw rows for audit drilldown
       await saveLocalBatch(batchObj);
-      await saveLocalRawRows(parsedData.rows.map((r, i) => ({ id: `raw_${batchObj.id}_${i + 1}`, batchId: batchObj.id, rowIndex: i + 1, rawValues: r })));
-      await saveLocalOrderLines(normResult.accepted);
+      await saveLocalRawRows(
+        parsedData.rows.map((r, i) => ({
+          id: `raw_${batchObj.id}_${i + 1}`,
+          batchId: batchObj.id,
+          rowIndex: i + 1,
+          rawValues: r,
+        }))
+      );
 
-      // 2. Sync to MongoDB if connected
-      try {
-        await pnlApi.createBatch({
-          channelId: channel,
-          fileName: file.name,
-          fileHash,
-          rowCountRaw: parsedData.rows.length,
-          rawRows: parsedData.rows.slice(0, 5000), // sync sample to server
-        });
-        await pnlApi.saveOrders(batchObj.id, normResult.accepted);
-      } catch (apiErr) {
-        console.warn('MongoDB sync notice (working with local database):', apiErr.message);
-      }
+      // Check if any SKUs are missing product costs
+      const missing = Array.from(
+        new Set(
+          normResult.accepted
+            .filter((l) => l.cogsSource === 'missing')
+            .map((l) => ({ sku: l.sku, skuKey: l.skuKey, title: l.productTitle }))
+        )
+      );
 
-      if (onIngestComplete) {
-        onIngestComplete(normResult);
+      if (missing.length > 0) {
+        setMissingSkusToFix(missing);
+        setPendingNormResult({ ...normResult, upsertStats, batchObj });
+        setQuickCostModalOpen(true);
+      } else {
+        if (onIngestComplete) {
+          onIngestComplete({ ...normResult, upsertStats, batchObj });
+        }
       }
     } catch (err) {
       setError(err.message || 'Failed to process import');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveQuickCosts = async () => {
+    // Save each entered cost
+    for (const item of missingSkusToFix) {
+      const costStr = enteredCosts[item.skuKey] || enteredCosts[item.sku];
+      if (costStr) {
+        const costPaise = Math.round(parseFloat(costStr) * 100);
+        await saveLocalProduct({
+          sellerId,
+          sku: item.sku,
+          skuKey: item.skuKey,
+          title: item.title,
+          costPaise,
+          cogsUnitPaise: costPaise,
+        });
+      }
+    }
+
+    setQuickCostModalOpen(false);
+    if (onIngestComplete && pendingNormResult) {
+      onIngestComplete(pendingNormResult);
     }
   };
 
@@ -172,12 +299,16 @@ export default function IngestView({ onIngestComplete }) {
           Import Sales & Orders Export
         </Typography>
         <Typography variant="body2" sx={{ color: '#94a3b8' }}>
-          Drop any raw CSV/XLSX export. Everything is parsed safely on your machine without server leaks.
+          Drop any raw Flipkart, Amazon, or marketplace export. Files are tagged by period (YYYY-MM) and upserted safely without duplicates.
         </Typography>
       </Box>
 
       {error && <Alert severity="error" sx={{ mb: 3, borderRadius: '10px' }}>{error}</Alert>}
-      {duplicateWarning && <Alert severity="warning" sx={{ mb: 3, borderRadius: '10px' }}>{duplicateWarning}</Alert>}
+      {duplicateWarning && (
+        <Alert severity="warning" sx={{ mb: 3, borderRadius: '10px' }}>
+          {duplicateWarning}
+        </Alert>
+      )}
 
       <Grid container spacing={3}>
         {/* Step 1: Channel & File Upload */}
@@ -195,12 +326,11 @@ export default function IngestView({ onIngestComplete }) {
                 onChange={(e) => setChannel(e.target.value)}
                 sx={{ color: '#f8fafc', bgcolor: 'rgba(255,255,255,0.03)' }}
               >
+                <MenuItem value="flipkart">Flipkart (Sales / Event Report)</MenuItem>
                 <MenuItem value="amazon">Amazon (MTR / Order Report)</MenuItem>
-                <MenuItem value="flipkart">Flipkart (Sales Report)</MenuItem>
                 <MenuItem value="meesho">Meesho (Orders Export)</MenuItem>
                 <MenuItem value="shopify">Shopify (Orders CSV)</MenuItem>
                 <MenuItem value="woocommerce">WooCommerce</MenuItem>
-                <MenuItem value="custom">Custom Marketplace / Store</MenuItem>
               </Select>
             </FormControl>
 
@@ -227,28 +357,48 @@ export default function IngestView({ onIngestComplete }) {
                 {file ? file.name : 'Click or Drag Sales Export Here'}
               </Typography>
               <Typography variant="caption" sx={{ color: '#64748b' }}>
-                Supports .XLSX, .CSV, .TSV (multi-thousand rows)
+                Supports .XLSX, .CSV, .TSV directly from Flipkart or Amazon
               </Typography>
             </Box>
 
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={handleLoadSampleFile}
-              startIcon={<Sparkles size={14} color="#00c9ff" />}
-              sx={{
-                borderColor: 'rgba(0, 201, 255, 0.4)',
-                color: '#00c9ff',
-                textTransform: 'none',
-                fontWeight: 600,
-                fontSize: '0.8rem',
-                borderRadius: '8px',
-                py: 0.8,
-                '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.1)', borderColor: '#00c9ff' },
-              }}
-            >
-              ⚡ Quick Demo: Load Sample Amazon Export
-            </Button>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleLoadSampleAugust}
+                startIcon={<Sparkles size={14} color="#00c9ff" />}
+                sx={{
+                  borderColor: 'rgba(0, 201, 255, 0.4)',
+                  color: '#00c9ff',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                  borderRadius: '8px',
+                  py: 0.8,
+                  '&:hover': { bgcolor: 'rgba(0, 201, 255, 0.1)', borderColor: '#00c9ff' },
+                }}
+              >
+                ⚡ Load Sample: August 2026 (6 Orders)
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleLoadSampleSeptember}
+                startIcon={<Sparkles size={14} color="#ffb703" />}
+                sx={{
+                  borderColor: 'rgba(255, 183, 3, 0.4)',
+                  color: '#ffb703',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                  borderRadius: '8px',
+                  py: 0.8,
+                  '&:hover': { bgcolor: 'rgba(255, 183, 3, 0.1)', borderColor: '#ffb703' },
+                }}
+              >
+                ⚡ Load Sample: September 2026 (Sales + Prior Month Return)
+              </Button>
+            </Box>
 
             {parsedData && (
               <Box sx={{ p: 2, bgcolor: 'rgba(0, 214, 143, 0.08)', borderRadius: '8px', border: '1px solid rgba(0, 214, 143, 0.25)' }}>
@@ -276,7 +426,7 @@ export default function IngestView({ onIngestComplete }) {
                     2. Check Your Columns
                   </Typography>
                   <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-                    We read your file and matched the columns for you.
+                    Columns matched automatically. You do not need to rename or touch anything.
                   </Typography>
                 </Box>
                 <Button
@@ -292,20 +442,19 @@ export default function IngestView({ onIngestComplete }) {
                     px: 3,
                   }}
                 >
-                  Analyze & Normalize
+                  Analyze & Upsert
                 </Button>
               </Box>
 
               {missingRequired.length === 0 && !showAllColumns && (
                 <Alert severity="success" sx={{ borderRadius: '10px' }}>
-                  All required columns were found automatically. Just click "Analyze &amp; Normalize".
+                  All required columns were matched. Click "Analyze &amp; Upsert" to import safely.
                 </Alert>
               )}
               {missingRequired.length > 0 && (
                 <Alert severity="warning" sx={{ borderRadius: '10px', mb: 2 }}>
                   We couldn't find {missingRequired.map((f) => f.label).join(', ')} in your file.
-                  For each one below, pick the column from your file that has that information
-                  (for example, the column that holds the order number).
+                  Please select the corresponding column from your file below.
                 </Alert>
               )}
 
@@ -381,6 +530,80 @@ export default function IngestView({ onIngestComplete }) {
           </Grid>
         )}
       </Grid>
+
+      {/* Quick Cost Setup Modal for Non-Technical Sellers */}
+      <Dialog
+        open={quickCostModalOpen}
+        onClose={() => setQuickCostModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { bgcolor: '#0f172a', color: '#f8fafc', borderRadius: '14px', border: '1px solid rgba(0, 201, 255, 0.25)' } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Package size={20} color="#00c9ff" />
+          Type Unit Cost for New SKUs
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2.5 }}>
+            We extracted these new SKUs from your sales file. Simply type your product cost (what you paid per unit) so we can calculate exact profit.
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxHeight: '360px', overflowY: 'auto', pr: 1 }}>
+            {missingSkusToFix.map((item) => (
+              <Box
+                key={item.skuKey}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  p: 1.5,
+                  bgcolor: 'rgba(255,255,255,0.03)',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                }}
+              >
+                <Box sx={{ maxWidth: '65%' }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#f8fafc' }}>
+                    {item.sku}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#64748b', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                    {item.title}
+                  </Typography>
+                </Box>
+                <TextField
+                  size="small"
+                  label="Cost (₹)"
+                  placeholder="e.g. 114"
+                  type="number"
+                  value={enteredCosts[item.skuKey] || ''}
+                  onChange={(e) => setEnteredCosts({ ...enteredCosts, [item.skuKey]: e.target.value })}
+                  sx={{
+                    width: '120px',
+                    '& .MuiInputBase-input': { color: '#00c9ff', fontWeight: 700 },
+                    '& .MuiInputLabel-root': { color: '#94a3b8' },
+                  }}
+                />
+              </Box>
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button onClick={() => setQuickCostModalOpen(false)} sx={{ color: '#94a3b8' }}>
+            Skip for Now
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSaveQuickCosts}
+            sx={{
+              background: 'linear-gradient(135deg, #00c9ff 0%, #0088ff 100%)',
+              fontWeight: 700,
+              textTransform: 'none',
+              px: 3,
+            }}
+          >
+            Save Costs &amp; View Dashboard
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

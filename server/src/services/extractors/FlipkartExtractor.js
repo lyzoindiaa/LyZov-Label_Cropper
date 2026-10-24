@@ -65,10 +65,36 @@ export class FlipkartExtractor extends BaseExtractor {
   upgradeResolution(imgUrl) {
     if (!imgUrl) return imgUrl;
     return imgUrl
+      .replace(/^http:\/\/rukmini[12]\.flixcart\.com/i, 'https://rukminim2.flixcart.com')
+      .replace(/^https:\/\/rukmini[12]\.flixcart\.com/i, 'https://rukminim2.flixcart.com')
       .replace(/{@width}/gi, '1800')
       .replace(/{@height}/gi, '1800')
       .replace(/{@quality}/gi, '85')
       .replace(/\/image\/[^\/]+\/[^\/]+\//i, '/image/1800/1800/');
+  }
+
+  async fetchImagesFromSearch(query) {
+    if (!query || typeof query !== 'string') return [];
+    try {
+      const q = `${query} flipkart`;
+      const searchUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(q)}&form=HDRSC2`;
+      const html = await safeFetchText(searchUrl, {
+        timeoutMs: 6000,
+        userAgent:
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      });
+      if (!html) return [];
+      const murls = [...html.matchAll(/&quot;murl&quot;:&quot;(https?:[^&]+?)&quot;/gi)].map((m) =>
+        m[1].replace(/\\/g, '')
+      );
+
+      const flixcartImages = murls.filter((u) => /flixcart\.com/i.test(u) && !/logo|banner|icon/i.test(u));
+      const targetImages = flixcartImages.length > 0 ? flixcartImages : murls.slice(0, 6);
+
+      return targetImages.map((img) => this.upgradeResolution(img));
+    } catch {
+      return [];
+    }
   }
 
   parseTitleFromSlug(url) {
@@ -232,6 +258,13 @@ export class FlipkartExtractor extends BaseExtractor {
           urls.forEach(addImage);
         }
       }
+    }
+
+    if (foundImages.length === 0 && (foundTitle || slugTitle)) {
+      try {
+        const searchImages = await this.fetchImagesFromSearch(foundTitle || slugTitle);
+        searchImages.forEach(addImage);
+      } catch {}
     }
 
     const finalImages = foundImages.length > 0 ? foundImages : fallbackGallery;

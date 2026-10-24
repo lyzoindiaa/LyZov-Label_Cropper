@@ -26,6 +26,7 @@ import {
   Trash2,
   CheckCircle2,
   ArrowRight,
+  History,
 } from 'lucide-react';
 
 import './pnl.css';
@@ -41,8 +42,14 @@ import RulesView from './pages/RulesView.jsx';
 import SEOHead from '../components/SEOHead.jsx';
 import BridgeView from './pages/BridgeView.jsx';
 import AdminView from './pages/AdminView.jsx';
+import ImportHistoryView from './pages/ImportHistoryView.jsx';
 
-import { getLocalOrderLines, clearLocalDatabase } from './db/index.js';
+import {
+  getRowsByPeriod,
+  getDistinctPeriods,
+  getLocalMonthlyExpenses,
+  clearLocalDatabase,
+} from './db/index.js';
 
 function PnlAppContent() {
   const {
@@ -58,66 +65,99 @@ function PnlAppContent() {
     isAdmin,
   } = usePnlAuth();
 
+  const currentSellerId = user?.id || user?._id || 'default_seller';
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const [orders, setOrders] = useState([]);
+  const [selectedPeriod, setSelectedPeriod] = useState('all');
+  const [availablePeriods, setAvailablePeriods] = useState([]);
+  const [monthlyExpenses, setMonthlyExpenses] = useState([]);
   const [auditResult, setAuditResult] = useState(null);
   const [missingSkus, setMissingSkus] = useState([]);
 
   // User menu anchor
   const [anchorEl, setAnchorEl] = useState(null);
 
-  // Load user data from local database on startup (clean, no sample seed)
-  const initAppDatabase = async () => {
+  // Load user data from local database partitioned by period
+  const loadPeriodData = async (periodToLoad, seller = currentSellerId) => {
     try {
-      const localOrders = await getLocalOrderLines();
-      setOrders(localOrders || []);
+      const distinct = await getDistinctPeriods(seller);
+      setAvailablePeriods(distinct);
+
+      let targetPeriod = periodToLoad;
+      if (!targetPeriod || (targetPeriod === 'all' && distinct.length > 0 && selectedPeriod === 'all')) {
+        // default to latest month if available
+        targetPeriod = distinct.length > 0 ? distinct[0] : 'all';
+      }
+      setSelectedPeriod(targetPeriod);
+
+      const rows = await getRowsByPeriod(seller, targetPeriod);
+      setOrders(rows || []);
+
+      const expenses = await getLocalMonthlyExpenses(seller, targetPeriod);
+      setMonthlyExpenses(expenses || []);
+
       const missing = Array.from(
-        new Set((localOrders || []).filter(l => l.cogsSource === 'missing').map(l => l.sku))
+        new Set((rows || []).filter((l) => l.cogsSource === 'missing').map((l) => l.sku))
       );
       setMissingSkus(missing);
     } catch (err) {
-      console.warn('LocalDB initialization notice:', err);
+      console.warn('LocalDB period load notice:', err);
     }
   };
 
   useEffect(() => {
-    initAppDatabase();
-  }, []);
+    loadPeriodData(selectedPeriod, currentSellerId);
+  }, [currentSellerId]);
+
+  const handlePeriodChange = (newPeriod) => {
+    setSelectedPeriod(newPeriod);
+    loadPeriodData(newPeriod, currentSellerId);
+  };
 
   const handleClearData = async () => {
     await clearLocalDatabase();
     setOrders([]);
+    setAvailablePeriods([]);
+    setSelectedPeriod('all');
+    setMonthlyExpenses([]);
     setAuditResult(null);
     setMissingSkus([]);
   };
 
-  const handleIngestComplete = (normResult) => {
-    setOrders(normResult.accepted);
+  const handleIngestComplete = async (normResult) => {
     setAuditResult(normResult);
-    const missing = Array.from(
-      new Set(normResult.accepted.filter(l => l.cogsSource === 'missing').map(l => l.sku))
-    );
-    setMissingSkus(missing);
-    setActiveTab('quality');
+    const periods = normResult.periodsDetected || [];
+    const latestPeriod = periods.length > 0 ? periods[0] : selectedPeriod;
+
+    // Reload distinct periods and switch to the newly uploaded month
+    await loadPeriodData(latestPeriod, currentSellerId);
+    setActiveTab('dashboard');
+  };
+
+  const handleExpensesUpdated = () => {
+    loadPeriodData(selectedPeriod, currentSellerId);
   };
 
   const navItems = [
     { key: 'dashboard', label: 'Dashboard', icon: <BarChart3 size={16} /> },
     { key: 'ingest', label: 'Import Sales', icon: <UploadCloud size={16} /> },
     { key: 'quality', label: 'Data Quality', icon: <ShieldCheck size={16} /> },
-    { key: 'products', label: 'Products & COGS', icon: <Package size={16} /> },
+    { key: 'products', label: 'Products & Costs', icon: <Package size={16} /> },
+    { key: 'history', label: 'Import History', icon: <History size={16} /> },
     { key: 'rules', label: 'Fee Cards', icon: <Layers size={16} /> },
-    { key: 'bridge', label: 'Profit Bridge & Simulators', icon: <GitCommit size={16} /> },
+    { key: 'bridge', label: 'Profit Simulators', icon: <GitCommit size={16} /> },
     ...(isAdmin ? [{ key: 'admin', label: 'Admin Console', icon: <ShieldAlert size={16} /> }] : []),
   ];
 
   return (
     <Box className="pnl-container">
       <SEOHead
-        title="Free E-Commerce P&L Analyzer & Marketplace Profit Calculator | LyZov"
-        description="Analyze real net margins, returns, and profits across Amazon, Flipkart, Meesho & Shopify. 100% private financial intelligence for Indian e-commerce sellers."
+        title="Seller P&L Analyzer & Marketplace Profit Calculator | LyZov"
+        description="Analyze exact net margins, fees, returns, and profits across Flipkart, Amazon, and Meesho. Idempotent period-scoped analytics for Indian marketplace sellers."
         canonical="https://tools.lyzov.com/pnl"
       />
+
       {/* Top Application Header */}
       <Box
         sx={{
@@ -154,10 +194,10 @@ function PnlAppContent() {
           </Box>
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 800, color: '#f8fafc', lineHeight: 1.1, letterSpacing: '-0.3px' }}>
-              LyZov <span style={{ color: '#00c9ff' }}>P&L Analyzer</span>
+              LyZov <span style={{ color: '#00c9ff' }}>Seller P&amp;L</span>
             </Typography>
             <Typography variant="caption" sx={{ color: '#64748b', fontSize: '0.72rem' }}>
-              Private Multi-Channel Financial Intelligence
+              Zero Data Mixing &bull; Period Partitioned
             </Typography>
           </Box>
         </Box>
@@ -190,9 +230,8 @@ function PnlAppContent() {
           })}
         </Box>
 
-        {/* Right Section: Trial/Subscription Badge & Auth */}
+        {/* Right Section: Subscription / Trial & User */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          {/* Subscription / Trial Pill */}
           <Button
             size="small"
             onClick={() => setPricingModalOpen(true)}
@@ -209,23 +248,16 @@ function PnlAppContent() {
               fontSize: '0.75rem',
             }}
           >
-            {isEnterprise ? 'Enterprise Plan (₹499)' : isPro ? 'Pro Plan (₹199)' : `1-Mo Free Trial (${trialDaysRemaining}d left)`}
+            {isEnterprise ? 'Enterprise Plan' : isPro ? 'Pro Plan' : `Free Trial (${trialDaysRemaining}d)`}
           </Button>
 
-          {/* User Profile / Login */}
           {user ? (
             <>
               <Button
                 size="small"
                 onClick={(e) => setAnchorEl(e.currentTarget)}
                 startIcon={<UserIcon size={16} />}
-                sx={{
-                  color: '#f8fafc',
-                  bgcolor: 'rgba(255,255,255,0.05)',
-                  borderRadius: '8px',
-                  textTransform: 'none',
-                  fontSize: '0.8rem',
-                }}
+                sx={{ color: '#f8fafc', fontWeight: 600, textTransform: 'none', borderRadius: '8px' }}
               >
                 {user.name || user.email.split('@')[0]}
               </Button>
@@ -243,11 +275,11 @@ function PnlAppContent() {
                 </Box>
                 <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />
                 <MenuItem onClick={() => { setAnchorEl(null); setPricingModalOpen(true); }} sx={{ fontSize: '0.85rem' }}>
-                  Manage Subscription (₹199 / ₹499)
+                  Manage Subscription
                 </MenuItem>
                 {isAdmin && (
                   <MenuItem onClick={() => { setAnchorEl(null); setActiveTab('admin'); }} sx={{ fontSize: '0.85rem' }}>
-                    Admin Dashboard
+                    Admin Console
                   </MenuItem>
                 )}
                 <MenuItem onClick={() => { setAnchorEl(null); logout(); }} sx={{ color: '#ff4d6d', fontSize: '0.85rem' }}>
@@ -276,10 +308,31 @@ function PnlAppContent() {
 
       {/* Main Workspace Router */}
       <Box sx={{ maxWidth: 1440, mx: 'auto', mt: 2 }}>
-        {activeTab === 'dashboard' && <DashboardView orders={orders} onNavigateTab={setActiveTab} />}
-        {activeTab === 'ingest' && <IngestView onIngestComplete={handleIngestComplete} />}
+        {activeTab === 'dashboard' && (
+          <DashboardView
+            orders={orders}
+            selectedPeriod={selectedPeriod}
+            onPeriodChange={handlePeriodChange}
+            availablePeriods={availablePeriods}
+            monthlyExpenses={monthlyExpenses}
+            onExpensesUpdated={handleExpensesUpdated}
+            onNavigateTab={setActiveTab}
+            sellerId={currentSellerId}
+          />
+        )}
+        {activeTab === 'ingest' && (
+          <IngestView onIngestComplete={handleIngestComplete} sellerId={currentSellerId} />
+        )}
         {activeTab === 'quality' && <QualityView auditResult={auditResult} />}
-        {activeTab === 'products' && <ProductsView missingSkus={missingSkus} />}
+        {activeTab === 'products' && (
+          <ProductsView missingSkus={missingSkus} sellerId={currentSellerId} />
+        )}
+        {activeTab === 'history' && (
+          <ImportHistoryView
+            onImportDeleted={() => loadPeriodData(selectedPeriod, currentSellerId)}
+            sellerId={currentSellerId}
+          />
+        )}
         {activeTab === 'rules' && <RulesView />}
         {activeTab === 'bridge' && <BridgeView orders={orders} />}
         {activeTab === 'admin' && (isAdmin ? <AdminView /> : <DashboardView orders={orders} onNavigateTab={setActiveTab} />)}
@@ -308,7 +361,7 @@ class PnlErrorBoundary extends React.Component {
       return (
         <Box sx={{ p: 4, maxWidth: 800, mx: 'auto', mt: 8, bgcolor: '#0f172a', border: '1px solid #ef4444', borderRadius: 3, color: '#f8fafc' }}>
           <Typography variant="h5" sx={{ color: '#ef4444', fontWeight: 800, mb: 2 }}>
-            P&L Analyzer Encountered an Error
+            P&amp;L Analyzer Encountered an Error
           </Typography>
           <Typography variant="body2" sx={{ color: '#94a3b8', mb: 2, fontFamily: 'monospace', bgcolor: '#020617', p: 2, borderRadius: 2, whiteSpace: 'pre-wrap' }}>
             {this.state.error?.message || String(this.state.error)}
