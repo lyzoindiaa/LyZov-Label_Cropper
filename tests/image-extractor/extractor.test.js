@@ -133,6 +133,12 @@ describe('Amazon & Flipkart Slug/ID Parsing & Image Content-Type Detection', () 
     assert.strictEqual(flipkart.parseTitleFromSlug('https://www.flipkart.com/p/itmc3ba08'), null);
   });
 
+  it('should not misclassify jeans URLs with swatchAttr query params as Watches', () => {
+    const flipkart = new FlipkartExtractor();
+    const url = 'https://www.flipkart.com/kotty-loose-fit-men-light-blue-jeans/p/itmf0f16afdf933b?pid=JEAGTJGX8HZFAMTW&swatchAttr=size';
+    assert.strictEqual(flipkart.detectCategory('Kotty Loose Fit Men Light Blue Jeans', url), 'Fashion & Apparel');
+  });
+
   it('should detect image MIME types from magic bytes', () => {
     const pngBuf = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d]);
     const jpgBuf = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);

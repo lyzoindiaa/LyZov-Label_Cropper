@@ -302,10 +302,12 @@ export const REAL_CATEGORY_GALLERIES = {
  * Detects the category and authentic high-resolution product photos from product title or URL.
  */
 export function detectCategoryAndIcon(titleOrUrl = '') {
-  const text = (titleOrUrl || '').toLowerCase();
+  // Strip query string parameters (e.g. ?swatchAttr=size) so param names never trigger category false positives
+  const cleanedInput = String(titleOrUrl || '').replace(/\?[^\s]*/g, '');
+  const text = cleanedInput.toLowerCase();
 
   // Footwear / Shoes
-  if (/shoe|sneaker|footwear|sandal|boot|loafer|heel|clog|runner|walking|trainer|slides|red tape/i.test(text)) {
+  if (/\b(shoes?|sneakers?|footwear|sandals?|boots?|loafers?|heels?|clogs?|runners?|walking|trainers?|slides?|red tape)\b/i.test(text)) {
     return {
       category: 'Footwear / Shoes',
       artwork: SNEAKER_ART,
@@ -316,7 +318,7 @@ export function detectCategoryAndIcon(titleOrUrl = '') {
   }
 
   // Watches & Wearables
-  if (/watch|smartwatch|band|chronograph|dial|boat storm/i.test(text)) {
+  if (/\b(watch|watches|smartwatch|smartwatches|chronograph|boat storm)\b/i.test(text)) {
     return {
       category: 'Wearables / Smartwatches',
       artwork: WATCH_ART,
@@ -327,7 +329,7 @@ export function detectCategoryAndIcon(titleOrUrl = '') {
   }
 
   // Apparel & Fashion
-  if (/shirt|t-shirt|saree|kurti|dress|pant|jeans|hoodie|jacket|cloth|apparel|top|trouser/i.test(text)) {
+  if (/\b(shirts?|t-?shirts?|sarees?|kurtis?|dresses?|pants?|jeans|denim|hoodies?|jackets?|cloth|apparel|tops?|trousers?)\b/i.test(text)) {
     return {
       category: 'Clothing / Fashion',
       artwork: SHIRT_ART,
@@ -338,7 +340,7 @@ export function detectCategoryAndIcon(titleOrUrl = '') {
   }
 
   // Electronics & Gadgets
-  if (/phone|mobile|iphone|samsung|pixel|earbuds|headphone|audio|speaker|echo|laptop|tablet/i.test(text)) {
+  if (/\b(phones?|mobiles?|iphones?|samsung|pixel|earbuds?|headphones?|audio|speakers?|echo|laptops?|tablets?)\b/i.test(text)) {
     return {
       category: 'Electronics / Audio',
       artwork: HEADPHONES_ART,
