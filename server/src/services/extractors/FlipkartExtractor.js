@@ -1,51 +1,16 @@
 import { BaseExtractor } from './BaseExtractor.js';
 import { safeFetchText, parseHtmlMetadata } from '../../utils/httpHelper.js';
 
-// Curated authentic studio photos for fallback with multiple product angles
-const CURATED_CATEGORY_GALLERIES = {
-  shoes: [
-    '/products/shoes.jpg',
-    '/products/shoes_2.jpg',
-    '/products/shoes_3.jpg',
-    '/products/shoes_4.jpg',
-  ],
-  footwear: [
-    '/products/shoes.jpg',
-    '/products/shoes_2.jpg',
-    '/products/shoes_3.jpg',
-    '/products/shoes_4.jpg',
-  ],
-  sneakers: [
-    '/products/shoes.jpg',
-    '/products/shoes_2.jpg',
-    '/products/shoes_3.jpg',
-    '/products/shoes_4.jpg',
-  ],
-  watch: [
-    '/products/watch.jpg',
-    '/products/watch_2.jpg',
-  ],
-  smartwatch: [
-    '/products/watch.jpg',
-    '/products/watch_2.jpg',
-  ],
-  headphones: [
-    '/products/headphones.jpg',
-  ],
-  shirt: [
-    '/products/shirt.jpg',
-    '/products/shirt_2.jpg',
-  ],
-  backpack: [
-    '/products/generic.jpg',
-  ],
-  phone: [
-    '/products/generic.jpg',
-  ],
-  generic: [
-    '/products/generic.jpg',
-  ],
-};
+function decodeHtmlEntities(str = '') {
+  return String(str || '')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 export class FlipkartExtractor extends BaseExtractor {
   constructor() {
@@ -70,7 +35,44 @@ export class FlipkartExtractor extends BaseExtractor {
       .replace(/{@width}/gi, '1800')
       .replace(/{@height}/gi, '1800')
       .replace(/{@quality}/gi, '85')
-      .replace(/\/image\/[^\/]+\/[^\/]+\//i, '/image/1800/1800/');
+      .replace(/\/image\/[^/]+\/[^/]+\//i, '/image/1800/1800/');
+  }
+
+  extractItemId(url) {
+    try {
+      const parsed = new URL(url);
+      const pid = parsed.searchParams.get('pid');
+      if (pid) return pid;
+      const match = parsed.pathname.match(/\/p\/(itm[0-9a-z]+)/i);
+      return match ? match[1] : null;
+    } catch {
+      return null;
+    }
+  }
+
+  async resolveTitleFromId(itemId) {
+    if (!itemId) return null;
+    try {
+      const query = `${itemId} flipkart`;
+      const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+      const html = await safeFetchText(ddgUrl, {
+        timeoutMs: 3500,
+      });
+      if (!html) return null;
+
+      const links = [...html.matchAll(/class="result__a"[^>]*>([\s\S]*?)<\/a>/gi)].map((m) =>
+        decodeHtmlEntities(m[1].replace(/<[^>]+>/g, ''))
+      );
+      for (const rawTitle of links) {
+        if (!rawTitle || /Online Shopping India/i.test(rawTitle)) continue;
+        const cleaned = rawTitle
+          .replace(/\s*[-:|]\s*Flipkart\.com.*$/i, '')
+          .replace(/\.\.\.$/, '')
+          .trim();
+        if (cleaned.length >= 6) return cleaned;
+      }
+    } catch {}
+    return null;
   }
 
   async fetchImagesFromSearch(query) {
@@ -79,19 +81,23 @@ export class FlipkartExtractor extends BaseExtractor {
       const q = `${query} flipkart`;
       const searchUrl = `https://www.bing.com/images/search?q=${encodeURIComponent(q)}&form=HDRSC2`;
       const html = await safeFetchText(searchUrl, {
-        timeoutMs: 6000,
-        userAgent:
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        timeoutMs: 4000,
+        minimalHeaders: true,
+        headers: {
+          Accept: 'text/html,application/xhtml+xml,*/*;q=0.8',
+          'Accept-Language': 'en-IN,en;q=0.9',
+        },
       });
       if (!html) return [];
       const murls = [...html.matchAll(/&quot;murl&quot;:&quot;(https?:[^&]+?)&quot;/gi)].map((m) =>
         m[1].replace(/\\/g, '')
       );
 
-      const flixcartImages = murls.filter((u) => /flixcart\.com/i.test(u) && !/logo|banner|icon/i.test(u));
-      const targetImages = flixcartImages.length > 0 ? flixcartImages : murls.slice(0, 6);
+      const cleanMurls = murls.filter((u) => !/logo|banner|icon|avatar/i.test(u));
+      const flixcartImages = cleanMurls.filter((u) => /flixcart\.com/i.test(u));
+      const targetImages = flixcartImages.length > 0 ? flixcartImages : cleanMurls.slice(0, 6);
 
-      return targetImages.map((img) => this.upgradeResolution(img));
+      return [...new Set(targetImages.map((img) => this.upgradeResolution(img)))].slice(0, 8);
     } catch {
       return [];
     }
@@ -101,12 +107,19 @@ export class FlipkartExtractor extends BaseExtractor {
     try {
       const parsed = new URL(url);
       const parts = parsed.pathname.split('/').filter(Boolean);
-      const slug = parts[0] !== 'p' ? parts[0] : parts[1] || '';
+      const pIndex = parts.findIndex((p) => p.toLowerCase() === 'p');
+      let slug = '';
+      if (pIndex > 0) {
+        slug = parts[pIndex - 1];
+      } else if (parts.length > 0 && parts[0].toLowerCase() !== 'p' && parts[0].toLowerCase() !== 'dl') {
+        slug = parts[0];
+      }
+
       if (slug) {
-        return decodeURIComponent(slug)
+        const cleaned = decodeURIComponent(slug)
           .replace(/[-_+.]+/g, ' ')
           .split(' ')
-          .filter((w) => w && !/^[0-9a-f]{8,}$/i.test(w) && !/^itm[0-9a-z]{6,}$/i.test(w))
+          .filter((w) => w && !/^[0-9a-f]{8,}$/i.test(w) && !/^itm[0-9a-z]{5,}$/i.test(w))
           .map((w) => {
             const lower = w.toLowerCase();
             if (['red', 'tape', 'boat', 'nike', 'apple', 'puma', 'adidas', 'sony'].includes(lower)) {
@@ -114,7 +127,9 @@ export class FlipkartExtractor extends BaseExtractor {
             }
             return w.charAt(0).toUpperCase() + lower.slice(1);
           })
-          .join(' ');
+          .join(' ')
+          .trim();
+        return cleaned || null;
       }
     } catch {}
     return null;
@@ -123,49 +138,58 @@ export class FlipkartExtractor extends BaseExtractor {
   detectCategory(titleOrUrl = '') {
     const text = titleOrUrl.toLowerCase();
     if (text.includes('shoe') || text.includes('sneaker') || text.includes('walking') || text.includes('footwear')) {
-      return { category: 'Footwear / Shoes', gallery: CURATED_CATEGORY_GALLERIES.shoes };
+      return 'Footwear / Shoes';
     }
     if (text.includes('watch') || text.includes('dial') || text.includes('strap')) {
-      return { category: 'Watches', gallery: CURATED_CATEGORY_GALLERIES.watch };
+      return 'Watches';
     }
     if (text.includes('headphone') || text.includes('earbud') || text.includes('airpods') || text.includes('audio')) {
-      return { category: 'Audio & Gadgets', gallery: CURATED_CATEGORY_GALLERIES.headphones };
+      return 'Audio & Gadgets';
     }
     if (text.includes('shirt') || text.includes('tshirt') || text.includes('jeans') || text.includes('dress') || text.includes('kurti')) {
-      return { category: 'Fashion & Apparel', gallery: CURATED_CATEGORY_GALLERIES.shirt };
+      return 'Fashion & Apparel';
     }
     if (text.includes('bag') || text.includes('backpack') || text.includes('luggage')) {
-      return { category: 'Bags & Luggage', gallery: CURATED_CATEGORY_GALLERIES.backpack };
+      return 'Bags & Luggage';
     }
     if (text.includes('phone') || text.includes('mobile') || text.includes('laptop')) {
-      return { category: 'Electronics & Mobiles', gallery: CURATED_CATEGORY_GALLERIES.phone };
+      return 'Electronics & Mobiles';
     }
-    return { category: 'E-Commerce Product', gallery: CURATED_CATEGORY_GALLERIES.generic };
+    return 'Flipkart Product';
   }
 
   async extract(url) {
     const slugTitle = this.parseTitleFromSlug(url);
-    const { category, gallery: fallbackGallery } = this.detectCategory((slugTitle || '') + ' ' + url);
+    const itemId = this.extractItemId(url);
 
     let html = '';
-    const userAgents = [
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-      'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
-    ];
+    try {
+      html = await safeFetchText(url, {
+        timeoutMs: 4500,
+      });
+    } catch {}
 
-    for (const ua of userAgents) {
+    // Check if Flipkart returned the generic homepage / bot shell
+    const isGenericHomepage = (text) => {
+      if (!text) return true;
+      const t = text.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1] || '';
+      return /Buy Products Online at Best Price in India|Online Shopping India \| Buy Mobiles/i.test(t);
+    };
+
+    if (!html || isGenericHomepage(html)) {
       try {
-        html = await safeFetchText(url, {
-          userAgent: ua,
-          timeoutMs: 7000,
+        const fbHtml = await safeFetchText(url, {
+          userAgent: 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+          minimalHeaders: true,
+          timeoutMs: 3000,
           headers: {
             'Accept-Language': 'en-IN,en;q=0.9',
           },
         });
-        if (html && html.length > 5000) break;
-      } catch {
-        // try next
-      }
+        if (fbHtml && !isGenericHomepage(fbHtml)) {
+          html = fbHtml;
+        }
+      } catch {}
     }
 
     const foundImages = [];
@@ -193,11 +217,11 @@ export class FlipkartExtractor extends BaseExtractor {
       if (!low.includes('flixcart.com')) return;
 
       const highRes = this.upgradeResolution(clean);
-      const fileMatch = highRes.match(/\/([^\/]+\.(?:jpeg|jpg|png|webp))$/i);
+      const fileMatch = highRes.match(/\/([^/]+\.(?:jpeg|jpg|png|webp))$/i);
       const filename = fileMatch ? fileMatch[1] : highRes;
 
-      const alreadyExists = foundImages.some(existing => {
-        const m = existing.match(/\/([^\/]+\.(?:jpeg|jpg|png|webp))$/i);
+      const alreadyExists = foundImages.some((existing) => {
+        const m = existing.match(/\/([^/]+\.(?:jpeg|jpg|png|webp))$/i);
         return m ? m[1] === filename : existing === highRes;
       });
 
@@ -206,11 +230,13 @@ export class FlipkartExtractor extends BaseExtractor {
       }
     };
 
-    if (html) {
+    if (html && !isGenericHomepage(html)) {
       const unescaped = html.replace(/\\u002f/gi, '/').replace(/\\\//g, '/');
 
-      // 1. JSON-LD scripts (contains the exact official gallery of THIS product)
-      const ldMatches = [...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>(.*?)<\/script>/gis)];
+      // 1. JSON-LD scripts (exact official gallery of THIS product)
+      const ldMatches = [
+        ...html.matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gis),
+      ];
       for (const m of ldMatches) {
         try {
           const data = JSON.parse(m[1]);
@@ -218,7 +244,9 @@ export class FlipkartExtractor extends BaseExtractor {
           for (const item of items) {
             if (item['@type'] === 'Product' || item.name) {
               if (item.name && !foundTitle) {
-                foundTitle = item.name.replace(/\s*\|\s*Flipkart\.com.*$/i, '').trim();
+                foundTitle = decodeHtmlEntities(
+                  item.name.replace(/\s*\|\s*Flipkart\.com.*$/i, '')
+                );
               }
               if (item.image) {
                 const imgs = Array.isArray(item.image) ? item.image : [item.image];
@@ -229,52 +257,71 @@ export class FlipkartExtractor extends BaseExtractor {
         } catch {}
       }
 
-      // If JSON-LD provided the authentic product gallery (>= 2 images), use them exclusively
-      // to avoid polluting the download gallery with "Similar Products" / "Recommended Products" widgets
+      // 2. OpenGraph & Meta image tags + product image patterns when JSON-LD is incomplete
       if (foundImages.length < 2) {
-        // 2. OpenGraph & Meta image tags
         const meta = parseHtmlMetadata(html, url);
-        if (meta.title && !foundTitle && !meta.title.includes('Online Shopping India') && !meta.title.includes('Flipkart.com')) {
-          foundTitle = meta.title.replace(/\s*\|\s*Flipkart\.com.*$/i, '').trim();
+        if (
+          meta.title &&
+          !foundTitle &&
+          !meta.title.includes('Online Shopping India') &&
+          !meta.title.includes('Buy Products Online') &&
+          !meta.title.includes('Flipkart.com')
+        ) {
+          foundTitle = decodeHtmlEntities(
+            meta.title.replace(/\s*\|\s*Flipkart\.com.*$/i, '')
+          );
         }
         if (meta.imageUrl) {
           addImage(meta.imageUrl);
         }
 
-        // 3. Scan flixcart product image URLs in unescaped HTML
-        const regex = /https?:\/\/[a-zA-Z0-9.-]*?flixcart\.com\/[^\s"',<>\\)\{]+?\.(?:jpeg|jpg|png|webp)/gi;
-        let match;
-        while ((match = regex.exec(unescaped)) !== null) {
-          const candidate = match[0];
-          if (candidate.includes('/image/') || candidate.includes('/xif0q/')) {
-            addImage(candidate);
+        // Only scan inline product images if we confirmed this is a product page (meta/title matched)
+        if (foundImages.length === 0) {
+          const regex =
+            /https?:\/\/[a-zA-Z0-9.-]*?flixcart\.com\/[^\s"',<>\\){]+?\.(?:jpeg|jpg|png|webp)/gi;
+          let match;
+          while ((match = regex.exec(unescaped)) !== null) {
+            const candidate = match[0];
+            if (candidate.includes('/image/') || candidate.includes('/xif0q/')) {
+              addImage(candidate);
+              if (foundImages.length >= 10) break;
+            }
           }
-        }
-
-        // 4. Scan srcset attributes
-        const srcsetMatches = [...unescaped.matchAll(/srcset=["']([^"']+)["']/gi)];
-        for (const s of srcsetMatches) {
-          const urls = s[1].split(',').map(part => part.trim().split(/\s+/)[0]);
-          urls.forEach(addImage);
         }
       }
     }
 
-    if (foundImages.length === 0 && (foundTitle || slugTitle)) {
-      try {
-        const searchImages = await this.fetchImagesFromSearch(foundTitle || slugTitle);
-        searchImages.forEach(addImage);
-      } catch {}
+    if (foundImages.length === 0) {
+      if (!foundTitle && itemId) {
+        const resolvedTitle = await this.resolveTitleFromId(itemId);
+        if (resolvedTitle) foundTitle = resolvedTitle;
+      }
+
+      if (foundTitle) {
+        const searchImages = await this.fetchImagesFromSearch(foundTitle);
+        searchImages.forEach((img) => {
+          if (!foundImages.includes(img)) foundImages.push(img);
+        });
+      }
     }
 
-    const finalImages = foundImages.length > 0 ? foundImages : fallbackGallery;
+    if (foundImages.length === 0) {
+      const err = new Error(
+        'Could not extract images from this Flipkart link. Flipkart may be blocking automated requests or the product was not found.'
+      );
+      err.code = 'EXTRACTION_FAILED';
+      throw err;
+    }
+
+    const finalTitle = foundTitle || 'Flipkart Product';
+    const category = this.detectCategory(`${finalTitle} ${url}`);
 
     return {
-      title: foundTitle || 'Flipkart Product',
-      imageUrl: finalImages[0],
-      images: finalImages,
+      title: finalTitle,
+      imageUrl: foundImages[0],
+      images: foundImages.slice(0, 12),
       platform: 'flipkart',
-      category: category,
+      category,
       sourceUrl: url,
     };
   }

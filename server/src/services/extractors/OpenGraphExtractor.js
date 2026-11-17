@@ -14,9 +14,9 @@ export class OpenGraphExtractor extends BaseExtractor {
     let html = '';
     try {
       html = await safeFetchText(url, {
-        timeoutMs: 7000,
+        timeoutMs: 6000,
       });
-    } catch (err) {
+    } catch {
       const timeoutErr = new Error('Product page request timed out or was unreachable.');
       timeoutErr.code = 'TIMEOUT';
       throw timeoutErr;
@@ -29,20 +29,47 @@ export class OpenGraphExtractor extends BaseExtractor {
     }
 
     const meta = parseHtmlMetadata(html, url);
+    const foundImages = [];
+    const addImage = (u) => {
+      if (!u || typeof u !== 'string') return;
+      try {
+        const abs = new URL(u.trim(), url).href;
+        if (!/^https?:\/\//i.test(abs)) return;
+        if (/logo|banner|icon|avatar|favicon/i.test(abs)) return;
+        if (!foundImages.includes(abs)) foundImages.push(abs);
+      } catch {}
+    };
 
-    let imageUrl = meta.imageUrl;
-    let title = meta.title;
+    if (meta.imageUrl) addImage(meta.imageUrl);
 
-    if (!imageUrl) {
-      // Look for any clean product images in HTML
-      const anyImgs = [...html.matchAll(/https?:\/\/[^"'\s\\]+\.(jpg|jpeg|png|webp)/gi)].map(m => m[0]);
-      const valid = anyImgs.filter(u => !u.includes('logo') && !u.includes('banner') && !u.includes('icon') && !u.includes('avatar'));
-      if (valid.length > 0) {
-        imageUrl = valid[0];
-      }
+    // Collect JSON-LD gallery images if available
+    const ldMatches = [
+      ...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gis),
+    ];
+    for (const m of ldMatches) {
+      try {
+        const data = JSON.parse(m[1]);
+        const items = Array.isArray(data) ? data : [data];
+        for (const item of items) {
+          if (item['@type'] === 'Product' || item.image) {
+            const imgs = Array.isArray(item.image) ? item.image : [item.image];
+            imgs.forEach((img) => {
+              if (typeof img === 'string') addImage(img);
+              else if (img && typeof img.url === 'string') addImage(img.url);
+            });
+          }
+        }
+      } catch {}
     }
 
-    if (!imageUrl) {
+    if (foundImages.length === 0) {
+      const anyImgs = [...html.matchAll(/https?:\/\/[^"'\s\\]+\.(?:jpg|jpeg|png|webp)/gi)].map(
+        (m) => m[0]
+      );
+      anyImgs.slice(0, 6).forEach(addImage);
+    }
+
+    if (foundImages.length === 0) {
       const err = new Error('No product image was found on the specified page.');
       err.code = 'NOT_FOUND';
       throw err;
@@ -58,9 +85,9 @@ export class OpenGraphExtractor extends BaseExtractor {
     } catch {}
 
     return {
-      title: title || 'Store Product',
-      imageUrl,
-      images: [imageUrl],
+      title: meta.title || 'Store Product',
+      imageUrl: foundImages[0],
+      images: foundImages.slice(0, 12),
       platform: platformName,
       category: 'E-Commerce Product',
       sourceUrl: url,

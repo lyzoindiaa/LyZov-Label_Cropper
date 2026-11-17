@@ -2,6 +2,9 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { validateSafeUrl } from '../../server/src/utils/ssrfGuard.js';
 import { extractorRegistry } from '../../server/src/services/extractors/ExtractorRegistry.js';
+import { AmazonExtractor } from '../../server/src/services/extractors/AmazonExtractor.js';
+import { FlipkartExtractor } from '../../server/src/services/extractors/FlipkartExtractor.js';
+import { detectImageContentType } from '../../server/src/utils/httpHelper.js';
 import { detectPlatform, PLATFORMS } from '../../src/image-extractor/mockData.js';
 
 describe('SSRF Guard & URL Safety Verification', () => {
@@ -105,5 +108,37 @@ describe('Extractor Registry Routing', () => {
     const ogExtractor = extractorRegistry.extractors.find(e => e.name === 'opengraph');
     assert.ok(ogExtractor);
     assert.strictEqual(ogExtractor.canHandle('https://randomstore.com/item'), true);
+  });
+});
+
+describe('Amazon & Flipkart Slug/ID Parsing & Image Content-Type Detection', () => {
+  it('should extract ASIN and ignore ASIN-only or gp paths as slug titles', () => {
+    const amazon = new AmazonExtractor();
+    assert.strictEqual(amazon.extractAsin('https://www.amazon.in/dp/B0GL8G49LV'), 'B0GL8G49LV');
+    assert.strictEqual(amazon.extractAsin('https://www.amazon.in/gp/product/B0GL8G49LV'), 'B0GL8G49LV');
+    assert.strictEqual(amazon.parseTitleFromSlug('https://www.amazon.in/dp/B0GL8G49LV'), null);
+    assert.strictEqual(amazon.parseTitleFromSlug('https://www.amazon.in/gp/product/B0GL8G49LV'), null);
+    assert.strictEqual(
+      amazon.parseTitleFromSlug('https://www.amazon.in/Samsung-Galaxy-S26-Ultra/dp/B0GL8G49LV'),
+      'Samsung Galaxy S26 Ultra'
+    );
+  });
+
+  it('should parse Flipkart slug only when present before /p/', () => {
+    const flipkart = new FlipkartExtractor();
+    assert.strictEqual(
+      flipkart.parseTitleFromSlug('https://www.flipkart.com/red-tape-sports-shoes/p/itmc3ba08'),
+      'RED TAPE Sports Shoes'
+    );
+    assert.strictEqual(flipkart.parseTitleFromSlug('https://www.flipkart.com/p/itmc3ba08'), null);
+  });
+
+  it('should detect image MIME types from magic bytes', () => {
+    const pngBuf = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d]);
+    const jpgBuf = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01]);
+    const webpBuf = Buffer.from('RIFF\x00\x00\x00\x00WEBP', 'ascii');
+    assert.strictEqual(detectImageContentType(pngBuf, 'https://example.com/img'), 'image/png');
+    assert.strictEqual(detectImageContentType(jpgBuf, 'https://example.com/img'), 'image/jpeg');
+    assert.strictEqual(detectImageContentType(webpBuf, 'https://example.com/img'), 'image/webp');
   });
 });

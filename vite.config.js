@@ -15,6 +15,12 @@ export default defineConfig({
     },
   },
   preview: {
-    allowedHosts: ['lyzov-label-cropper.onrender.com','tools.lyzov.com']
-  }
+    allowedHosts: ['lyzov-label-cropper.onrender.com', 'tools.lyzov.com'],
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
+    },
+  },
 })

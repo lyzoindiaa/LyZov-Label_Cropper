@@ -1,5 +1,5 @@
 import { validateSafeUrl } from '../../server/src/utils/ssrfGuard.js';
-import { safeFetchBinary } from '../../server/src/utils/httpHelper.js';
+import { safeFetchBinary, detectImageContentType } from '../../server/src/utils/httpHelper.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -16,19 +16,14 @@ export default async function handler(req, res) {
 
   try {
     const safeUrl = await validateSafeUrl(url);
-    const buffer = await safeFetchBinary(safeUrl, { timeoutMs: 10000 });
-
-    const lower = safeUrl.toLowerCase();
-    const contentType = lower.endsWith('.png')
-      ? 'image/png'
-      : lower.endsWith('.webp')
-      ? 'image/webp'
-      : 'image/jpeg';
+    const buffer = await safeFetchBinary(safeUrl, { timeoutMs: 8500 });
+    const contentType = detectImageContentType(buffer, safeUrl);
 
     res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Length', String(buffer.length));
     res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=86400');
     return res.status(200).send(buffer);
-  } catch (err) {
+  } catch {
     return res.status(502).send('Failed to proxy image');
   }
 }
