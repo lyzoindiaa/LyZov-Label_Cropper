@@ -135,27 +135,8 @@ export class FlipkartExtractor extends BaseExtractor {
     return null;
   }
 
-  detectCategory(titleOrUrl = '') {
-    const text = titleOrUrl.toLowerCase();
-    if (text.includes('shoe') || text.includes('sneaker') || text.includes('walking') || text.includes('footwear')) {
-      return 'Footwear / Shoes';
-    }
-    if (text.includes('watch') || text.includes('dial') || text.includes('strap')) {
-      return 'Watches';
-    }
-    if (text.includes('headphone') || text.includes('earbud') || text.includes('airpods') || text.includes('audio')) {
-      return 'Audio & Gadgets';
-    }
-    if (text.includes('shirt') || text.includes('tshirt') || text.includes('jeans') || text.includes('dress') || text.includes('kurti')) {
-      return 'Fashion & Apparel';
-    }
-    if (text.includes('bag') || text.includes('backpack') || text.includes('luggage')) {
-      return 'Bags & Luggage';
-    }
-    if (text.includes('phone') || text.includes('mobile') || text.includes('laptop')) {
-      return 'Electronics & Mobiles';
-    }
-    return 'Flipkart Product';
+  detectCategory(title = '', url = '') {
+    return this.detectCategoryFromTitle(title, url, 'Flipkart Product');
   }
 
   async extract(url) {
@@ -314,7 +295,7 @@ export class FlipkartExtractor extends BaseExtractor {
     }
 
     const finalTitle = foundTitle || 'Flipkart Product';
-    const category = this.detectCategory(`${finalTitle} ${url}`);
+    const category = this.detectCategory(finalTitle, url);
 
     return {
       title: finalTitle,
