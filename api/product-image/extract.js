@@ -2,6 +2,15 @@ import { validateSafeUrl } from '../../server/src/utils/ssrfGuard.js';
 import { resolveSafeRedirects } from '../../server/src/utils/urlResolver.js';
 import { extractorRegistry } from '../../server/src/services/extractors/ExtractorRegistry.js';
 
+function mapErrorStatus(code) {
+  if (code === 'INVALID_URL') return 400;
+  if (code === 'BLOCKED') return 403;
+  if (code === 'NOT_FOUND') return 404;
+  if (code === 'EXTRACTION_FAILED') return 422;
+  if (code === 'TIMEOUT') return 504;
+  return 500;
+}
+
 export default async function handler(req, res) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -56,9 +65,10 @@ export default async function handler(req, res) {
       },
     });
   } catch (err) {
-    return res.status(500).json({
+    const code = err.code || 'EXTRACTION_FAILED';
+    return res.status(mapErrorStatus(code)).json({
       success: false,
-      code: err.code || 'EXTRACTION_FAILED',
+      code,
       error: err.message || 'Failed to extract product image.',
     });
   }

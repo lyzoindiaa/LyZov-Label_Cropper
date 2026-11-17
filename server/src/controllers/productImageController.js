@@ -4,17 +4,34 @@ import { resolveSafeRedirects } from '../utils/urlResolver.js';
 import { extractorRegistry } from '../services/extractors/ExtractorRegistry.js';
 import { ProductCache } from '../models/ProductCache.js';
 import { ConversionLog } from '../models/ConversionLog.js';
-import { safeFetchBinary } from '../utils/httpHelper.js';
+import { safeFetchBinary, detectImageContentType } from '../utils/httpHelper.js';
 
 function hashUrl(url) {
   return crypto.createHash('sha256').update(url.trim().toLowerCase()).digest('hex');
+}
+
+function isValidExtractableUrl(imageUrl) {
+  return (
+    typeof imageUrl === 'string' &&
+    /^https?:\/\//i.test(imageUrl) &&
+    !imageUrl.startsWith('/products/')
+  );
+}
+
+function mapErrorStatus(code) {
+  if (code === 'INVALID_URL') return 400;
+  if (code === 'BLOCKED') return 403;
+  if (code === 'NOT_FOUND') return 404;
+  if (code === 'EXTRACTION_FAILED') return 422;
+  if (code === 'TIMEOUT') return 504;
+  return 500;
 }
 
 /**
  * POST /api/product-image/extract
  * Extracts product image & title from an e-commerce link.
  */
-export async function extractProductImage(req, res, next) {
+export async function extractProductImage(req, res) {
   const startTime = Date.now();
   const { url, format = 'png', quality = 90 } = req.body || {};
 
@@ -37,11 +54,10 @@ export async function extractProductImage(req, res, next) {
     const resolvedUrl = await resolveSafeRedirects(safeInitial, 3);
     const urlHash = hashUrl(resolvedUrl);
 
-    // 3. Check 24h cache
+    // 3. Check 24h cache (skip stale fallback entries)
     try {
       const cached = await ProductCache.findOne({ urlHash });
-      if (cached) {
-        // Log cache hit
+      if (cached && isValidExtractableUrl(cached.imageUrl)) {
         ConversionLog.create({
           userId,
           ip: clientIp,
@@ -74,30 +90,33 @@ export async function extractProductImage(req, res, next) {
 
     // 4. Live extraction via Registry
     const extractionResult = await extractorRegistry.extract(resolvedUrl);
-    const allImages = extractionResult.images && extractionResult.images.length > 0
-      ? extractionResult.images
-      : [extractionResult.imageUrl];
+    const allImages =
+      extractionResult.images && extractionResult.images.length > 0
+        ? extractionResult.images
+        : [extractionResult.imageUrl];
 
-    // 5. Save to Cache
-    try {
-      await ProductCache.findOneAndUpdate(
-        { urlHash },
-        {
-          urlHash,
-          platform: extractionResult.platform,
-          title: extractionResult.title,
-          category: extractionResult.category || 'E-Commerce Product',
-          imageUrl: extractionResult.imageUrl,
-          images: allImages,
-          sourceUrl: resolvedUrl,
-          format,
-          quality: Number(quality) || 90,
-          createdAt: new Date(),
-        },
-        { upsert: true, new: true }
-      );
-    } catch {
-      // Cache write error non-fatal
+    // 5. Save to Cache (only real remote URLs)
+    if (isValidExtractableUrl(extractionResult.imageUrl)) {
+      try {
+        await ProductCache.findOneAndUpdate(
+          { urlHash },
+          {
+            urlHash,
+            platform: extractionResult.platform,
+            title: extractionResult.title,
+            category: extractionResult.category || 'E-Commerce Product',
+            imageUrl: extractionResult.imageUrl,
+            images: allImages,
+            sourceUrl: resolvedUrl,
+            format,
+            quality: Number(quality) || 90,
+            createdAt: new Date(),
+          },
+          { upsert: true, new: true }
+        );
+      } catch {
+        // Cache write error non-fatal
+      }
     }
 
     // 6. Log success
@@ -127,8 +146,8 @@ export async function extractProductImage(req, res, next) {
       },
     });
   } catch (err) {
-    const status = err.code === 'INVALID_URL' ? 400 : err.code === 'BLOCKED' ? 403 : err.code === 'TIMEOUT' ? 504 : 500;
-    const errorCode = err.code || 'FAILED';
+    const errorCode = err.code || 'EXTRACTION_FAILED';
+    const status = mapErrorStatus(errorCode);
 
     // Log failure
     ConversionLog.create({
@@ -163,13 +182,8 @@ export async function proxyImage(req, res) {
 
   try {
     const safeUrl = await validateSafeUrl(url);
-    const buffer = await safeFetchBinary(safeUrl, { timeoutMs: 10000 });
-
-    // Determine content type
-    let contentType = 'image/jpeg';
-    if (safeUrl.endsWith('.png')) contentType = 'image/png';
-    else if (safeUrl.endsWith('.webp')) contentType = 'image/webp';
-    else if (safeUrl.endsWith('.svg')) contentType = 'image/svg+xml';
+    const buffer = await safeFetchBinary(safeUrl, { timeoutMs: 8500 });
+    const contentType = detectImageContentType(buffer, safeUrl);
 
     res.set({
       'Content-Type': contentType,
@@ -180,7 +194,7 @@ export async function proxyImage(req, res) {
     });
 
     return res.send(buffer);
-  } catch (err) {
+  } catch {
     return res.status(502).send('Failed to proxy product image.');
   }
 }
@@ -201,7 +215,7 @@ export async function getRecentExtractions(req, res) {
       .select('platform sourceUrl format status createdAt');
 
     return res.json({ success: true, logs });
-  } catch (err) {
+  } catch {
     return res.status(500).json({ success: false, error: 'Failed to retrieve recent logs.' });
   }
 }

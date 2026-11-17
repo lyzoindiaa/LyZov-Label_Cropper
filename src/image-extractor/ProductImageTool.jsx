@@ -58,15 +58,16 @@ import {
   PLATFORMS,
   SAMPLE_LINKS,
   detectPlatform,
-  simulateExtract,
 } from './mockData';
 
 const rawBase = import.meta.env.VITE_API_BASE_URL || '/api';
 const API_BASE = rawBase.replace(/\/+$/, '');
+const API_CANDIDATES = API_BASE === '/api' ? ['/api'] : [API_BASE, '/api'];
 
 export default function ProductImageTool() {
   const { theme, toggleTheme, user, setUser } = useContext(AppContext);
   const fileInputRef = useRef(null);
+  const activeApiBaseRef = useRef(API_BASE);
 
   // Active Tab: 0 = Single Link Extractor, 1 = Batch Multi-Link Mode
   const [activeTab, setActiveTab] = useState(0);
@@ -171,6 +172,201 @@ export default function ProductImageTool() {
     setErrorCode('');
   };
 
+  // Build proxy URL for a given remote image
+  const getProxyUrl = (remoteUrl, base = activeApiBaseRef.current) =>
+    `${base}/product-image/proxy?url=${encodeURIComponent(remoteUrl)}`;
+
+  // Extract SKU / ASIN / Item ID from URL when available
+  const extractSkuFromUrl = (rawUrl = '') => {
+    const skuMatch = rawUrl.match(/(?:dp|gp\/product|p|buy|item|d)\/([a-zA-Z0-9_-]+)/i);
+    return skuMatch ? skuMatch[1].toUpperCase() : `SKU-${Date.now().toString().slice(-6)}`;
+  };
+
+  // Call backend extraction API with automatic fallback to same-origin /api
+  const extractViaApi = async (targetUrl) => {
+    const trimmed = targetUrl.trim();
+    if (!/^https?:\/\//i.test(trimmed)) {
+      const err = new Error('Invalid URL format. Please make sure the link starts with http:// or https://');
+      err.code = 'INVALID_URL';
+      throw err;
+    }
+
+    const token = localStorage.getItem('gst_token') || localStorage.getItem('token');
+    let structuredApiError = null;
+
+    for (const base of API_CANDIDATES) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 14000);
+      try {
+        const apiRes = await fetch(`${base}/product-image/extract`, {
+          method: 'POST',
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ url: trimmed, format, quality }),
+        });
+        clearTimeout(timeoutId);
+
+        const contentType = apiRes.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          continue;
+        }
+
+        const json = await apiRes.json();
+        if (apiRes.ok && json.success && json.data) {
+          activeApiBaseRef.current = base;
+          const platformObj = PLATFORMS[json.data.platform] || PLATFORMS.generic;
+          const rawImages =
+            json.data.images && json.data.images.length > 0
+              ? json.data.images
+              : [json.data.imageUrl];
+          const images = rawImages.filter((u) => typeof u === 'string' && !u.startsWith('/products/'));
+
+          if (images.length === 0) {
+            const err = new Error('No product images could be extracted from this link.');
+            err.code = 'NOT_FOUND';
+            throw err;
+          }
+
+          return {
+            success: true,
+            platform: json.data.platform,
+            platformInfo: platformObj,
+            title: json.data.title,
+            category: json.data.category || 'Product',
+            dimensions: 'Original Resolution',
+            fileSizeEstimate: 'High-Res',
+            imageUrl: images[0],
+            images,
+            sourceUrl: json.data.sourceUrl || trimmed,
+            sku: extractSkuFromUrl(json.data.sourceUrl || trimmed),
+            format,
+            quality,
+            extractedAt: new Date().toISOString(),
+          };
+        }
+
+        if (json && json.success === false && json.code) {
+          const err = new Error(json.error || 'Failed to extract product image.');
+          err.code = json.code;
+          structuredApiError = err;
+          // If the external backend failed extraction due to IP blocking or timeout,
+          // still let the same-origin fallback try if available
+          if (['INVALID_URL', 'BLOCKED', 'NOT_FOUND'].includes(json.code)) {
+            throw err;
+          }
+        }
+      } catch (err) {
+        clearTimeout(timeoutId);
+        if (err && ['INVALID_URL', 'BLOCKED', 'NOT_FOUND'].includes(err.code)) {
+          throw err;
+        }
+      }
+    }
+
+    if (structuredApiError) {
+      throw structuredApiError;
+    }
+
+    const unavailableErr = new Error(
+      'Unable to reach the image extraction service. Please retry in a moment or upload the product image directly.'
+    );
+    unavailableErr.code = 'API_UNAVAILABLE';
+    throw unavailableErr;
+  };
+
+  // Fetch image bytes via proxy (with fallback across API candidates) and convert to selected format
+  const convertImageToBlob = async (targetUrl) => {
+    if (!targetUrl) {
+      throw new Error('Missing image URL.');
+    }
+
+    let sourceBlob;
+    if (targetUrl.startsWith('data:')) {
+      const res = await fetch(targetUrl);
+      sourceBlob = await res.blob();
+    } else if (/^https?:\/\//i.test(targetUrl)) {
+      const proxyBases = [...new Set([activeApiBaseRef.current, ...API_CANDIDATES])];
+      let fetchedBlob = null;
+      for (const base of proxyBases) {
+        try {
+          const proxyRes = await fetch(getProxyUrl(targetUrl, base));
+          if (proxyRes.ok) {
+            const b = await proxyRes.blob();
+            if (b && b.size > 0 && (!b.type || b.type.startsWith('image/') || b.type === 'application/octet-stream')) {
+              fetchedBlob = b;
+              break;
+            }
+          }
+        } catch {}
+      }
+      if (!fetchedBlob) {
+        throw new Error('Failed to download image through proxy.');
+      }
+      sourceBlob = fetchedBlob;
+    } else {
+      const res = await fetch(targetUrl);
+      if (!res.ok) throw new Error('Failed to load local image.');
+      sourceBlob = await res.blob();
+    }
+
+    const objectUrl = URL.createObjectURL(sourceBlob);
+    try {
+      const converted = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth || 1200;
+            canvas.height = img.naturalHeight || 1200;
+            const ctx = canvas.getContext('2d');
+            if (format === 'jpeg') {
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            ctx.drawImage(img, 0, 0);
+            const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+            const q = format === 'jpeg' ? quality / 100 : undefined;
+            canvas.toBlob(
+              (blob) => {
+                if (blob) resolve(blob);
+                else reject(new Error('Canvas conversion returned empty blob'));
+              },
+              mimeType,
+              q
+            );
+          } catch (canvasErr) {
+            reject(canvasErr);
+          }
+        };
+        img.onerror = () => reject(new Error('Browser could not decode image'));
+        img.src = objectUrl;
+      });
+      return converted;
+    } catch {
+      return sourceBlob;
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  };
+
+  // Retry image preview through backend proxy if direct CDN blocks hotlinking
+  const handleImageLoadError = (e, originalUrl) => {
+    const imgEl = e.currentTarget;
+    if (
+      originalUrl &&
+      /^https?:\/\//i.test(originalUrl) &&
+      !imgEl.dataset.proxyAttempted
+    ) {
+      imgEl.dataset.proxyAttempted = '1';
+      imgEl.src = getProxyUrl(originalUrl);
+      return;
+    }
+    imgEl.onerror = null;
+  };
+
   // Trigger Single Extraction from Link
   const handleExtract = async (targetUrl = urlInput) => {
     const urlToTest = targetUrl || urlInput;
@@ -193,57 +389,14 @@ export default function ProductImageTool() {
     setErrorCode('');
 
     try {
-      let result = null;
-      try {
-        const token = localStorage.getItem('token');
-        const apiRes = await fetch(`${API_BASE}/product-image/extract`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ url: urlToTest, format, quality }),
-        });
-        if (apiRes.ok) {
-          const json = await apiRes.json();
-          if (json.success && json.data) {
-            const platformObj = PLATFORMS[json.data.platform] || PLATFORMS.generic;
-            const images = json.data.images && json.data.images.length > 0
-              ? json.data.images
-              : [json.data.imageUrl];
-            result = {
-              success: true,
-              platform: json.data.platform,
-              platformInfo: platformObj,
-              title: json.data.title,
-              category: json.data.category || 'Product',
-              dimensions: '2048 × 2048 px',
-              fileSizeEstimate: '2.4 MB',
-              imageUrl: images[0],
-              images: images,
-              sourceUrl: json.data.sourceUrl || urlToTest,
-              sku: `SKU-${Date.now().toString().slice(-6)}`,
-              format,
-              quality,
-              extractedAt: new Date().toISOString(),
-            };
-          }
-        }
-      } catch (apiErr) {
-        console.warn('Backend API unavailable, using client extractor:', apiErr);
-      }
-
-      if (!result) {
-        result = await simulateExtract(urlToTest, format, quality);
-      }
-
+      const result = await extractViaApi(urlToTest);
       setExtractedData(result);
       setSelectedImageIndex(0);
       setStateStatus('success');
       recordGuestExtraction();
     } catch (err) {
       setStateStatus('error');
-      setErrorCode(err.code || 'UNKNOWN_ERROR');
+      setErrorCode(err.code || 'EXTRACTION_FAILED');
       setErrorMessage(err.message || 'Failed to extract product image.');
     }
   };
@@ -313,8 +466,8 @@ export default function ProductImageTool() {
     }
   };
 
-  // Single Image Download with safe data URI handling & direct fallback
-  const handleDownload = (item = extractedData, targetUrlOverride = null) => {
+  // Single Image Download with proxy fallback & format conversion
+  const handleDownload = async (item = extractedData, targetUrlOverride = null) => {
     const targetUrl = targetUrlOverride || activeImageUrl || item?.imageUrl;
     if (!targetUrl) return;
     setDownloading(true);
@@ -322,80 +475,18 @@ export default function ProductImageTool() {
     const cleanName = (item?.title || 'product')
       .replace(/[^a-z0-9_-]/gi, '_')
       .slice(0, 36);
-
     const angleSuffix = item?.images && item.images.length > 1 ? `_Angle_${selectedImageIndex + 1}` : '';
+    const ext = format === 'jpeg' ? 'jpg' : 'png';
 
-    const fallbackDirectDownload = () => {
-      try {
-        if (targetUrl.startsWith('data:')) {
-          const arr = targetUrl.split(',');
-          const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
-          const bstr = atob(arr[1]);
-          let n = bstr.length;
-          const u8arr = new Uint8Array(n);
-          while (n--) {
-            u8arr[n] = bstr.charCodeAt(n);
-          }
-          const blob = new Blob([u8arr], { type: mime });
-          saveAs(blob, `${cleanName}${angleSuffix}.${format === 'jpeg' ? 'jpg' : 'png'}`);
-        } else {
-          const directUrl = /^https?:\/\//i.test(targetUrl)
-            ? `${API_BASE}/product-image/proxy?url=${encodeURIComponent(targetUrl)}`
-            : targetUrl;
-          saveAs(directUrl, `${cleanName}${angleSuffix}.${format === 'jpeg' ? 'jpg' : 'png'}`);
-        }
-      } catch (e) {
-        console.warn('Fallback direct download failed:', e);
-      } finally {
-        setDownloading(false);
-      }
-    };
-
-    const img = new Image();
-    const sourceSrc = /^https?:\/\//i.test(targetUrl)
-      ? `${API_BASE}/product-image/proxy?url=${encodeURIComponent(targetUrl)}`
-      : targetUrl;
-
-    if (/^https?:\/\//i.test(sourceSrc)) {
-      img.crossOrigin = 'anonymous';
+    try {
+      const blob = await convertImageToBlob(targetUrl);
+      saveAs(blob, `${cleanName}${angleSuffix}.${ext}`);
+    } catch (err) {
+      console.error('Download failed:', err);
+      alert('Failed to download image. Please try again.');
+    } finally {
+      setDownloading(false);
     }
-
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth || 1200;
-        canvas.height = img.naturalHeight || 1200;
-        const ctx = canvas.getContext('2d');
-
-        if (format === 'jpeg') {
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-        ctx.drawImage(img, 0, 0);
-
-        const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/png';
-        const q = format === 'jpeg' ? quality / 100 : undefined;
-
-        canvas.toBlob((blob) => {
-          if (blob) {
-            saveAs(blob, `${cleanName}${angleSuffix}.${format === 'jpeg' ? 'jpg' : 'png'}`);
-            setDownloading(false);
-          } else {
-            fallbackDirectDownload();
-          }
-        }, mimeType, q);
-      } catch (canvasErr) {
-        console.warn('Canvas export error, using fallback:', canvasErr);
-        fallbackDirectDownload();
-      }
-    };
-
-    img.onerror = (err) => {
-      console.warn('Image canvas load failed, using fallback:', err);
-      fallbackDirectDownload();
-    };
-
-    img.src = sourceSrc;
   };
 
   // Download All Angles of a Single Product as ZIP
@@ -408,45 +499,21 @@ export default function ProductImageTool() {
       const zip = new JSZip();
       const cleanTitle = (item.title || 'product').replace(/[^a-z0-9_-]/gi, '_').slice(0, 32);
       const folder = zip.folder(`${cleanTitle}_images`);
+      const ext = format === 'jpeg' ? 'jpg' : 'png';
+      let addedCount = 0;
 
       for (let i = 0; i < images.length; i++) {
-        const url = images[i];
-        const blob = await new Promise((resolve) => {
-          const img = new Image();
-          const proxySrc = /^https?:\/\//i.test(url)
-            ? `${API_BASE}/product-image/proxy?url=${encodeURIComponent(url)}`
-            : url;
+        try {
+          const blob = await convertImageToBlob(images[i]);
+          folder.file(`Angle_${i + 1}_${cleanTitle}.${ext}`, blob);
+          addedCount++;
+        } catch (imgErr) {
+          console.warn(`Skipping angle ${i + 1}:`, imgErr);
+        }
+      }
 
-          if (/^https?:\/\//i.test(proxySrc)) {
-            img.crossOrigin = 'anonymous';
-          }
-          img.onload = () => {
-            try {
-              const canvas = document.createElement('canvas');
-              canvas.width = img.naturalWidth || 1200;
-              canvas.height = img.naturalHeight || 1200;
-              const ctx = canvas.getContext('2d');
-              if (format === 'jpeg') {
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-              }
-              ctx.drawImage(img, 0, 0);
-              canvas.toBlob(
-                (b) => resolve(b || new Blob([''], { type: 'image/png' })),
-                format === 'jpeg' ? 'image/jpeg' : 'image/png',
-                quality / 100
-              );
-            } catch {
-              resolve(new Blob([''], { type: 'image/png' }));
-            }
-          };
-          img.onerror = () => {
-            resolve(new Blob([''], { type: 'image/png' }));
-          };
-          img.src = proxySrc;
-        });
-
-        folder.file(`Angle_${i + 1}_${cleanTitle}.${format === 'jpeg' ? 'jpg' : 'png'}`, blob);
+      if (addedCount === 0) {
+        throw new Error('No images could be downloaded.');
       }
 
       const zipBlob = await zip.generateAsync({ type: 'blob' });
@@ -486,49 +553,13 @@ export default function ProductImageTool() {
     for (let i = 0; i < urls.length; i++) {
       setBatchProgress({ current: i + 1, total: urls.length });
       try {
-        let res = null;
-        try {
-          const token = localStorage.getItem('token');
-          const apiRes = await fetch(`${API_BASE}/product-image/extract`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-            body: JSON.stringify({ url: urls[i], format, quality }),
-          });
-          if (apiRes.ok) {
-            const json = await apiRes.json();
-            if (json.success && json.data) {
-              const platformObj = PLATFORMS[json.data.platform] || PLATFORMS.generic;
-              res = {
-                success: true,
-                platform: json.data.platform,
-                platformInfo: platformObj,
-                title: json.data.title,
-                category: json.data.category || 'Product',
-                dimensions: '2048 × 2048 px',
-                fileSizeEstimate: '2.4 MB',
-                imageUrl: json.data.imageUrl,
-                sourceUrl: json.data.sourceUrl || urls[i],
-                sku: `SKU-${Date.now().toString().slice(-6)}`,
-                format,
-                quality,
-                extractedAt: new Date().toISOString(),
-              };
-            }
-          }
-        } catch {}
-
-        if (!res) {
-          res = await simulateExtract(urls[i], format, quality);
-        }
+        const res = await extractViaApi(urls[i]);
         results.push({ ...res, status: 'success', id: i });
       } catch (err) {
         results.push({
           sourceUrl: urls[i],
           status: 'error',
-          error: err.message,
+          error: err.message || 'Extraction failed',
           id: i,
         });
       }
@@ -554,53 +585,23 @@ export default function ProductImageTool() {
     try {
       const zip = new JSZip();
       const folder = zip.folder('product_images');
+      const ext = format === 'jpeg' ? 'jpg' : 'png';
+      let addedCount = 0;
 
       for (let i = 0; i < validItems.length; i++) {
         const item = validItems[i];
-        const blob = await new Promise((resolve) => {
-          const img = new Image();
-          const proxySrc = /^https?:\/\//i.test(item.imageUrl)
-            ? `${API_BASE}/product-image/proxy?url=${encodeURIComponent(item.imageUrl)}`
-            : item.imageUrl;
+        try {
+          const blob = await convertImageToBlob(item.imageUrl);
+          const safeTitle = (item.title || 'item').replace(/[^a-z0-9_-]/gi, '_').slice(0, 24);
+          folder.file(`${i + 1}_${safeTitle}.${ext}`, blob);
+          addedCount++;
+        } catch (imgErr) {
+          console.warn(`Skipping batch item ${i + 1}:`, imgErr);
+        }
+      }
 
-          if (/^https?:\/\//i.test(proxySrc)) {
-            img.crossOrigin = 'anonymous';
-          }
-          img.onload = () => {
-            try {
-              const canvas = document.createElement('canvas');
-              canvas.width = img.naturalWidth || 1200;
-              canvas.height = img.naturalHeight || 1200;
-              const ctx = canvas.getContext('2d');
-              if (format === 'jpeg') {
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-              }
-              ctx.drawImage(img, 0, 0);
-              canvas.toBlob((b) => resolve(b || new Blob([''], { type: 'image/png' })), format === 'jpeg' ? 'image/jpeg' : 'image/png', quality / 100);
-            } catch {
-              resolve(new Blob([''], { type: 'image/png' }));
-            }
-          };
-          img.onerror = () => {
-            if (item.imageUrl?.startsWith('data:')) {
-              try {
-                const arr = item.imageUrl.split(',');
-                const bstr = atob(arr[1]);
-                let n = bstr.length;
-                const u8arr = new Uint8Array(n);
-                while (n--) u8arr[n] = bstr.charCodeAt(n);
-                resolve(new Blob([u8arr], { type: 'image/png' }));
-                return;
-              } catch {}
-            }
-            resolve(new Blob([''], { type: 'image/png' }));
-          };
-          img.src = proxySrc;
-        });
-
-        const safeTitle = (item.title || 'item').replace(/[^a-z0-9_-]/gi, '_').slice(0, 24);
-        folder.file(`${i + 1}_${safeTitle}.${format === 'jpeg' ? 'jpg' : 'png'}`, blob);
+      if (addedCount === 0) {
+        throw new Error('No batch images could be downloaded.');
       }
 
       const zipBlob = await zip.generateAsync({ type: 'blob' });
@@ -1059,14 +1060,18 @@ export default function ProductImageTool() {
                     ? 'Product Not Found (404)'
                     : errorCode === 'TIMEOUT'
                     ? 'Extraction Timed Out'
-                    : 'Extraction Notice'}
+                    : errorCode === 'BLOCKED'
+                    ? 'Restricted URL'
+                    : errorCode === 'API_UNAVAILABLE'
+                    ? 'Extractor Service Unreachable'
+                    : 'Extraction Failed'}
                 </Typography>
                 <Typography variant="body2" sx={{ mt: 0.4 }}>
                   {errorMessage}
                 </Typography>
-                {errorCode === 'UNSUPPORTED_PLATFORM' && (
+                {['UNSUPPORTED_PLATFORM', 'EXTRACTION_FAILED', 'API_UNAVAILABLE'].includes(errorCode) && (
                   <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'text.secondary' }}>
-                    Tip: Try an Amazon, Flipkart, Meesho, or Myntra product link, or upload an image file directly.
+                    Tip: Try another product URL from Amazon, Flipkart, Meesho, or Myntra, or click &ldquo;Upload Image&rdquo; to convert a local image directly.
                   </Typography>
                 )}
               </Alert>
@@ -1094,10 +1099,17 @@ export default function ProductImageTool() {
                         src={activeImageUrl}
                         alt={extractedData.title}
                         className="extractor-preview-img"
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src = '/products/shoes.jpg';
+                        referrerPolicy="no-referrer"
+                        onLoad={(e) => {
+                          const { naturalWidth, naturalHeight } = e.currentTarget;
+                          if (naturalWidth > 0 && naturalHeight > 0) {
+                            const dims = `${naturalWidth} × ${naturalHeight} px`;
+                            setExtractedData((prev) =>
+                              prev && prev.dimensions !== dims ? { ...prev, dimensions: dims } : prev
+                            );
+                          }
                         }}
+                        onError={(e) => handleImageLoadError(e, activeImageUrl)}
                       />
 
                       {/* Top Badges */}
@@ -1209,11 +1221,9 @@ export default function ProductImageTool() {
                               <img
                                 src={imgUrl}
                                 alt={`Angle ${idx + 1}`}
+                                referrerPolicy="no-referrer"
                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                onError={(e) => {
-                                  e.currentTarget.onerror = null;
-                                  e.currentTarget.src = '/products/shoes.jpg';
-                                }}
+                                onError={(e) => handleImageLoadError(e, imgUrl)}
                               />
                             </Box>
                           ))}
@@ -1395,7 +1405,7 @@ export default function ProductImageTool() {
                           size="small"
                           startIcon={copiedLink ? <Check size={16} /> : <Copy size={16} />}
                           onClick={() => {
-                            navigator.clipboard.writeText(extractedData.imageUrl);
+                            navigator.clipboard.writeText(activeImageUrl || extractedData.imageUrl);
                             setCopiedLink(true);
                             setTimeout(() => setCopiedLink(false), 2000);
                           }}
@@ -1610,10 +1620,8 @@ export default function ProductImageTool() {
                             <img
                               src={item.imageUrl}
                               alt={item.title}
-                              onError={(e) => {
-                                e.currentTarget.onerror = null;
-                                e.currentTarget.src = '/products/shoes.jpg';
-                              }}
+                              referrerPolicy="no-referrer"
+                              onError={(e) => handleImageLoadError(e, item.imageUrl)}
                               style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
                             />
                             <Box
@@ -1685,9 +1693,14 @@ export default function ProductImageTool() {
                           <Typography variant="caption" color="error" fontWeight={700} display="block">
                             Failed to extract:
                           </Typography>
-                          <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-all' }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-all', display: 'block' }}>
                             {item.sourceUrl}
                           </Typography>
+                          {item.error && (
+                            <Typography variant="caption" color="error" sx={{ display: 'block', mt: 0.5 }}>
+                              {item.error}
+                            </Typography>
+                          )}
                         </Box>
                       )}
                     </Box>
@@ -1856,10 +1869,15 @@ export default function ProductImageTool() {
                   : activePreviewItem?.imageUrl
               }
               alt={activePreviewItem?.title || 'Preview'}
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = '/products/shoes.jpg';
-              }}
+              referrerPolicy="no-referrer"
+              onError={(e) =>
+                handleImageLoadError(
+                  e,
+                  activePreviewItem?.images && activePreviewItem.images.length > 0
+                    ? activePreviewItem.images[selectedImageIndex] || activePreviewItem.images[0]
+                    : activePreviewItem?.imageUrl
+                )
+              }
               style={{
                 maxWidth: '100%',
                 maxHeight: '62vh',
@@ -1921,11 +1939,9 @@ export default function ProductImageTool() {
                   <img
                     src={imgUrl}
                     alt={`Angle ${idx + 1}`}
+                    referrerPolicy="no-referrer"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = '/products/shoes.jpg';
-                    }}
+                    onError={(e) => handleImageLoadError(e, imgUrl)}
                   />
                 </Box>
               ))}
