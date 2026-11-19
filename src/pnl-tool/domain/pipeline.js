@@ -105,8 +105,12 @@ export function normalizeRows({
     const shippingCharged = Money.fromMajor(rawShipping || 0, template.currency || 'INR');
 
     // 7. Extract Status & Event Types
+    const rawSubType = columnMap.eventSubType
+      ? cleanText(rawValues[columnMap.eventSubType]).toLowerCase()
+      : '';
     const rawStatus = rawValues[columnMap.status];
-    const status = normalizeStatus(rawStatus, valueMaps.status || {});
+    const statusInput = rawSubType && rawSubType.includes('cancel') ? rawSubType : rawStatus;
+    const status = normalizeStatus(statusInput, valueMaps.status || {});
     if (status === 'unknown') {
       flags.push(createFlag(QualityFlags.UNKNOWN_STATUS, `Raw: "${rawStatus}"`));
     }
@@ -116,9 +120,7 @@ export function normalizeRows({
       ? cleanText(rawValues[columnMap.eventType]).toLowerCase()
       : (status === 'returned' ? 'return' : status === 'cancelled' ? 'cancellation' : 'sale');
 
-    const eventSubType = columnMap.eventSubType
-      ? cleanText(rawValues[columnMap.eventSubType]).toLowerCase()
-      : 'main';
+    const eventSubType = rawSubType || 'main';
 
     // 8. Deterministic Unique Key for Upsert (No duplicate append bugs)
     // Key: seller + marketplace + Order Item ID + event type + event sub type
@@ -187,7 +189,7 @@ export function normalizeRows({
     });
 
     // Event-style reports list returns as their own row
-    const isEventReturn = status === 'returned' || eventType === 'return';
+    const isEventReturn = (status === 'returned' || eventType === 'return') && !rawSubType.includes('cancel');
 
     const orderLine = {
       id: uniqueKey, // for backward compatibility with id

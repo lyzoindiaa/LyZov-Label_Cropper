@@ -39,4 +39,5 @@ server/data/
 
 # Scratch & temporary test scripts
 scratch/
+*.xlsx
 
