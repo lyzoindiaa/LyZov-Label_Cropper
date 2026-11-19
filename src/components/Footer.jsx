@@ -35,6 +35,10 @@ export default function Footer() {
         backdropFilter: 'blur(16px)',
         px: { xs: 2, sm: 4, md: 6 },
         py: { xs: 4, md: 5 },
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        overflowX: 'clip',
       }}
     >
       {/* Branding row */}
@@ -138,33 +142,35 @@ export default function Footer() {
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: { xs: 'flex-start', sm: 'center' },
-          gap: { xs: 1, sm: 1.5 },
+          gap: { xs: 0.8, sm: 1.2 },
           mb: 2.5,
           fontSize: '0.74rem',
           color: 'text.secondary',
           opacity: 0.85,
+          maxWidth: '100%',
+          boxSizing: 'border-box',
         }}
       >
-        <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'text.secondary' }}>
+        <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'text.secondary', mr: 0.5 }}>
           Popular Solutions:
         </Typography>
-        <Link to="/cropper" style={{ color: inactiveTextColor, textDecoration: 'none' }}>
+        <Link to="/cropper" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
           Meesho Label Cropper
         </Link>
         <span>·</span>
-        <Link to="/blog/crop-amazon-flipkart-labels-fast" style={{ color: inactiveTextColor, textDecoration: 'none' }}>
+        <Link to="/blog/crop-amazon-flipkart-labels-fast" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
           Flipkart &amp; Amazon Cropper Guide
         </Link>
         <span>·</span>
-        <Link to="/blog/thermal-printer-shipping-label-guide" style={{ color: inactiveTextColor, textDecoration: 'none' }}>
+        <Link to="/blog/thermal-printer-shipping-label-guide" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
           4×6 Thermal Label Printing
         </Link>
         <span>·</span>
-        <Link to="/gst-tool" style={{ color: inactiveTextColor, textDecoration: 'none' }}>
+        <Link to="/gst-tool" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
           GSTR-1 Return Generator
         </Link>
         <span>·</span>
-        <Link to="/pnl" style={{ color: inactiveTextColor, textDecoration: 'none' }}>
+        <Link to="/pnl" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
           E-Commerce P&amp;L Calculator
         </Link>
       </Box>

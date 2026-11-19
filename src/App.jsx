@@ -1,4 +1,4 @@
-import React, { useContext, useState, useMemo } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import {
   CssBaseline,
@@ -6,20 +6,16 @@ import {
   createTheme,
   Box,
   Typography,
-  Tabs,
-  Tab,
-  Badge,
   Chip,
   Button,
   Tooltip,
   IconButton,
+  Menu,
+  MenuItem,
+  Divider,
 } from '@mui/material';
 import {
   Scissors,
-  Download,
-  ShieldCheck,
-  PanelLeftClose,
-  PanelLeftOpen,
   Crown,
   LogOut,
   User as UserIcon,
@@ -27,16 +23,19 @@ import {
   Sun,
   Moon,
   Receipt,
+  ChevronDown,
+  LayoutGrid,
+  FileSpreadsheet,
+  TrendingUp,
+  Image as ImageIcon,
+  BookOpen,
 } from 'lucide-react';
 import { AppProvider, AppContext } from './context/AppContext';
 import CropperAuthModal from './components/CropperAuthModal';
 import CropperInvoicesModal from './components/CropperInvoicesModal';
 import GstApp from './gst-tool/GstApp';
 import PnlApp from './pnl-tool/PnlApp';
-import PdfUploader from './components/PdfUploader';
-import PdfViewer from './components/PdfViewer';
-import CropProcessor from './components/CropProcessor';
-import DownloadPanel from './components/DownloadPanel';
+import SimpleCropperPage from './components/SimpleCropperPage';
 import Footer from './components/Footer';
 import SEOHead from './components/SEOHead';
 
@@ -88,10 +87,6 @@ const getAppTheme = (mode = 'dark') =>
 
 function MainContent() {
   const {
-    activeTab,
-    setActiveTab,
-    pdfFiles,
-    croppedBlobs,
     user,
     setUser,
     isTrialExpired,
@@ -110,10 +105,23 @@ function MainContent() {
     theme,
     toggleTheme,
   } = useContext(AppContext);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const [toolsAnchorEl, setToolsAnchorEl] = useState(null);
+  const toolsMenuOpen = Boolean(toolsAnchorEl);
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', width: '100%', bgcolor: 'background.default', color: 'text.primary' }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        maxWidth: '100%',
+        overflowX: 'clip',
+        bgcolor: 'background.default',
+        color: 'text.primary',
+      }}
+    >
       <SEOHead
         title="Free Batch Shipping Label Cropper & 4x6 Thermal Printer Tool | LyZov"
         description="Free, 100% private client-side batch PDF shipping label cropper for Meesho, Flipkart & Amazon. Crop 4x6 thermal labels instantly with zero uploads."
@@ -123,7 +131,7 @@ function MainContent() {
       <Box
         component="header"
         sx={{
-          py: 1.5,
+          py: 1.2,
           px: { xs: 1.5, sm: 2.5, md: 4 },
           borderBottom: '1px solid',
           borderColor: 'divider',
@@ -133,42 +141,75 @@ function MainContent() {
           top: 0,
           zIndex: 100,
           display: 'flex',
-          flexWrap: 'wrap',
+          flexWrap: 'nowrap',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 1.5,
           width: '100%',
+          maxWidth: '100%',
+          boxSizing: 'border-box',
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Box
+          component={Link}
+          to="/cropper"
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: { xs: 1, sm: 1.5 },
+            textDecoration: 'none',
+            color: 'inherit',
+            flexShrink: 0,
+          }}
+        >
           <Box
             sx={{
-              width: 38,
-              height: 38,
+              width: { xs: 32, sm: 36 },
+              height: { xs: 32, sm: 36 },
               borderRadius: '10px',
               background: 'linear-gradient(135deg, #00c9ff 0%, #a78bfa 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               boxShadow: '0 4px 14px rgba(0, 201, 255, 0.35)',
+              flexShrink: 0,
             }}
           >
-            <Scissors size={20} color="#ffffff" />
+            <Scissors size={18} color="#ffffff" />
           </Box>
-          <Box>
-            <Typography variant="h6" fontWeight={800} sx={{ letterSpacing: '-0.5px', lineHeight: 1.1, fontSize: { xs: '1rem', sm: '1.15rem' }, color: 'text.primary' }}>
-              LyZov <span style={{ color: theme === 'dark' ? '#00c9ff' : '#0284c7' }}>Cropper</span> Studio
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="h6"
+              fontWeight={800}
+              sx={{
+                letterSpacing: '-0.5px',
+                lineHeight: 1.1,
+                fontSize: { xs: '0.88rem', sm: '1.15rem' },
+                color: 'text.primary',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              LyZov <span style={{ color: theme === 'dark' ? '#00c9ff' : '#0284c7' }}>Cropper</span><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}> Studio</Box>
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                display: { xs: 'none', md: 'block' },
+                lineHeight: 1,
+                fontSize: '0.7rem',
+                whiteSpace: 'nowrap',
+              }}
+            >
               Batch PDF Label Cropper &amp; Thermal Printer
             </Typography>
           </Box>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 }, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.6, sm: 1.2 }, flexShrink: 0, flexWrap: 'nowrap' }}>
           {/* User Auth & 30-Day Trial Status */}
           {user ? (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.6, sm: 1 }, flexWrap: 'nowrap' }}>
               {user.plan === 'trial' ? (
                 <Tooltip title={isTrialExpired ? 'Your 30-day trial has expired. Subscribe to continue!' : `${daysLeftInTrial} days remaining in your free trial. Click to view subscription.`}>
                   <Chip
@@ -185,6 +226,7 @@ function MainContent() {
                       border: `1px solid ${isTrialExpired ? 'rgba(255, 77, 109, 0.35)' : 'rgba(0, 201, 255, 0.3)'}`,
                       fontWeight: 700,
                       cursor: 'pointer',
+                      fontSize: '0.72rem',
                     }}
                   />
                 </Tooltip>
@@ -201,6 +243,7 @@ function MainContent() {
                       border: '1px solid rgba(0, 214, 143, 0.3)',
                       fontWeight: 700,
                       cursor: 'pointer',
+                      fontSize: '0.72rem',
                     }}
                   />
                 </Tooltip>
@@ -219,10 +262,11 @@ function MainContent() {
                     color: '#ffffff',
                     fontWeight: 800,
                     fontSize: '0.75rem',
-                    py: 0.5,
+                    py: 0.4,
                     px: 1.2,
                     borderRadius: 2,
                     textTransform: 'none',
+                    whiteSpace: 'nowrap',
                     display: { xs: 'none', sm: 'inline-flex' },
                   }}
                 >
@@ -241,12 +285,13 @@ function MainContent() {
                     color: theme === 'dark' ? '#00c9ff' : '#0284c7',
                     borderColor: theme === 'dark' ? 'rgba(0, 201, 255, 0.4)' : 'rgba(2, 132, 199, 0.4)',
                     fontWeight: 700,
-                    fontSize: '0.75rem',
+                    fontSize: '0.74rem',
                     borderRadius: 2,
                     py: 0.4,
-                    px: 1.2,
+                    px: 1.1,
                     textTransform: 'none',
-                    display: { xs: 'none', sm: 'inline-flex' },
+                    whiteSpace: 'nowrap',
+                    display: { xs: 'none', md: 'inline-flex' },
                     '&:hover': {
                       bgcolor: theme === 'dark' ? 'rgba(0, 201, 255, 0.1)' : 'rgba(2, 132, 199, 0.1)',
                       borderColor: theme === 'dark' ? '#00c9ff' : '#0284c7',
@@ -268,45 +313,48 @@ function MainContent() {
                     color: 'text.primary',
                     fontWeight: 600,
                     cursor: 'pointer',
-                    display: { xs: 'none', md: 'inline-flex' },
+                    fontSize: '0.72rem',
+                    display: { xs: 'none', sm: 'inline-flex' },
                   }}
                 />
               </Tooltip>
 
               <Tooltip title="Log Out">
-                <Button
+                <IconButton
                   size="small"
                   onClick={logoutUser}
                   sx={{
                     color: '#94a3b8',
-                    minWidth: 32,
                     p: 0.6,
                     '&:hover': { color: '#ff4d6d' },
                   }}
                 >
                   <LogOut size={16} />
-                </Button>
+                </IconButton>
               </Tooltip>
             </Box>
           ) : (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.6, sm: 1 }, flexWrap: 'nowrap' }}>
               <Tooltip title="You can crop up to 5 labels today for free without signing in!">
                 <Chip
-                  icon={<Sparkles size={13} color="#00c9ff" />}
-                  label={`Guest: ${Math.max(0, (GUEST_DAILY_LIMIT || 5) - (guestUsage?.count || 0))}/5 free today`}
+                  icon={<Sparkles size={12} color="#00c9ff" />}
+                  label={`Guest: ${Math.max(0, (GUEST_DAILY_LIMIT || 5) - (guestUsage?.count || 0))}/5 free`}
                   size="small"
                   sx={{
                     bgcolor: 'rgba(0, 201, 255, 0.1)',
                     color: '#00c9ff',
                     border: '1px solid rgba(0, 201, 255, 0.25)',
                     fontWeight: 700,
+                    fontSize: '0.72rem',
+                    height: 26,
+                    display: { xs: 'none', md: 'inline-flex' },
                   }}
                 />
               </Tooltip>
 
-              {/* Direct Sign In button for returning users */}
+              {/* Direct Sign In button for returning users (hidden on xs to save space) */}
               <Button
-                variant="outlined"
+                variant="text"
                 size="small"
                 onClick={() => {
                   setAuthModalMode('auth');
@@ -315,16 +363,17 @@ function MainContent() {
                 }}
                 sx={{
                   color: 'text.primary',
-                  borderColor: 'divider',
                   fontWeight: 700,
-                  fontSize: { xs: '0.72rem', sm: '0.8rem' },
+                  fontSize: { xs: '0.75rem', sm: '0.8rem' },
                   borderRadius: 2,
                   textTransform: 'none',
-                  px: { xs: 1.2, sm: 1.5 },
+                  px: { xs: 1, sm: 1.4 },
                   py: 0.5,
+                  minWidth: 'auto',
+                  whiteSpace: 'nowrap',
+                  display: { xs: 'none', sm: 'inline-flex' },
                   '&:hover': {
-                    borderColor: theme === 'dark' ? '#00c9ff' : '#0284c7',
-                    bgcolor: theme === 'dark' ? 'rgba(0, 201, 255, 0.08)' : 'rgba(2, 132, 199, 0.08)',
+                    color: theme === 'dark' ? '#00c9ff' : '#0284c7',
                   },
                 }}
               >
@@ -346,8 +395,9 @@ function MainContent() {
                   fontSize: { xs: '0.72rem', sm: '0.8rem' },
                   borderRadius: 2,
                   textTransform: 'none',
-                  px: { xs: 1.2, sm: 1.8 },
-                  py: 0.5,
+                  px: { xs: 1, sm: 1.6 },
+                  py: 0.45,
+                  whiteSpace: 'nowrap',
                   boxShadow: '0 4px 14px rgba(0, 201, 255, 0.35)',
                 }}
               >
@@ -356,109 +406,106 @@ function MainContent() {
             </Box>
           )}
 
+          {/* More Tools Dropdown Menu */}
           <Button
-            component={Link}
-            to="/blog"
-            variant="text"
-            size="small"
-            sx={{
-              color: 'text.secondary',
-              fontWeight: 700,
-              fontSize: '0.78rem',
-              borderRadius: '10px',
-              textTransform: 'none',
-              px: 1.2,
-              py: 0.6,
-              '&:hover': { color: theme === 'dark' ? '#00c9ff' : '#0284c7' },
-              display: { xs: 'none', md: 'inline-flex' },
-            }}
-          >
-            Guides
-          </Button>
-
-          <Button
-            component={Link}
-            to="/"
             variant="outlined"
             size="small"
+            onClick={(e) => setToolsAnchorEl(e.currentTarget)}
+            endIcon={
+              <ChevronDown
+                size={14}
+                style={{
+                  transform: toolsMenuOpen ? 'rotate(180deg)' : 'none',
+                  transition: 'transform 0.2s',
+                }}
+              />
+            }
             sx={{
               color: 'text.secondary',
               borderColor: 'divider',
               fontWeight: 700,
-              fontSize: '0.78rem',
-              borderRadius: '10px',
+              fontSize: { xs: '0.74rem', sm: '0.8rem' },
+              borderRadius: 2,
               textTransform: 'none',
-              px: 1.5,
-              py: 0.6,
-              '&:hover': { borderColor: theme === 'dark' ? '#00c9ff' : '#0284c7', color: theme === 'dark' ? '#00c9ff' : '#0284c7' },
-              display: { xs: 'none', sm: 'inline-flex' },
+              px: { xs: 1, sm: 1.4 },
+              py: 0.5,
+              whiteSpace: 'nowrap',
+              '&:hover': {
+                borderColor: theme === 'dark' ? '#00c9ff' : '#0284c7',
+                color: theme === 'dark' ? '#00c9ff' : '#0284c7',
+                bgcolor: theme === 'dark' ? 'rgba(0, 201, 255, 0.08)' : 'rgba(2, 132, 199, 0.08)',
+              },
             }}
           >
-            ← All Tools
+            Tools
           </Button>
-
-          <Button
-            component={Link}
-            to="/gst-tool"
-            variant="contained"
-            size="small"
-            sx={{
-              background: 'linear-gradient(135deg, #00d68f 0%, #f5a623 100%)',
-              color: '#0a0f1e',
-              fontWeight: 800,
-              fontSize: '0.8rem',
-              borderRadius: '10px',
-              textTransform: 'none',
-              px: 1.8,
-              py: 0.6,
-              boxShadow: '0 4px 14px rgba(0, 214, 143, 0.4)',
-              display: { xs: 'none', sm: 'inline-flex' },
+          <Menu
+            anchorEl={toolsAnchorEl}
+            open={toolsMenuOpen}
+            onClose={() => setToolsAnchorEl(null)}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            slotProps={{
+              paper: {
+                sx: {
+                  mt: 1,
+                  minWidth: 220,
+                  borderRadius: 2.5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: theme === 'dark' ? '#0e1628' : '#ffffff',
+                  boxShadow: theme === 'dark' ? '0 12px 32px rgba(0,0,0,0.6)' : '0 12px 32px rgba(0,0,0,0.1)',
+                },
+              },
             }}
           >
-            ✦ GST Tool
-          </Button>
-
-          <Button
-            component={Link}
-            to="/pnl"
-            variant="contained"
-            size="small"
-            sx={{
-              background: 'linear-gradient(135deg, #00c9ff 0%, #0088ff 100%)',
-              color: '#ffffff',
-              fontWeight: 800,
-              fontSize: '0.8rem',
-              borderRadius: '10px',
-              textTransform: 'none',
-              px: 1.8,
-              py: 0.6,
-              boxShadow: '0 4px 14px rgba(0, 201, 255, 0.4)',
-              display: { xs: 'none', sm: 'inline-flex' },
-            }}
-          >
-            ✦ P&L Analyzer
-          </Button>
-
-          <Button
-            component={Link}
-            to="/image-extractor"
-            variant="contained"
-            size="small"
-            sx={{
-              background: 'linear-gradient(135deg, #a78bfa 0%, #ec4899 100%)',
-              color: '#ffffff',
-              fontWeight: 800,
-              fontSize: '0.8rem',
-              borderRadius: '10px',
-              textTransform: 'none',
-              px: 1.8,
-              py: 0.6,
-              boxShadow: '0 4px 14px rgba(167, 139, 250, 0.4)',
-              display: { xs: 'none', md: 'inline-flex' },
-            }}
-          >
-            ✦ Image Extractor
-          </Button>
+            <MenuItem
+              component={Link}
+              to="/"
+              onClick={() => setToolsAnchorEl(null)}
+              sx={{ py: 1, px: 2, gap: 1.5, fontSize: '0.84rem', fontWeight: 600 }}
+            >
+              <LayoutGrid size={16} color={theme === 'dark' ? '#00c9ff' : '#0284c7'} />
+              All Tools Hub
+            </MenuItem>
+            <MenuItem
+              component={Link}
+              to="/gst-tool"
+              onClick={() => setToolsAnchorEl(null)}
+              sx={{ py: 1, px: 2, gap: 1.5, fontSize: '0.84rem', fontWeight: 600 }}
+            >
+              <FileSpreadsheet size={16} color="#00d68f" />
+              GST Return Tool
+            </MenuItem>
+            <MenuItem
+              component={Link}
+              to="/pnl"
+              onClick={() => setToolsAnchorEl(null)}
+              sx={{ py: 1, px: 2, gap: 1.5, fontSize: '0.84rem', fontWeight: 600 }}
+            >
+              <TrendingUp size={16} color="#00c9ff" />
+              P&amp;L Analyzer
+            </MenuItem>
+            <MenuItem
+              component={Link}
+              to="/image-extractor"
+              onClick={() => setToolsAnchorEl(null)}
+              sx={{ py: 1, px: 2, gap: 1.5, fontSize: '0.84rem', fontWeight: 600 }}
+            >
+              <ImageIcon size={16} color="#ec4899" />
+              Image Extractor
+            </MenuItem>
+            <Divider sx={{ my: 0.5 }} />
+            <MenuItem
+              component={Link}
+              to="/blog"
+              onClick={() => setToolsAnchorEl(null)}
+              sx={{ py: 1, px: 2, gap: 1.5, fontSize: '0.84rem', fontWeight: 600 }}
+            >
+              <BookOpen size={16} color="#a78bfa" />
+              Seller Guides &amp; Blog
+            </MenuItem>
+          </Menu>
 
           {/* Theme Toggle Button */}
           <Tooltip title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
@@ -488,225 +535,8 @@ function MainContent() {
         </Box>
       </Box>
 
-      {/* Main Full-Width App Workspace */}
-      <Box sx={{ width: '100%', px: { xs: 1, sm: 2, md: 3.5 }, mt: 2, flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {/* Navigation Tabs Bar */}
-        <Box
-          sx={{
-            mb: 2,
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 1.5,
-            width: '100%',
-          }}
-        >
-          <Tabs
-            value={activeTab}
-            onChange={(_, val) => setActiveTab(val)}
-            variant="scrollable"
-            scrollButtons="auto"
-            allowScrollButtonsMobile
-            textColor="primary"
-            indicatorColor="primary"
-            sx={{
-              minHeight: 44,
-              '& .MuiTab-root': {
-                textTransform: 'none',
-                fontWeight: 700,
-                fontSize: { xs: '0.82rem', sm: '0.92rem' },
-                minWidth: { xs: 110, sm: 140 },
-                py: 1,
-              },
-            }}
-          >
-            <Tab
-              label="1. Inspect & Select Crop"
-              icon={<Scissors size={18} />}
-              iconPosition="start"
-            />
-            <Tab
-              label={
-                <Badge
-                  badgeContent={croppedBlobs.length}
-                  color="primary"
-                  sx={{ '& .MuiBadge-badge': { fontWeight: 700 } }}
-                >
-                  2. Download &amp; Print
-                </Badge>
-              }
-              icon={<Download size={18} />}
-              iconPosition="start"
-            />
-          </Tabs>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {activeTab === 0 && (
-              <Tooltip title={sidebarCollapsed ? 'Show Sidebar' : 'Hide Sidebar (Full Width View)'}>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-                  onClick={() => setSidebarCollapsed((c) => !c)}
-                  sx={{
-                    fontSize: '0.78rem',
-                    color: 'text.secondary',
-                    borderColor: 'divider',
-                    textTransform: 'none',
-                    display: { xs: 'none', md: 'inline-flex' },
-                  }}
-                >
-                  {sidebarCollapsed ? 'Show Sidebar' : 'Full Width'}
-                </Button>
-              </Tooltip>
-            )}
-
-            {croppedBlobs.length > 0 && activeTab === 0 && (
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => setActiveTab(1)}
-                sx={{
-                  color: theme === 'dark' ? '#00c9ff' : '#0284c7',
-                  borderColor: theme === 'dark' ? 'rgba(0, 201, 255, 0.4)' : 'rgba(2, 132, 199, 0.4)',
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  fontSize: '0.8rem',
-                }}
-              >
-                View {croppedBlobs.length} Cropped Labels →
-              </Button>
-            )}
-          </Box>
-        </Box>
-
-        {/* Tab 0: Editor and Upload View (Full-Width Flexbox) */}
-        {activeTab === 0 && (
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              gap: 2.5,
-              width: '100%',
-              flex: 1,
-              alignItems: 'stretch',
-            }}
-          >
-            {/* Left Sidebar: Uploads & Processing */}
-            {!sidebarCollapsed && (
-              <Box
-                sx={{
-                  width: { xs: '100%', md: 360, lg: 400 },
-                  flexShrink: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 2,
-                }}
-              >
-                <PdfUploader />
-                <CropProcessor />
-              </Box>
-            )}
-
-            {/* Right Main View: PDF Canvas - expands across 100% full remaining width */}
-            <Box
-              sx={{
-                flex: 1,
-                minWidth: 0,
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-              <PdfViewer />
-            </Box>
-          </Box>
-        )}
-
-        {/* Tab 1: Export and Print Panel */}
-        {activeTab === 1 && (
-          <Box sx={{ width: '100%' }}>
-            <DownloadPanel />
-          </Box>
-        )}
-      </Box>
-
-      {/* Mobile Sticky Quick Action Bar (360px - 640px) */}
-      {pdfFiles.length > 0 && (
-        <Box
-          sx={{
-            display: { xs: 'flex', md: 'none' },
-            position: 'sticky',
-            bottom: 0,
-            py: 1.2,
-            px: 2,
-            pb: 'calc(10px + env(safe-area-inset-bottom, 0px))',
-            bgcolor: theme === 'dark' ? 'rgba(7, 10, 18, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: { xs: 'none', md: 'blur(16px)' },
-            borderTop: '1px solid',
-            borderColor: 'divider',
-            zIndex: 90,
-            gap: 1.5,
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            boxShadow: '0 -4px 16px rgba(0,0,0,0.1)',
-            mt: 2,
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="caption" fontWeight={700}>
-              {pdfFiles.length} {pdfFiles.length === 1 ? 'file' : 'files'}
-            </Typography>
-            {croppedBlobs.length > 0 && (
-              <Chip
-                size="small"
-                label={`${croppedBlobs.length} ready`}
-                sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700, bgcolor: 'rgba(0, 201, 255, 0.15)', color: theme === 'dark' ? '#00c9ff' : '#0284c7' }}
-              />
-            )}
-          </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            {activeTab === 0 && croppedBlobs.length > 0 ? (
-              <Button
-                size="small"
-                variant="contained"
-                onClick={() => setActiveTab(1)}
-                sx={{
-                  py: 0.8,
-                  px: 1.5,
-                  fontSize: '0.8rem',
-                  fontWeight: 800,
-                  textTransform: 'none',
-                  borderRadius: 2,
-                  background: 'linear-gradient(135deg, #00c9ff 0%, #0077ff 100%)',
-                  color: '#ffffff',
-                }}
-              >
-                View Results →
-              </Button>
-            ) : activeTab === 1 ? (
-              <Button
-                size="small"
-                variant="outlined"
-                onClick={() => setActiveTab(0)}
-                sx={{
-                  py: 0.8,
-                  px: 1.5,
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  textTransform: 'none',
-                  borderRadius: 2,
-                }}
-              >
-                ← Back to Editor
-              </Button>
-            ) : null}
-          </Box>
-        </Box>
-      )}
+      {/* Simplified automatic label & invoice cropper */}
+      <SimpleCropperPage />
 
       {/* Cropper Invoices & Subscription Management Modal */}
       <CropperInvoicesModal

@@ -13,7 +13,9 @@ export const CANONICAL_FIELDS = [
   { key: 'grossSales', label: 'Gross Sales / Price', required: true, synonyms: ['price before discount', 'gross sales', 'selling price', 'item price', 'lineitem price', 'final selling price', 'product price', 'price', 'buyer invoice amount', 'final invoice amount', 'invoice amount', 'total'] },
   { key: 'discounts', label: 'Discounts', required: false, synonyms: ['total discount', 'discount', 'discounts', 'promotion discount', 'promo discount', 'lineitem discount', 'coupon'] },
   { key: 'shippingCharged', label: 'Shipping Charged', required: false, synonyms: ['shipping', 'shipping price', 'shipping charge', 'shipping charges', 'order shipping', 'shipping fee charged'] },
-  { key: 'status', label: 'Order Status', required: true, synonyms: ['status', 'order status', 'event type', 'event sub type', 'financial status', 'fulfillment status', 'item status', 'reason for credit entry'] },
+  { key: 'status', label: 'Order Status', required: true, synonyms: ['status', 'order status', 'event type', 'financial status', 'fulfillment status', 'item status', 'reason for credit entry'] },
+  { key: 'eventType', label: 'Event Type', required: false, synonyms: ['event type', 'event'] },
+  { key: 'eventSubType', label: 'Event Sub Type', required: false, synonyms: ['event sub type', 'event subtype', 'sub event'] },
   { key: 'currency', label: 'Currency', required: false, synonyms: ['currency', 'currency code', 'iso currency'] },
 ];
 
