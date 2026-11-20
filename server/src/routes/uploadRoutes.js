@@ -1,4 +1,5 @@
 import express from 'express';
+import fs from 'fs';
 import { uploadMiddleware, calculateFileHash } from '../middleware/upload.js';
 import { authenticate } from '../middleware/auth.js';
 import { Business } from '../models/Business.js';
@@ -117,6 +118,39 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+function removeFileSafe(filePath) {
+  if (!filePath) return;
+  try {
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  } catch {
+    // Ignore missing/locked local temp files on cleanup
+  }
+}
+
+// DELETE /api/uploads?businessId=...&period=... (Clear all uploads and parsed rows for a period)
+router.delete('/', async (req, res, next) => {
+  try {
+    const { businessId, period } = req.query;
+    if (!businessId || !period) {
+      return res.status(400).json({ error: 'Business ID and period (MMYYYY) are required' });
+    }
+
+    const uploads = await Upload.find({ userId: req.user._id, businessId, period });
+    uploads.forEach(u => removeFileSafe(u.storedFilePath));
+
+    const linesRes = await OrderLine.deleteMany({ userId: req.user._id, businessId, period });
+    const uploadsRes = await Upload.deleteMany({ userId: req.user._id, businessId, period });
+
+    res.json({
+      message: 'Cleared uploaded reports for this period',
+      deletedUploads: uploadsRes.deletedCount || 0,
+      deletedOrderLines: linesRes.deletedCount || 0,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // DELETE /api/uploads/:id (Delete uploaded file and its parsed rows)
 router.delete('/:id', async (req, res, next) => {
   try {
@@ -125,6 +159,7 @@ router.delete('/:id', async (req, res, next) => {
       return res.status(404).json({ error: 'Upload record not found' });
     }
 
+    removeFileSafe(upload.storedFilePath);
     // Remove rows from OrderLine
     await OrderLine.deleteMany({ uploadId: upload._id });
     // Remove upload record

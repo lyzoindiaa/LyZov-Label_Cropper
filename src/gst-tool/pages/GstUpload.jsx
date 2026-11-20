@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../gst.css';
 import {
@@ -101,8 +101,43 @@ export default function GstUpload() {
 
   const [processing, setProcessing] = useState(false);
   const [globalError, setGlobalError] = useState('');
+  const [savedUploads, setSavedUploads] = useState([]);
+  const [loadingUploads, setLoadingUploads] = useState(false);
+  const [deletingUploadId, setDeletingUploadId] = useState(null);
 
   const period = `${month}${year}`;
+
+  const loadSavedUploads = useCallback(async () => {
+    if (!selectedBusinessId || selectedBusinessId === 'default-1') return;
+    try {
+      const res = await gstApi.getUploads(selectedBusinessId, period);
+      setSavedUploads(res?.uploads || []);
+    } catch {
+      setSavedUploads([]);
+    } finally {
+      setLoadingUploads(false);
+    }
+  }, [selectedBusinessId, period]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!selectedBusinessId || selectedBusinessId === 'default-1') return undefined;
+    Promise.resolve().then(async () => {
+      if (cancelled) return;
+      setLoadingUploads(true);
+      try {
+        const res = await gstApi.getUploads(selectedBusinessId, period);
+        if (!cancelled) setSavedUploads(res?.uploads || []);
+      } catch {
+        if (!cancelled) setSavedUploads([]);
+      } finally {
+        if (!cancelled) setLoadingUploads(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedBusinessId, period]);
 
   useEffect(() => {
     async function loadBusinesses() {
@@ -159,8 +194,12 @@ export default function GstUpload() {
         setFlipkartStatus('ok');
         setFlipkartMsg(successMsg);
       }
+      await loadSavedUploads();
     } catch (err) {
-      const errMsg = err.message || 'Parsing error';
+      const baseMsg = err.message || 'Parsing error';
+      const errMsg = err.status === 409
+        ? `${baseMsg} — click Delete below to replace it.`
+        : baseMsg;
       if (isAmazon) {
         setAmazonStatus('error');
         setAmazonMsg(errMsg);
@@ -168,11 +207,60 @@ export default function GstUpload() {
         setFlipkartStatus('error');
         setFlipkartMsg(errMsg);
       }
+      if (err.status === 409) {
+        await loadSavedUploads();
+      }
+    }
+  };
+
+  const handleDeleteUpload = async (upload) => {
+    try {
+      setDeletingUploadId(upload._id);
+      setGlobalError('');
+      await gstApi.deleteUpload(upload._id);
+      setSavedUploads(prev => prev.filter(u => u._id !== upload._id));
+
+      if (upload.platform === 'amazon' && (amazonFile?.name === upload.originalFileName || amazonStatus === 'error')) {
+        setAmazonFile(null);
+        setAmazonStatus('');
+        setAmazonMsg('');
+      }
+      if (upload.platform === 'flipkart' && (flipkartFile?.name === upload.originalFileName || flipkartStatus === 'error')) {
+        setFlipkartFile(null);
+        setFlipkartStatus('');
+        setFlipkartMsg('');
+      }
+    } catch (err) {
+      setGlobalError(err.message || 'Failed to delete uploaded report');
+    } finally {
+      setDeletingUploadId(null);
+    }
+  };
+
+  const handleClearPeriodUploads = async () => {
+    if (!window.confirm(`Clear all ${visibleSavedUploads.length} uploaded report(s) for ${monthName} ${year}? You can re-upload fresh files afterward.`)) {
+      return;
+    }
+    try {
+      setDeletingUploadId('all');
+      setGlobalError('');
+      await gstApi.clearUploads(selectedBusinessId, period);
+      setSavedUploads([]);
+      setAmazonFile(null);
+      setAmazonStatus('');
+      setAmazonMsg('');
+      setFlipkartFile(null);
+      setFlipkartStatus('');
+      setFlipkartMsg('');
+    } catch (err) {
+      setGlobalError(err.message || 'Failed to clear uploaded reports');
+    } finally {
+      setDeletingUploadId(null);
     }
   };
 
   const generate = async () => {
-    if (!amazonFile && !flipkartFile) return;
+    if (!amazonFile && !flipkartFile && visibleSavedUploads.length === 0) return;
 
     try {
       setProcessing(true);
@@ -186,6 +274,10 @@ export default function GstUpload() {
       sessionStorage.setItem('gst_active_return', JSON.stringify(res));
       navigate('/gst-tool/summary');
     } catch (err) {
+      if (err.status) {
+        setGlobalError(err.message || 'Failed to generate GSTR-1 return');
+        return;
+      }
       // If server or DB is in demo fallback mode, navigate to summary anyway with mock data
       console.warn('API Generate fallback:', err.message);
       navigate('/gst-tool/summary');
@@ -196,6 +288,11 @@ export default function GstUpload() {
 
   const currentBusiness = businesses.find(b => b._id === selectedBusinessId) || businesses[0];
   const monthName = MONTHS.find(m => m.code === month)?.name || 'September';
+  const visibleSavedUploads = selectedBusinessId && selectedBusinessId !== 'default-1' ? savedUploads : [];
+  const savedAmazon = visibleSavedUploads.filter(u => u.platform === 'amazon');
+  const savedFlipkart = visibleSavedUploads.filter(u => u.platform === 'flipkart');
+  const canGenerate = (Boolean(amazonFile) || Boolean(flipkartFile) || visibleSavedUploads.length > 0)
+    && !processing && amazonStatus !== 'loading' && flipkartStatus !== 'loading';
 
   return (
     <div className="gst-animate-in">
@@ -283,6 +380,83 @@ export default function GstUpload() {
                 onRemove={() => { setFlipkartFile(null); setFlipkartStatus(''); setFlipkartMsg(''); }} />
             </div>
           </div>
+
+          {/* Previously uploaded reports on server for this period */}
+          {(loadingUploads || visibleSavedUploads.length > 0) && (
+            <div className="gst-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, gap: 12, flexWrap: 'wrap' }}>
+                <div>
+                  <h2 style={{ fontWeight: 700, fontSize: '0.98rem', marginBottom: 2 }}>
+                    Uploaded Reports on Server ({monthName} {year})
+                  </h2>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--gst-text-mute)' }}>
+                    Delete an old report before re-uploading a replacement for this period.
+                  </p>
+                </div>
+                {visibleSavedUploads.length > 0 && (
+                  <button
+                    className="gst-btn gst-btn-sm gst-btn-outline"
+                    style={{ color: 'var(--gst-red, #ff4757)', borderColor: 'rgba(255,71,87,0.3)', gap: 6 }}
+                    onClick={handleClearPeriodUploads}
+                    disabled={deletingUploadId !== null}
+                  >
+                    {deletingUploadId === 'all' ? <Loader2 size={13} className="gst-spin" /> : <Trash2 size={13} />}
+                    Clear All
+                  </button>
+                )}
+              </div>
+
+              {loadingUploads && visibleSavedUploads.length === 0 ? (
+                <div style={{ fontSize: '0.83rem', color: 'var(--gst-text-mute)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Loader2 size={14} className="gst-spin" /> Checking saved uploads...
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {visibleSavedUploads.map(u => (
+                    <div
+                      key={u._id}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+                        background: 'var(--gst-surface2)', border: '1px solid var(--gst-border)',
+                        borderRadius: 'var(--gst-radius-sm)', padding: '10px 14px',
+                      }}
+                    >
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                          <span
+                            className="gst-tag"
+                            style={{
+                              fontSize: '0.7rem',
+                              textTransform: 'uppercase',
+                              color: u.platform === 'amazon' ? 'var(--gst-gold)' : 'var(--gst-blue)',
+                            }}
+                          >
+                            {u.platform}
+                          </span>
+                          <span style={{ fontWeight: 600, fontSize: '0.84rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {u.originalFileName}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--gst-text-mute)' }}>
+                          {u.rowCount || 0} rows · Uploaded {new Date(u.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                      <button
+                        className="gst-btn gst-btn-sm gst-btn-outline"
+                        style={{ color: 'var(--gst-red, #ff4757)', borderColor: 'rgba(255,71,87,0.25)', gap: 5, flexShrink: 0 }}
+                        onClick={() => handleDeleteUpload(u)}
+                        disabled={deletingUploadId !== null}
+                        title="Delete this uploaded report"
+                      >
+                        {deletingUploadId === u._id ? <Loader2 size={13} className="gst-spin" /> : <Trash2 size={13} />}
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right column */}
@@ -293,8 +467,18 @@ export default function GstUpload() {
             {[
               { label: 'Business', value: currentBusiness?.legalName || 'Sunrise Traders' },
               { label: 'Period', value: `${monthName} ${year} (${period})` },
-              { label: 'Amazon Report', value: amazonFile ? '✓ ' + amazonFile.name.slice(0, 18) + '…' : 'Not uploaded' },
-              { label: 'Flipkart Report', value: flipkartFile ? '✓ ' + flipkartFile.name.slice(0, 18) + '…' : 'Not uploaded' },
+              {
+                label: 'Amazon Report',
+                value: amazonFile
+                  ? '✓ ' + amazonFile.name.slice(0, 18) + '…'
+                  : (savedAmazon.length > 0 ? `✓ ${savedAmazon.length} file on server` : 'Not uploaded'),
+              },
+              {
+                label: 'Flipkart Report',
+                value: flipkartFile
+                  ? '✓ ' + flipkartFile.name.slice(0, 18) + '…'
+                  : (savedFlipkart.length > 0 ? `✓ ${savedFlipkart.length} file on server` : 'Not uploaded'),
+              },
             ].map(({ label, value }) => (
               <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid var(--gst-border)', fontSize: '0.83rem' }}>
                 <span style={{ color: 'var(--gst-text-sec)' }}>{label}</span>
@@ -304,8 +488,8 @@ export default function GstUpload() {
 
             <button
               className="gst-btn gst-btn-primary"
-              style={{ width: '100%', justifyContent: 'center', marginTop: 18, opacity: (!amazonFile && !flipkartFile) ? 0.4 : 1 }}
-              disabled={(!amazonFile && !flipkartFile) || processing}
+              style={{ width: '100%', justifyContent: 'center', marginTop: 18, opacity: canGenerate ? 1 : 0.4 }}
+              disabled={!canGenerate}
               onClick={generate}
             >
               {processing ? <><Loader2 size={16} className="gst-spin" /> Processing...</> : <>Generate GSTR-1 <ArrowRight size={16} /></>}

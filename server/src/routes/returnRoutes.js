@@ -207,4 +207,28 @@ router.get('/:id/download/excel', async (req, res, next) => {
   }
 });
 
+// DELETE /api/returns/:id (Delete a generated return report and its exported files)
+router.delete('/:id', async (req, res, next) => {
+  try {
+    const report = await ReturnReport.findOne({ _id: req.params.id, userId: req.user._id });
+    if (!report) {
+      return res.status(404).json({ error: 'Return report not found' });
+    }
+
+    [report.jsonFilePath, report.excelFilePath].forEach(filePath => {
+      if (!filePath) return;
+      try {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      } catch {
+        // Ignore missing/locked export files on cleanup
+      }
+    });
+
+    await ReturnReport.deleteOne({ _id: report._id });
+    res.json({ message: 'Return report deleted successfully', id: req.params.id });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
