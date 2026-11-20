@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import '../gst.css';
-import { Download, FileJson, FileSpreadsheet, CheckCircle2, Clock, Calendar, ChevronRight, Loader2 } from 'lucide-react';
+import { Download, FileJson, FileSpreadsheet, CheckCircle2, Calendar, Loader2, Trash2 } from 'lucide-react';
 import { gstApi } from '../api/client';
 
 export default function GstDownloads() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     async function loadHistory() {
@@ -37,6 +38,29 @@ export default function GstDownloads() {
       alert(err.message || 'Failed to download file');
     } finally {
       setDownloadingId(null);
+    }
+  };
+
+  const handleDelete = async (r) => {
+    const label = r.period ? `${r.period.slice(0, 2)}/${r.period.slice(2)}` : 'this';
+    if (!window.confirm(`Delete generated GSTR-1 report for ${label}?`)) return;
+    try {
+      setDeletingId(r.id);
+      await gstApi.deleteReturn(r.id);
+      setHistory(prev => prev.filter(item => item.id !== r.id));
+      try {
+        const raw = sessionStorage.getItem('gst_active_return');
+        if (raw && JSON.parse(raw)?.reportId === r.id) {
+          sessionStorage.removeItem('gst_active_return');
+        }
+      } catch {
+        // ignore storage parse failure
+      }
+    } catch (err) {
+      console.error('Delete return error:', err);
+      alert(err.message || 'Failed to delete return report');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -74,24 +98,25 @@ export default function GstDownloads() {
             <tr>
               <th>Period</th>
               <th>Business / GSTIN</th>
-              <th>Generated Date</th>
+              <th>Generated Date &amp; Time</th>
               <th>Taxable Value</th>
               <th>Total Tax</th>
               <th style={{ textAlign: 'center' }}>GSTR-1 JSON</th>
               <th style={{ textAlign: 'center' }}>GSTR-1 Excel</th>
+              <th style={{ textAlign: 'center' }}>Clear</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: 32 }}>
+                <td colSpan={8} style={{ textAlign: 'center', padding: 32 }}>
                   <Loader2 size={20} className="gst-spin" style={{ margin: '0 auto 8px' }} />
                   Loading files...
                 </td>
               </tr>
             ) : history.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--gst-text-mute)' }}>
+                <td colSpan={8} style={{ textAlign: 'center', padding: 32, color: 'var(--gst-text-mute)' }}>
                   No returns generated yet. Go to New Return to upload your reports.
                 </td>
               </tr>
@@ -110,8 +135,11 @@ export default function GstDownloads() {
                       {r.business?.gstin || '29AABCU9603R1ZX'}
                     </div>
                   </td>
-                  <td style={{ fontSize: '0.82rem', color: 'var(--gst-text-sec)' }}>
-                    {new Date(r.generatedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                  <td style={{ fontSize: '0.82rem', color: 'var(--gst-text-sec)', whiteSpace: 'nowrap' }}>
+                    {new Date(r.generatedAt).toLocaleString('en-IN', {
+                      day: '2-digit', month: 'short', year: 'numeric',
+                      hour: '2-digit', minute: '2-digit', hour12: true,
+                    })}
                   </td>
                   <td style={{ fontWeight: 600 }}>{formatINR(r.totalTaxableValue)}</td>
                   <td style={{ color: 'var(--gst-emerald)', fontWeight: 700 }}>{formatINR(r.totalTax)}</td>
@@ -135,6 +163,18 @@ export default function GstDownloads() {
                     >
                       {downloadingId === `${r.id}-excel` ? <Loader2 size={12} className="gst-spin" /> : <FileSpreadsheet size={13} />}
                       Excel
+                    </button>
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <button
+                      className="gst-btn gst-btn-sm gst-btn-outline"
+                      style={{ color: 'var(--gst-red, #ff4757)', borderColor: 'rgba(255,71,87,0.25)', gap: 5 }}
+                      onClick={() => handleDelete(r)}
+                      disabled={deletingId === r.id}
+                      title="Delete this generated return"
+                    >
+                      {deletingId === r.id ? <Loader2 size={12} className="gst-spin" /> : <Trash2 size={13} />}
+                      Delete
                     </button>
                   </td>
                 </tr>

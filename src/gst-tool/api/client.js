@@ -185,11 +185,24 @@ export const gstApi = {
     });
   },
 
+  async clearUploads(businessId, period) {
+    const params = new URLSearchParams({ businessId, period });
+    return request(`/uploads?${params.toString()}`, {
+      method: 'DELETE',
+    });
+  },
+
   // --- Return Endpoints ---
   async generateReturn({ businessId, period }) {
     return request('/returns/generate', {
       method: 'POST',
       body: JSON.stringify({ businessId, period }),
+    });
+  },
+
+  async deleteReturn(id) {
+    return request(`/returns/${id}`, {
+      method: 'DELETE',
     });
   },
 
