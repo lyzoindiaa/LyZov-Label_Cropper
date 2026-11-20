@@ -83,6 +83,7 @@ function buildDocSeries(numArray, warnings = []) {
 
   const docs = [];
   let numCounter = 1;
+  // Series keep first-seen order (= source file order), matching the reference tool.
   Object.keys(map).forEach(prefix => {
     const items = map[prefix].sort((a, b) => a.num - b.num);
     const minNum = items[0].num;
@@ -127,6 +128,10 @@ function buildDocSeries(numArray, warnings = []) {
  * Aggregates unified orderlines into statutory GSTR-1 data structures
  */
 export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '', grossTurnover = 0) {
+  // Deterministic processing order regardless of upload order: Amazon rows first, then
+  // Flipkart (Array.sort is stable, so each file keeps its own row order).
+  const platformRank = p => (String(p || '').toLowerCase().includes('amazon') ? 0 : 1);
+  orderLines = [...orderLines].sort((a, b) => platformRank(a.platform) - platformRank(b.platform));
   const totals = {
     grossTurnover,
     totalInvoices: 0,              // Count of sales invoices only (e.g. 45)
@@ -366,14 +371,17 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
   // Round B2CS decimals.
   // Zero-value buckets are intentionally excluded ─ the GST portal accepts absent
   // zero-value B2CS rows and the offline tool treats them the same way.
-  const b2csList = Object.values(b2csMap).map(item => ({
+  const b2csAllBuckets = Object.values(b2csMap).map(item => ({
     ...item,
-    txval: Number(item.txval.toFixed(2)),
-    iamt:  Number(item.iamt.toFixed(2)),
-    camt:  Number(item.camt.toFixed(2)),
-    samt:  Number(item.samt.toFixed(2)),
-    csamt: Number(item.csamt.toFixed(2)),
-  })).filter(item => item.txval !== 0);
+    txval: Number(item.txval.toFixed(2)) + 0,   // "+ 0" normalises -0 to 0
+    iamt:  Number(item.iamt.toFixed(2)) + 0,
+    camt:  Number(item.camt.toFixed(2)) + 0,
+    samt:  Number(item.samt.toFixed(2)) + 0,
+    csamt: Number(item.csamt.toFixed(2)) + 0,
+  }));
+  // Display / Excel list hides buckets that net to zero; the JSON exporter uses
+  // b2csAll (zero-value buckets kept) to match the paid tool's output.
+  const b2csList = b2csAllBuckets.filter(item => item.txval !== 0);
 
   // Round Nil section decimals
   const nilList = Object.values(nilMap).map(item => ({
@@ -452,18 +460,19 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
       docs: salesDocs,
     });
   }
-  if (debitDocs.length > 0) {
-    doc_det.push({
-      doc_num: 4,
-      doc_typ: 'Debit Note',
-      docs: debitDocs,
-    });
-  }
+  // Order matches the paid tool / portal listing: 1 (Invoices), 5 (Credit Note), 4 (Debit Note)
   if (creditDocs.length > 0) {
     doc_det.push({
       doc_num: 5,
       doc_typ: 'Credit Note',
       docs: creditDocs,
+    });
+  }
+  if (debitDocs.length > 0) {
+    doc_det.push({
+      doc_num: 4,
+      doc_typ: 'Debit Note',
+      docs: debitDocs,
     });
   }
 
@@ -477,6 +486,7 @@ export function aggregateGstr1(orderLines, sellerStateCode = '09', legalName = '
     sections: {
       b2b:        Object.values(b2bMap),
       b2cs:       b2csList,
+      b2csAll:    b2csAllBuckets,
       cdnr:       Object.values(cdnrMap),
       nil:        { inv: nilList },
       hsn:        { hsn_b2c: hsnList },      // GST portal key: hsn_b2c for B2C supplies

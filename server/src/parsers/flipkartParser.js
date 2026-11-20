@@ -134,9 +134,20 @@ export async function parseFlipkartReport(filePath, sellerStateCode) {
         'Final Invoice Amount', 'Invoice Amount', 'Total Amount', 'Gross Amount'
       ], 0)) || taxableNum;
 
+      // Flipkart "Return Cancellation" (Event Sub Type / Document Sub Type) means the
+      // customer's return was cancelled, so the supply is REINSTATED. The report already
+      // carries these rows with POSITIVE values (invoice no. prefix e.g. LOAEADL...).
+      // They must be ADDED back (upward adjustment => Debit Note), never netted off as a
+      // return, even though the Event Type column literally says "Return".
+      const subTypeRaw = String(getVal(row, ['Event Sub Type', 'Document Sub Type'])).toLowerCase();
+      const isReturnCancellation = subTypeRaw.includes('return cancellation');
+
       let type = 'sale';
       let docType = 'INV';
-      if (eventTypeRaw.includes('debit')) {
+      if (isReturnCancellation) {
+        type = taxableNum < 0 ? 'return' : 'sale';
+        docType = 'DR';
+      } else if (eventTypeRaw.includes('debit')) {
         type = 'return';
         docType = 'DR';
       } else if (eventTypeRaw.includes('credit')) {
