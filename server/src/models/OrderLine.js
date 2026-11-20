@@ -45,6 +45,13 @@ const orderLineSchema = new mongoose.Schema({
     enum: ['sale', 'return', 'cancellation'],
     default: 'sale',
   },
+  // INV = tax invoice, CR = credit note, DR = debit note.
+  // Must be persisted: the aggregator needs it to file Table 13 / sign-adjust correctly.
+  docType: {
+    type: String,
+    enum: ['INV', 'CR', 'DR'],
+    default: 'INV',
+  },
   buyerGstin: {
     type: String,
     default: '',

@@ -62,6 +62,8 @@ router.post('/generate', async (req, res, next) => {
       period,
       aggregatedData: aggregated,
       outputFilePath: jsonFilePath,
+      // 'placeholder' (default) = paid-tool-identical hsn_b2b zero row; 'full' = real hsn_b2c summary
+      hsnMode: req.body.hsnMode === 'full' ? 'full' : 'placeholder',
     });
 
     generateGstr1Excel({
