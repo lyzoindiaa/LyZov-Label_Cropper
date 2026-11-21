@@ -31,7 +31,7 @@ describe('Sitemap, Robots & Website Visibility Assets', () => {
     const sitemapPath = path.join(ROOT_DIR, 'public', 'sitemap.xml');
     assert.ok(fs.existsSync(sitemapPath), 'Missing public/sitemap.xml');
 
-    const xml = fs.readFileSync(sitemapPath, 'utf8');
+    const xml = fs.readFileSync(sitemapPath, 'utf8').replace(/\r\n/g, '\n');
     assert.equal(xml, buildSitemapXml(), 'public/sitemap.xml is out of sync; run npm run sitemap');
 
     assert.ok(xml.startsWith('<?xml version="1.0" encoding="UTF-8"?>'));
