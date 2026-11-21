@@ -17,8 +17,13 @@ import {
   Building2,
 } from 'lucide-react';
 import PageLayout from '../components/PageLayout';
+import { PAGE_SEO, buildBreadcrumbSchema } from '../data/seoMetadata';
 
 const SUPPORT_EMAIL = 'lyzovindia@gmail.com';
+const contactSchema = buildBreadcrumbSchema([
+  { name: 'Home', path: '/' },
+  { name: 'Contact Us', path: '/contact' },
+]);
 
 export default function ContactPage() {
   const [copied, setCopied] = useState(false);
@@ -31,8 +36,11 @@ export default function ContactPage() {
 
   return (
     <PageLayout
-      title="Contact Us"
-      description="Get in touch with the LyZov Cropper Studio team for bug reports, thermal printer compatibility help, or feature suggestions."
+      title={PAGE_SEO['/contact'].title}
+      description={PAGE_SEO['/contact'].description}
+      keywords={PAGE_SEO['/contact'].keywords}
+      canonical="https://tools.lyzov.com/contact"
+      schema={contactSchema}
       maxWidth={1240}
     >
       {/* Hero Header */}

@@ -1,0 +1,23 @@
+{
+  "name": "LyZov Tools — Image, PDF & E-Commerce Suite",
+  "short_name": "LyZov Tools",
+  "description": "Free, 100% private browser-based tools for images, PDFs, Word documents, shipping labels, GST returns, and marketplace seller analytics.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#080c18",
+  "theme_color": "#080c18",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

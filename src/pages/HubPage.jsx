@@ -1,135 +1,67 @@
-import React, { useState, useEffect, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useContext, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "../gst-tool/gst.css";
 import { AppContext } from "../context/AppContext";
+import { TOOL_CATEGORIES, TOOLS_CATALOG } from "../data/toolsCatalog";
+import { PAGE_SEO, buildHubSchema } from "../data/seoMetadata";
 import {
   Scissors, FileText, ArrowRight, Zap, ShieldCheck,
   Star, Globe, Layers, CheckCircle2, Sparkles, BookOpen,
   Upload, Download, MousePointer, ChevronDown,
   Package, Clock, Lock, Cpu, Lightbulb, TrendingUp,
   Users, BarChart2, FileCheck, Printer, Sun, Moon,
-  Menu, X, Image as ImageIcon,
+  Menu, X, Image as ImageIcon, Maximize2, Minimize2,
+  RefreshCw, Wand2, FileType2, FileOutput, Search,
 } from "lucide-react";
 
 import SEOHead from "../components/SEOHead";
 
-const TOOLS = [
-  {
-    id: "cropper",
-    icon: Scissors,
-    name: "LyZov Cropper Studio",
-    tagline: "Batch PDF Label Cropper",
-    description: "Crop and extract hundreds of thermal shipping labels and barcodes in seconds.",
-    accent: "#00c9ff",
-    accentDim: "#0096cc",
-    glowColor: "rgba(0,201,255,0.22)",
-    route: "/cropper",
-    badge: "Free • No Signup",
-    badgeClass: "gst-badge-blue",
-    features: [
-      "Visual drag-to-crop selection",
-      "Thermal printer ready (4×6, 6×4, A4)",
-      "Batch export as ZIP or unified PDF",
-    ],
-    cta: "Open Cropper Studio",
-    status: "Live",
-    statusColor: "#00d68f",
-  },
-  {
-    id: "gst",
-    icon: FileText,
-    name: "GST Tool",
-    tagline: "GSTR-1 Return Generator",
-    description: "Convert Amazon & Flipkart GST reports into portal-ready GSTR-1 JSON in minutes.",
-    accent: "#00d68f",
-    accentDim: "#00a86b",
-    glowColor: "rgba(0,214,143,0.22)",
-    route: "/gst-tool",
-    badge: "30-Day Free Trial",
-    badgeClass: "gst-badge-green",
-    features: [
-      "Supports Amazon MTR & Flipkart GST",
-      "Auto-splits B2B, B2CS, CDNR & HSN",
-      "Portal-ready JSON + CA Excel export",
-    ],
-    cta: "Open GST Tool",
-    status: "Live",
-    statusColor: "#00d68f",
-  },
-  {
-    id: "pnl",
-    icon: BarChart2,
-    name: "LyZov P&L Analyzer",
-    tagline: "Multi-Channel Profit Intelligence",
-    description: "Uncover real net profit across Amazon, Flipkart, Meesho & Shopify after all fees.",
-    accent: "#ffb703",
-    accentDim: "#fb8500",
-    glowColor: "rgba(255,183,3,0.22)",
-    route: "/pnl",
-    badge: "1-Mo Free Trial",
-    badgeClass: "gst-badge-gold",
-    features: [
-      "Amazon, Flipkart, Meesho & Shopify",
-      "Reconciled Audit (accepted vs rejected)",
-      "What-If price & return-rate simulators",
-    ],
-    cta: "Launch P&L Analyzer",
-    status: "Live",
-    statusColor: "#00d68f",
-  },
-  {
-    id: "image-extractor",
-    icon: ImageIcon,
-    name: "Product Image Extractor",
-    tagline: "Link to HD Product Photo",
-    description: "Extract clean 4K product photos from Amazon, Flipkart, Meesho & Myntra links instantly.",
-    accent: "#a78bfa",
-    accentDim: "#8b5cf6",
-    glowColor: "rgba(167,139,250,0.22)",
-    route: "/image-extractor",
-    badge: "5 Daily • Quota",
-    badgeClass: "gst-badge-blue",
-    features: [
-      "Amazon, Flipkart, Meesho & Myntra",
-      "PNG & JPEG converter with quality slider",
-      "Batch multi-link & ZIP archive download",
-    ],
-    cta: "Open Image Extractor",
-    status: "Live",
-    statusColor: "#00d68f",
-  },
-];
+const TOOL_ICON_MAP = {
+  Maximize2,
+  Minimize2,
+  RefreshCw,
+  Wand2,
+  Layers,
+  FileType2,
+  FileOutput,
+  Scissors,
+  FileText,
+  BarChart2,
+  ImageIcon,
+  Image: ImageIcon,
+  Package,
+  Sparkles,
+};
 
 const HOW_IT_WORKS = [
-  { step: "01", icon: MousePointer, title: "Choose your tool", desc: "Browse the tools below and click into the one you need. No account required to get started.", accent: "#00c9ff" },
-  { step: "02", icon: Upload, title: "Upload your file", desc: "Drag and drop or browse for your file. Every tool shows you exactly what formats it accepts.", accent: "#a78bfa" },
-  { step: "03", icon: Cpu, title: "Processed locally", desc: "All computation runs in your browser. Your files are never sent to any server, ever.", accent: "#00d68f" },
-  { step: "04", icon: Download, title: "Download your result", desc: "Get your output instantly � cropped labels, GSTR-1 JSON, or Excel report � with one click.", accent: "#f5a623" },
+  { step: "01", icon: MousePointer, title: "Choose your tool", desc: "Pick any image, PDF, Word, or seller tool below. No account required to get started.", accent: "#00c9ff" },
+  { step: "02", icon: Upload, title: "Upload your file", desc: "Drag and drop single or bulk files. Clear prompts show accepted formats instantly.", accent: "#a78bfa" },
+  { step: "03", icon: Cpu, title: "Processed in browser", desc: "Your everyday image, PDF, and Word tasks run directly in your browser without server waits.", accent: "#00d68f" },
+  { step: "04", icon: Download, title: "Download your result", desc: "Preview your output and download individual files or all items in a single ZIP.", accent: "#f5a623" },
 ];
 
 const WHY_LYZOV = [
-  { icon: Lock, title: "100% Private", desc: "Your files and documents never leave your device. All processing runs locally in the browser with zero server calls." },
-  { icon: Zap, title: "Instant Results", desc: "No upload queues, no delays. Results are generated in real time as soon as you provide the input." },
-  { icon: Layers, title: "Purpose-Built", desc: "Each tool is laser-focused on doing exactly one job � and doing it better than any generic solution." },
-  { icon: Globe, title: "Works Everywhere", desc: "Any modern browser on any OS. No app installs, no plugins, no admin permissions needed." },
-  { icon: Clock, title: "Always Available", desc: "Browser-based tools have no downtime. Open the URL and start working � any time, anywhere." },
-  { icon: TrendingUp, title: "Continuously Improving", desc: "Tools are updated regularly based on real user feedback. New formats and features added often." },
+  { icon: Lock, title: "Privacy First", desc: "Your everyday image, PDF, and document files stay on your device with browser-side processing." },
+  { icon: Zap, title: "Instant Results", desc: "No upload queues, no delays. Process single files or bulk batches in seconds." },
+  { icon: Layers, title: "Purpose-Built", desc: "Each tool focuses on doing one job cleanly without cluttered menus or confusing settings." },
+  { icon: Globe, title: "Works Everywhere", desc: "Any modern browser on desktop or mobile. No software installs or admin permissions needed." },
+  { icon: Clock, title: "Always Available", desc: "Browser-based tools stay fast and reliable whenever you need to resize, compress, merge, or convert." },
+  { icon: TrendingUp, title: "Built for Everyone", desc: "Designed for students, office teams, small businesses, and e-commerce sellers alike." },
 ];
 
 const COMING_SOON = [
-  { icon: BarChart2, name: "P&L Analyzer", desc: "Upload your sales reports and get a clean profit & loss breakdown by product, channel, and date range." },
   { icon: FileCheck, name: "Invoice Generator", desc: "Create GST-compliant invoices in seconds. Enter items, auto-calculate tax, download as PDF." },
   { icon: Printer, name: "Barcode Studio", desc: "Generate and print EAN-13, QR, Code128 barcodes in bulk from a CSV. Thermal-printer optimized." },
   { icon: Package, name: "Packing List Tool", desc: "Convert order exports into print-ready packing slips and box labels for warehouse operations." },
 ];
 
 const FAQS = [
-  { q: "Do I need to create an account to use these tools?", a: "For the Label Cropper Studio, no account is needed at all � just open and use it. The GST Tool offers a 30-day free trial without a credit card, and a login is needed only to save your business GSTINs and return history across sessions." },
-  { q: "Are my files safe? Is my data uploaded to any server?", a: "The Label Cropper Studio is 100% client-side � your PDF files are processed entirely in your browser and never uploaded anywhere. The GST Tool also processes your reports locally; only account credentials and return summaries are stored on the server." },
-  { q: "What file formats are supported?", a: "The Cropper Studio accepts any standard PDF file. The GST Tool accepts CSV and Excel (.xlsx, .xls) � specifically Amazon MTR (Merchant Tax Report) and Flipkart GST / Sales Tax Report formats." },
-  { q: "Can I use these tools on my phone or tablet?", a: "Yes, all tools work on modern mobile browsers. For the best experience � especially for the visual crop zone selector � a desktop or laptop with a larger screen is recommended." },
-  { q: "Will more tools be added?", a: "Absolutely. LyZov Tools is a growing collection. Upcoming additions include a P&L Analyzer, Invoice Generator, Barcode Studio, and Packing List Tool � all following the same privacy-first, browser-based approach." },
-  { q: "Is there a cost to use these tools?", a: "The Label Cropper Studio is completely free. The GST Tool has a 30-day free trial with no credit card required. After the trial, plans start at Rs.149/month for individual sellers." },
+  { q: "Do I need to create an account to use these tools?", a: "No account is needed for our Image Tools, PDF & Document Tools, or Label Cropper Studio — just open a tool and start working. The GST Tool and P&L Analyzer offer free trials with optional sign-in to sync reports across sessions." },
+  { q: "Are my files safe? Are images or documents uploaded to a server?", a: "Our Image Resizer, Compressor, Converter, Background Remover, Merge PDF, PDF to Word, Word to PDF, and Label Cropper run right in your browser, so your files stay on your device." },
+  { q: "What file formats are supported?", a: "Image tools support JPG, JPEG, PNG, WEBP, and BMP. Document tools support PDF (including OCR for scanned PDFs) and Word (.docx). E-commerce tools support shipping label PDFs, CSV, and Excel (.xlsx, .xls)." },
+  { q: "Can I process multiple files at once?", a: "Yes! Most tools — including Image Resizer, Compressor, Converter, Background Remover, Merge PDF, and Label Cropper — support bulk uploads and one-click Download All as ZIP." },
+  { q: "Can I use these tools on my phone or tablet?", a: "Yes, every tool is responsive and works on modern mobile and desktop browsers. For large batches or heavy AI background removal, a desktop browser provides the fastest performance." },
+  { q: "Are the new image and PDF tools free?", a: "Yes! All Image Tools and PDF & Document Tools are completely free to use right now with no signup or credit card required." },
 ];
 
 export default function HubPage() {
@@ -138,13 +70,15 @@ export default function HubPage() {
   const [hoveredTool, setHoveredTool] = useState(null);
   const [openFaq, setOpenFaq] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => entries.forEach(e => {
         if (e.isIntersecting) { e.target.style.opacity = "1"; e.target.style.transform = "translateY(0)"; }
       }),
-      { threshold: 0.1 }
+      { threshold: 0.08 }
     );
     document.querySelectorAll(".hub-obs").forEach(el => {
       el.style.opacity = "0";
@@ -153,18 +87,45 @@ export default function HubPage() {
       observer.observe(el);
     });
     return () => observer.disconnect();
-  }, []);
+  }, [selectedCategory, searchQuery]);
 
   const S = { px: "clamp(12px, 4vw, 80px)" };
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
+  const visibleCategories = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const cats = selectedCategory === "all"
+      ? TOOL_CATEGORIES
+      : TOOL_CATEGORIES.filter((c) => c.id === selectedCategory);
+
+    return cats
+      .map((cat) => {
+        const catTools = TOOLS_CATALOG.filter((tool) => {
+          if (tool.categoryId !== cat.id) return false;
+          if (!q) return true;
+          return (
+            tool.name.toLowerCase().includes(q) ||
+            tool.tagline.toLowerCase().includes(q) ||
+            tool.description.toLowerCase().includes(q) ||
+            (tool.tags || []).some((tag) => tag.includes(q))
+          );
+        });
+        return { ...cat, tools: catTools };
+      })
+      .filter((cat) => cat.tools.length > 0);
+  }, [selectedCategory, searchQuery]);
+
+  const hubSchema = useMemo(() => buildHubSchema(TOOLS_CATALOG, FAQS), []);
+
   return (
     <div className="gst-root" style={{ background: "var(--gst-bg)", minHeight: "100vh", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
       <SEOHead
-        title="LyZov Tools — Free E-Commerce Seller Tools & Shipping Label Cropper"
-        description="Free, private, browser-based tools for e-commerce sellers. Batch crop shipping labels for Meesho, Flipkart & Amazon, generate GSTR-1 returns, and analyze marketplace profits."
+        title={PAGE_SEO["/"].title}
+        description={PAGE_SEO["/"].description}
+        keywords={PAGE_SEO["/"].keywords}
         canonical="https://tools.lyzov.com/"
+        schema={hubSchema}
       />
 
       {/* NAVBAR */}
@@ -178,7 +139,7 @@ export default function HubPage() {
         width: "100%", maxWidth: "100vw", boxSizing: "border-box", gap: 10,
       }}>
         {/* Brand / Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0" }}>
+        <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", textDecoration: "none", color: "inherit" }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#00c9ff,#a78bfa)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(0,201,255,0.35)", flexShrink: 0 }}>
             <Sparkles size={18} color="#0a0f1e" />
           </div>
@@ -186,28 +147,28 @@ export default function HubPage() {
             <span style={{ color: "var(--gst-text)", fontWeight: 800, fontSize: "1.05rem", letterSpacing: "-0.3px" }}>LyZov <span style={{ color: "#00c9ff" }}>Tools</span></span>
             <div style={{ color: "var(--gst-text-mute)", fontSize: "0.67rem", lineHeight: 1.1 }}>tools.lyzov.com</div>
           </div>
-        </div>
+        </Link>
 
         {/* Desktop Links & Action Buttons */}
-        <nav style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <nav aria-label="Primary navigation" style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div className="gst-nav-desktop" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <button className="gst-btn gst-btn-ghost gst-btn-sm" onClick={() => navigate("/blog")}>
-              <BookOpen size={14} color="#a78bfa" /> Blog &amp; Guides
-            </button>
-            <a href="#tools" className="gst-btn gst-btn-ghost gst-btn-sm">Tools</a>
-            <a href="#how" className="gst-btn gst-btn-ghost gst-btn-sm">How it works</a>
-            <a href="#why" className="gst-btn gst-btn-ghost gst-btn-sm">Why LyZov</a>
+            <a href="#cat-image" className="gst-btn gst-btn-ghost gst-btn-sm">Image Tools</a>
+            <a href="#cat-pdf" className="gst-btn gst-btn-ghost gst-btn-sm">PDF &amp; Docs</a>
+            <a href="#cat-ecommerce" className="gst-btn gst-btn-ghost gst-btn-sm">Seller Tools</a>
+            <Link to="/blog" className="gst-btn gst-btn-ghost gst-btn-sm">
+              <BookOpen size={14} color="#a78bfa" /> Guides
+            </Link>
             <a href="#faq" className="gst-btn gst-btn-ghost gst-btn-sm">FAQ</a>
           </div>
-          
-          <button className="gst-btn gst-btn-outline gst-btn-sm" onClick={() => navigate("/cropper")}>
+
+          <Link to="/cropper" className="gst-btn gst-btn-outline gst-btn-sm">
             <Scissors size={14} /> <span style={{ display: "inline" }}>Cropper</span>
-          </button>
-          
-          <button className="gst-nav-desktop gst-btn gst-btn-primary gst-btn-sm" onClick={() => navigate("/gst-tool")}>
+          </Link>
+
+          <Link to="/gst-tool" className="gst-nav-desktop gst-btn gst-btn-primary gst-btn-sm">
             <FileText size={14} /> GST Tool
-          </button>
-          
+          </Link>
+
           <button
             id="themeToggle"
             type="button"
@@ -244,128 +205,231 @@ export default function HubPage() {
           animation: "gst-fade-in 0.25s ease",
           boxShadow: "0 12px 30px rgba(0,0,0,0.15)",
         }}>
-          <button className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={() => { closeMobileMenu(); navigate("/blog"); }}>
+          <a href="#cat-image" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={() => { setSelectedCategory("all"); closeMobileMenu(); }}>
+            <ImageIcon size={16} color="#00c9ff" /> Image Tools
+          </a>
+          <a href="#cat-pdf" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={() => { setSelectedCategory("all"); closeMobileMenu(); }}>
+            <FileText size={16} color="#a78bfa" /> PDF &amp; Document Tools
+          </a>
+          <a href="#cat-ecommerce" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={() => { setSelectedCategory("all"); closeMobileMenu(); }}>
+            <Package size={16} color="#00d68f" /> E-Commerce &amp; Seller Tools
+          </a>
+          <Link to="/blog" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={closeMobileMenu}>
             <BookOpen size={16} color="#a78bfa" /> Seller Blog &amp; Guides
-          </button>
-          <a href="#tools" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={closeMobileMenu}>
-            <Layers size={16} color="#00c9ff" /> Available Tools
-          </a>
-          <a href="#how" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={closeMobileMenu}>
-            <Lightbulb size={16} color="#a78bfa" /> How it Works
-          </a>
-          <a href="#why" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={closeMobileMenu}>
-            <Star size={16} color="#00d68f" /> Why LyZov Tools
-          </a>
+          </Link>
           <a href="#faq" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={closeMobileMenu}>
             <Users size={16} color="#f5a623" /> Frequently Asked Questions
           </a>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
-            <button className="gst-btn gst-btn-outline" style={{ justifyContent: "center", minHeight: 44 }} onClick={() => { closeMobileMenu(); navigate("/cropper"); }}>
+            <Link to="/cropper" className="gst-btn gst-btn-outline" style={{ justifyContent: "center", minHeight: 44 }} onClick={closeMobileMenu}>
               <Scissors size={15} /> Cropper Studio
-            </button>
-            <button className="gst-btn gst-btn-primary" style={{ justifyContent: "center", minHeight: 44 }} onClick={() => { closeMobileMenu(); navigate("/gst-tool"); }}>
+            </Link>
+            <Link to="/gst-tool" className="gst-btn gst-btn-primary" style={{ justifyContent: "center", minHeight: 44 }} onClick={closeMobileMenu}>
               <FileText size={15} /> GST Tool
-            </button>
+            </Link>
           </div>
         </div>
       )}
 
       {/* HERO */}
-      <section style={{ textAlign: "center", padding: `clamp(60px,11vh,120px) ${S.px} clamp(50px,8vh,90px)`, position: "relative", overflow: "hidden" }}>
+      <section style={{ textAlign: "center", padding: `clamp(50px,9vh,105px) ${S.px} clamp(36px,6vh,70px)`, position: "relative", overflow: "hidden" }}>
         {[{ t: "5%", l: "8%", w: 520, c: "rgba(0,201,255,0.07)" }, { t: "15%", r: "8%", w: 420, c: "rgba(167,139,250,0.07)" }, { b: "-5%", l: "38%", w: 340, c: "rgba(0,214,143,0.07)" }].map((o, i) => (
           <div key={i} style={{ position: "absolute", borderRadius: "50%", pointerEvents: "none", filter: "blur(70px)", width: o.w, height: o.w, background: `radial-gradient(circle,${o.c} 0%,transparent 70%)`, top: o.t, left: o.l, right: o.r, bottom: o.b }} />
         ))}
-        <div className="gst-badge gst-badge-blue" style={{ margin: "0 auto 24px", display: "inline-flex" }}>
+        <div className="gst-badge gst-badge-blue" style={{ margin: "0 auto 22px", display: "inline-flex" }}>
           <Sparkles size={11} /> Free browser-based tools • No signup required to start
         </div>
-        <h1 style={{ fontSize: "clamp(2.4rem,5.5vw,4.4rem)", fontWeight: 900, lineHeight: 1.08, letterSpacing: "-2px", margin: "0 auto 24px", maxWidth: 900, color: "var(--gst-text)" }}>
+        <h1 style={{ fontSize: "clamp(2.2rem,5.2vw,4.2rem)", fontWeight: 900, lineHeight: 1.08, letterSpacing: "-2px", margin: "0 auto 22px", maxWidth: 900, color: "var(--gst-text)" }}>
           Tools that actually<br /><span className="gst-gradient-text">get work done.</span>
         </h1>
-        <p style={{ fontSize: "clamp(0.98rem,1.8vw,1.18rem)", color: "var(--gst-text-sec)", maxWidth: 600, margin: "0 auto 40px", lineHeight: 1.75 }}>
-          A growing collection of precision-built browser tools designed to handle repetitive, error-prone tasks — fast, private, and free to start.
+        <p style={{ fontSize: "clamp(0.98rem,1.8vw,1.16rem)", color: "var(--gst-text-sec)", maxWidth: 620, margin: "0 auto 36px", lineHeight: 1.75 }}>
+          Fast, reliable everyday tools for images, PDFs, Word documents, and e-commerce sellers — simple enough for anyone, private right in your browser.
         </p>
-        <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap", marginBottom: 36 }}>
+        <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap", marginBottom: 32 }}>
           <button className="gst-btn gst-btn-primary gst-btn-lg" onClick={() => document.querySelector("#tools").scrollIntoView({ behavior: "smooth" })}>Explore All Tools <ArrowRight size={18} /></button>
-          <button className="gst-btn gst-btn-outline gst-btn-lg" onClick={() => navigate("/gst-tool")}><FileText size={16} /> Open GST Tool</button>
+          <Link to="/cropper" className="gst-btn gst-btn-outline gst-btn-lg"><Scissors size={16} /> Open Cropper Studio</Link>
         </div>
-        <div style={{ display: "flex", gap: 28, justifyContent: "center", flexWrap: "wrap" }}>
-          {[{ icon: ShieldCheck, text: "100% private • no server uploads" }, { icon: Zap, text: "Runs entirely in your browser" }, { icon: Star, text: "No credit card to start" }].map(({ icon: Icon, text }) => (
+        <div style={{ display: "flex", gap: 26, justifyContent: "center", flexWrap: "wrap" }}>
+          {[{ icon: ShieldCheck, text: "Private browser-side processing" }, { icon: Zap, text: "Fast bulk upload & ZIP download" }, { icon: Star, text: "No registration required" }].map(({ icon: Icon, text }) => (
             <span key={text} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: "0.83rem", color: "var(--gst-text-sec)" }}><Icon size={14} color="var(--gst-emerald)" /> {text}</span>
           ))}
         </div>
       </section>
 
-      {/* TOOLS */}
-      <section id="tools" style={{ padding: `clamp(50px,8vh,90px) ${S.px}` }}>
-        <div className="hub-obs" style={{ textAlign: "center", marginBottom: 50 }}>
-          <div className="gst-badge gst-badge-gold" style={{ margin: "0 auto 16px", display: "inline-flex" }}><BookOpen size={11} /> Available Tools</div>
-          <h2 style={{ fontSize: "clamp(1.8rem,3.5vw,2.6rem)", fontWeight: 800, letterSpacing: "-0.8px", margin: "0 0 14px", color: "var(--gst-text)" }}>Pick your <span className="gst-gradient-text">tool</span></h2>
-          <p style={{ color: "var(--gst-text-sec)", maxWidth: 520, margin: "0 auto", lineHeight: 1.75 }}>Each tool is fully self-contained, works offline after first load, and keeps your data completely private on your device.</p>
+      {/* CATEGORIZED TOOLS DIRECTORY */}
+      <section id="tools" style={{ padding: `clamp(36px,6vh,70px) ${S.px} clamp(50px,8vh,90px)` }}>
+        <div className="hub-obs" style={{ textAlign: "center", marginBottom: 32 }}>
+          <div className="gst-badge gst-badge-gold" style={{ margin: "0 auto 14px", display: "inline-flex" }}><Layers size={11} /> Tool Categories</div>
+          <h2 style={{ fontSize: "clamp(1.8rem,3.5vw,2.6rem)", fontWeight: 800, letterSpacing: "-0.8px", margin: "0 0 12px", color: "var(--gst-text)" }}>Pick your <span className="gst-gradient-text">tool</span></h2>
+          <p style={{ color: "var(--gst-text-sec)", maxWidth: 560, margin: "0 auto", lineHeight: 1.7 }}>
+            Browse tools organized by category, or search by task to jump straight in.
+          </p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))", gap: "clamp(16px, 2.5vw, 24px)", maxWidth: 1200, margin: "0 auto" }}>
-          {TOOLS.map((tool) => {
-            const Icon = tool.icon;
-            const isH = hoveredTool === tool.id;
-            return (
-              <div key={tool.id} className="hub-obs"
-                style={{
-                  background: isH ? (theme === 'dark' ? "linear-gradient(160deg,rgba(14,22,40,0.98),rgba(10,15,30,0.9))" : "var(--gst-surface2)") : "var(--gst-surface)",
-                  border: `1px solid ${isH ? tool.accent + "55" : "var(--gst-border)"}`,
-                  borderRadius: 16,
-                  padding: "18px 18px 16px",
-                  cursor: "pointer",
-                  transition: "all 0.28s ease",
-                  boxShadow: isH ? `0 0 35px ${tool.glowColor}, var(--gst-shadow-lg)` : "var(--gst-shadow)",
-                  transform: isH ? "translateY(-5px)" : "translateY(0)",
-                  position: "relative",
-                  overflow: "hidden",
-                  display: "flex",
-                  flexDirection: "column",
-                  height: "100%",
-                }}
-                onMouseEnter={() => setHoveredTool(tool.id)} onMouseLeave={() => setHoveredTool(null)} onClick={() => navigate(tool.route)}>
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,transparent,${tool.accent},transparent)`, opacity: isH ? 1 : 0.25, transition: "opacity 0.28s" }} />
 
-                {/* Header: Icon + Title & Badges */}
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
-                  <div style={{ width: 42, height: 42, borderRadius: 10, background: `${tool.accent}15`, border: `1px solid ${tool.accent}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: isH ? `0 0 16px ${tool.glowColor}` : "none", transition: "box-shadow 0.28s" }}>
-                    <Icon size={20} color={tool.accent} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 6, marginBottom: 3, flexWrap: "wrap" }}>
-                      <div style={{ fontWeight: 800, fontSize: "1.05rem", letterSpacing: "-0.3px", color: "var(--gst-text)", lineHeight: 1.25 }}>
-                        {tool.name}
+        {/* Category Filter Tabs & Quick Search */}
+        <div style={{ maxWidth: 1200, margin: "0 auto 40px", display: "flex", flexDirection: "column", gap: 16, alignItems: "center" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
+            <button
+              type="button"
+              onClick={() => setSelectedCategory("all")}
+              className={`gst-btn gst-btn-sm ${selectedCategory === "all" ? "gst-btn-primary" : "gst-btn-outline"}`}
+              style={{ borderRadius: 99, padding: "8px 18px" }}
+            >
+              All Tools ({TOOLS_CATALOG.length})
+            </button>
+            {TOOL_CATEGORIES.map((cat) => {
+              const count = TOOLS_CATALOG.filter((t) => t.categoryId === cat.id).length;
+              const active = selectedCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`gst-btn gst-btn-sm ${active ? "gst-btn-primary" : "gst-btn-outline"}`}
+                  style={{ borderRadius: 99, padding: "8px 18px" }}
+                >
+                  {cat.name} ({count})
+                </button>
+              );
+            })}
+          </div>
+
+          <div style={{ position: "relative", width: "100%", maxWidth: 440 }}>
+            <Search size={16} color="var(--gst-text-mute)" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search tools (e.g. resize, compress, merge pdf, word, gst)..."
+              aria-label="Search tools"
+              className="gst-input"
+              style={{ paddingLeft: 40, borderRadius: 99, height: 42, fontSize: "0.86rem" }}
+            />
+          </div>
+        </div>
+
+        {/* Categorized Multiple Lists */}
+        <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", flexDirection: "column", gap: 48 }}>
+          {visibleCategories.length === 0 ? (
+            <div className="gst-card" style={{ textAlign: "center", padding: "36px 20px" }}>
+              <p style={{ margin: "0 0 12px", fontWeight: 700, color: "var(--gst-text)" }}>No tools match &ldquo;{searchQuery}&rdquo;</p>
+              <button
+                type="button"
+                className="gst-btn gst-btn-outline gst-btn-sm"
+                onClick={() => { setSearchQuery(""); setSelectedCategory("all"); }}
+              >
+                Show All Tools
+              </button>
+            </div>
+          ) : (
+            visibleCategories.map((category) => {
+              const CatIcon = TOOL_ICON_MAP[category.iconName] || Layers;
+              return (
+                <div key={category.id} id={`cat-${category.id}`}>
+                  {/* Category Header */}
+                  <div style={{
+                    display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap",
+                    gap: 12, marginBottom: 20, paddingBottom: 12, borderBottom: "1px solid var(--gst-border)",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{
+                        width: 40, height: 40, borderRadius: 11,
+                        background: `${category.accent}18`, border: `1px solid ${category.accent}35`,
+                        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                      }}>
+                        <CatIcon size={20} color={category.accent} />
                       </div>
-                      <span className={`gst-badge ${tool.badgeClass}`} style={{ fontSize: "0.62rem", padding: "2px 7px", whiteSpace: "nowrap", flexShrink: 0, marginTop: 1 }}>
-                        {tool.badge}
-                      </span>
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, letterSpacing: "-0.3px", color: "var(--gst-text)" }}>
+                          {category.name}
+                        </h3>
+                        <p style={{ margin: "2px 0 0", fontSize: "0.84rem", color: "var(--gst-text-sec)" }}>
+                          {category.description}
+                        </p>
+                      </div>
                     </div>
-                    <div style={{ fontSize: "0.75rem", color: tool.accent, fontWeight: 600 }}>{tool.tagline}</div>
+                    <span className="gst-badge gst-badge-blue" style={{ fontSize: "0.7rem" }}>
+                      {category.tools.length} {category.tools.length === 1 ? "Tool" : "Tools"}
+                    </span>
+                  </div>
+
+                  {/* Category Tool Cards Grid */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 265px), 1fr))", gap: "clamp(16px, 2.2vw, 22px)" }}>
+                    {category.tools.map((tool) => {
+                      const Icon = TOOL_ICON_MAP[tool.iconName] || Sparkles;
+                      const isH = hoveredTool === tool.id;
+                      return (
+                        <div key={tool.id} className="hub-obs"
+                          style={{
+                            background: isH ? (theme === "dark" ? "linear-gradient(160deg,rgba(14,22,40,0.98),rgba(10,15,30,0.9))" : "var(--gst-surface2)") : "var(--gst-surface)",
+                            border: `1px solid ${isH ? tool.accent + "55" : "var(--gst-border)"}`,
+                            borderRadius: 16,
+                            padding: "18px 18px 16px",
+                            cursor: "pointer",
+                            transition: "all 0.25s ease",
+                            boxShadow: isH ? `0 0 32px ${tool.glowColor}, var(--gst-shadow-lg)` : "var(--gst-shadow)",
+                            transform: isH ? "translateY(-4px)" : "translateY(0)",
+                            position: "relative",
+                            overflow: "hidden",
+                            display: "flex",
+                            flexDirection: "column",
+                            height: "100%",
+                          }}
+                          onMouseEnter={() => setHoveredTool(tool.id)}
+                          onMouseLeave={() => setHoveredTool(null)}
+                          onClick={() => navigate(tool.route)}
+                        >
+                          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,transparent,${tool.accent},transparent)`, opacity: isH ? 1 : 0.25, transition: "opacity 0.25s" }} />
+
+                          {/* Header: Icon + Title & Badges */}
+                          <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+                            <div style={{ width: 42, height: 42, borderRadius: 10, background: `${tool.accent}15`, border: `1px solid ${tool.accent}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: isH ? `0 0 16px ${tool.glowColor}` : "none", transition: "box-shadow 0.25s" }}>
+                              <Icon size={20} color={tool.accent} />
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 6, marginBottom: 3, flexWrap: "wrap" }}>
+                                <div style={{ fontWeight: 800, fontSize: "1.02rem", letterSpacing: "-0.3px", color: "var(--gst-text)", lineHeight: 1.25 }}>
+                                  {tool.name}
+                                </div>
+                                <span className={`gst-badge ${tool.badgeClass}`} style={{ fontSize: "0.62rem", padding: "2px 7px", whiteSpace: "nowrap", flexShrink: 0, marginTop: 1 }}>
+                                  {tool.badge}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: "0.75rem", color: tool.accent, fontWeight: 600 }}>{tool.tagline}</div>
+                            </div>
+                          </div>
+
+                          {/* Short Description */}
+                          <p style={{ fontSize: "0.8rem", color: "var(--gst-text-sec)", lineHeight: 1.5, margin: "0 0 10px", minHeight: 36 }}>
+                            {tool.description}
+                          </p>
+
+                          {/* 3 Key Highlights */}
+                          <ul style={{ listStyle: "none", padding: 0, margin: "0 0 14px", display: "flex", flexDirection: "column", gap: 5 }}>
+                            {tool.features.map((f) => (
+                              <li key={f} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: "0.76rem", color: "var(--gst-text-sec)" }}>
+                                <CheckCircle2 size={13} color={tool.accent} style={{ flexShrink: 0 }} /> {f}
+                              </li>
+                            ))}
+                          </ul>
+
+                          {/* Action CTA Link */}
+                          <Link
+                            to={tool.route}
+                            className="gst-btn"
+                            style={{ width: "100%", marginTop: "auto", minHeight: 38, padding: "8px 14px", fontSize: "0.82rem", justifyContent: "center", background: `linear-gradient(135deg,${tool.accent},${tool.accentDim})`, color: "#0a0f1e", fontWeight: 800, borderRadius: 9, boxShadow: `0 4px 14px ${tool.glowColor}`, boxSizing: "border-box" }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {tool.cta} <ArrowRight size={15} />
+                          </Link>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-
-                {/* 1-Line Description */}
-                <p style={{ fontSize: "0.8rem", color: "var(--gst-text-sec)", lineHeight: 1.5, margin: "0 0 10px", minHeight: 36 }}>
-                  {tool.description}
-                </p>
-
-                {/* 3 Key Highlights */}
-                <ul style={{ listStyle: "none", padding: 0, margin: "0 0 14px", display: "flex", flexDirection: "column", gap: 5 }}>
-                  {tool.features.map(f => (
-                    <li key={f} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: "0.76rem", color: "var(--gst-text-sec)" }}>
-                      <CheckCircle2 size={13} color={tool.accent} style={{ flexShrink: 0 }} /> {f}
-                    </li>
-                  ))}
-                </ul>
-
-                {/* Action CTA Button */}
-                <button className="gst-btn" style={{ width: "100%", marginTop: "auto", minHeight: 38, padding: "8px 14px", fontSize: "0.82rem", justifyContent: "center", background: `linear-gradient(135deg,${tool.accent},${tool.accentDim})`, color: "#0a0f1e", fontWeight: 800, borderRadius: 9, boxShadow: `0 4px 14px ${tool.glowColor}` }}
-                  onClick={(e) => { e.stopPropagation(); navigate(tool.route); }}>
-                  {tool.cta} <ArrowRight size={15} />
-                </button>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </section>
 
@@ -374,7 +438,7 @@ export default function HubPage() {
         <div className="hub-obs" style={{ textAlign: "center", marginBottom: 56 }}>
           <div className="gst-badge gst-badge-blue" style={{ margin: "0 auto 16px", display: "inline-flex" }}><Lightbulb size={11} /> Simple by design</div>
           <h2 style={{ fontSize: "clamp(1.8rem,3.5vw,2.6rem)", fontWeight: 800, letterSpacing: "-0.8px", margin: "0 0 14px" }}>How it <span className="gst-gradient-text">works</span></h2>
-          <p style={{ color: "var(--gst-text-sec)", maxWidth: 480, margin: "0 auto", lineHeight: 1.75 }}>Every tool follows the same four-step flow. No learning curve.</p>
+          <p style={{ color: "var(--gst-text-sec)", maxWidth: 480, margin: "0 auto", lineHeight: 1.75 }}>Every tool follows the same simple flow. No learning curve.</p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 32, maxWidth: 960, margin: "0 auto" }}>
           {HOW_IT_WORKS.map(({ step, icon: Icon, title, desc, accent }) => (
@@ -398,7 +462,7 @@ export default function HubPage() {
           <p style={{ color: "var(--gst-text-sec)", maxWidth: 520, margin: "0 auto", lineHeight: 1.75 }}>Every decision we make is guided by one principle: your data belongs to you, and your time is too valuable to waste on clunky workflows.</p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 18, maxWidth: 960, margin: "0 auto" }}>
-          {WHY_LYZOV.map(({ icon: Icon, title, desc }, i) => (
+          {WHY_LYZOV.map(({ icon: Icon, title, desc }) => (
             <div key={title} className="gst-card hub-obs"
               style={{ transition: "border 0.22s, transform 0.22s" }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(0,201,255,0.3)"; e.currentTarget.style.transform = "translateY(-4px)"; }}
@@ -445,7 +509,7 @@ export default function HubPage() {
             const isOpen = openFaq === i;
             return (
               <div key={i} className="hub-obs" style={{ background: isOpen ? "var(--gst-surface)" : "var(--gst-surface2)", border: `1px solid ${isOpen ? "rgba(0,201,255,0.3)" : "var(--gst-border)"}`, borderRadius: "var(--gst-radius)", overflow: "hidden", transition: "border 0.22s" }}>
-                <button onClick={() => setOpenFaq(isOpen ? null : i)} style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: "18px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, color: "var(--gst-text)", fontFamily: "inherit" }}>
+                <button type="button" onClick={() => setOpenFaq(isOpen ? null : i)} style={{ width: "100%", background: "none", border: "none", cursor: "pointer", padding: "18px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, color: "var(--gst-text)", fontFamily: "inherit" }}>
                   <span style={{ fontWeight: 700, fontSize: "0.95rem", textAlign: "left", lineHeight: 1.4 }}>{q}</span>
                   <ChevronDown size={18} color="var(--gst-text-sec)" style={{ flexShrink: 0, transition: "transform 0.25s", transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }} />
                 </button>
@@ -462,10 +526,10 @@ export default function HubPage() {
         <div style={{ position: "absolute", bottom: -60, left: -60, width: 260, height: 260, borderRadius: "50%", background: "radial-gradient(circle,rgba(0,214,143,0.08),transparent 70%)", pointerEvents: "none" }} />
         <div className="gst-badge gst-badge-green" style={{ margin: "0 auto 20px", display: "inline-flex" }}><Zap size={11} /> Open in seconds</div>
         <h2 style={{ fontSize: "clamp(1.6rem,3.5vw,2.4rem)", fontWeight: 800, letterSpacing: "-0.6px", marginBottom: 14 }}>Ready to get started?</h2>
-        <p style={{ color: "var(--gst-text-sec)", maxWidth: 460, margin: "0 auto 36px", lineHeight: 1.75 }}>Open any tool instantly. No account needed for most tools, no installs, no waiting. Just open and work.</p>
+        <p style={{ color: "var(--gst-text-sec)", maxWidth: 460, margin: "0 auto 36px", lineHeight: 1.75 }}>Open any tool instantly. No account needed for everyday image &amp; PDF tools, no installs, no waiting.</p>
         <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-          <button className="gst-btn gst-btn-outline gst-btn-lg" onClick={() => navigate("/cropper")} style={{ borderColor: "rgba(0,201,255,0.4)", color: "#00c9ff" }}><Scissors size={18} /> Open Cropper Studio</button>
-          <button className="gst-btn gst-btn-primary gst-btn-lg" onClick={() => navigate("/gst-tool")}><FileText size={18} /> Open GST Tool <ArrowRight size={16} /></button>
+          <Link to="/image-resizer" className="gst-btn gst-btn-outline gst-btn-lg" style={{ borderColor: "rgba(0,201,255,0.4)", color: "#00c9ff" }}><Maximize2 size={18} /> Try Image Resizer</Link>
+          <Link to="/merge-pdf" className="gst-btn gst-btn-primary gst-btn-lg"><Layers size={18} /> Merge PDF <ArrowRight size={16} /></Link>
         </div>
       </section>
 
@@ -479,24 +543,56 @@ export default function HubPage() {
             </div>
             <p style={{ fontSize: "0.83rem", color: "var(--gst-text-mute)", lineHeight: 1.7, margin: 0 }}>Free, private, browser-based tools built for people who have real work to get done.</p>
           </div>
-          <div style={{ display: "flex", gap: "clamp(20px, 4vw, 48px)", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "clamp(20px, 4vw, 44px)", flexWrap: "wrap" }}>
             {[
-              { heading: "Tools", links: [{ label: "Cropper Studio", route: "/cropper" }, { label: "GST Tool", route: "/gst-tool" }] },
-              { heading: "Legal", links: [{ label: "Privacy Policy", route: "/privacy-policy" }, { label: "Terms of Service", route: "/terms" }, { label: "Disclaimer", route: "/disclaimer" }] },
-              { heading: "Company", links: [{ label: "About", route: "/about" }, { label: "Contact", route: "/contact" }, { label: "FAQ", route: "#faq" }] },
+              {
+                heading: "Image & PDF Tools",
+                links: [
+                  { label: "Image Resizer", route: "/image-resizer" },
+                  { label: "Image Compressor", route: "/image-compressor" },
+                  { label: "Image Converter", route: "/image-converter" },
+                  { label: "Background Remover", route: "/background-remover" },
+                  { label: "Merge PDF", route: "/merge-pdf" },
+                  { label: "PDF to Word", route: "/pdf-to-word" },
+                  { label: "Word to PDF", route: "/word-to-pdf" },
+                ],
+              },
+              {
+                heading: "Seller Suite",
+                links: [
+                  { label: "Cropper Studio", route: "/cropper" },
+                  { label: "GST Tool", route: "/gst-tool" },
+                  { label: "P&L Analyzer", route: "/pnl" },
+                  { label: "Image Extractor", route: "/image-extractor" },
+                  { label: "Product Description Generator", route: "/product-description" },
+                ],
+              },
+              {
+                heading: "Guides & Legal",
+                links: [
+                  { label: "Seller Blog & Guides", route: "/blog" },
+                  { label: "How to Use", route: "/how-to-use" },
+                  { label: "FAQ", route: "/faq" },
+                  { label: "About", route: "/about" },
+                  { label: "Contact", route: "/contact" },
+                  { label: "Privacy Policy", route: "/privacy-policy" },
+                  { label: "Terms of Service", route: "/terms" },
+                  { label: "Disclaimer", route: "/disclaimer" },
+                ],
+              },
             ].map(({ heading, links }) => (
               <div key={heading}>
                 <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--gst-text-sec)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>{heading}</div>
                 {links.map(({ label, route }) => (
-                  <a key={label} href={route} style={{ display: "block", fontSize: "0.85rem", color: "var(--gst-text-mute)", textDecoration: "none", marginBottom: 8 }}
-                    onMouseEnter={e => e.target.style.color = "var(--gst-text)"} onMouseLeave={e => e.target.style.color = "var(--gst-text-mute)"}>{label}</a>
+                  <Link key={label} to={route} style={{ display: "block", fontSize: "0.85rem", color: "var(--gst-text-mute)", textDecoration: "none", marginBottom: 8 }}
+                    onMouseEnter={e => e.target.style.color = "var(--gst-text)"} onMouseLeave={e => e.target.style.color = "var(--gst-text-mute)"}>{label}</Link>
                 ))}
               </div>
             ))}
           </div>
         </div>
         <div style={{ borderTop: "1px solid var(--gst-border)", paddingTop: 20, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-          <span style={{ fontSize: "0.78rem", color: "var(--gst-text-mute)" }}>� {new Date().getFullYear()} LyZov Tools � tools.lyzov.com � All rights reserved.</span>
+          <span style={{ fontSize: "0.78rem", color: "var(--gst-text-mute)" }}>© {new Date().getFullYear()} LyZov Tools · tools.lyzov.com · All rights reserved.</span>
           <span style={{ fontSize: "0.78rem", color: "var(--gst-text-mute)", display: "flex", alignItems: "center", gap: 5 }}><Lock size={12} color="var(--gst-emerald)" /> Your data never leaves your device</span>
         </div>
       </footer>

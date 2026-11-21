@@ -190,7 +190,7 @@ export default function DashboardView({
       {/* Top Header with Month / Period Selector */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: '#f8fafc', mb: 0.5 }}>
+          <Typography component="h1" variant="h5" sx={{ fontWeight: 800, color: '#f8fafc', mb: 0.5 }}>
             Monthly Profit &amp; Loss Dashboard
           </Typography>
           <Typography variant="body2" sx={{ color: '#94a3b8' }}>

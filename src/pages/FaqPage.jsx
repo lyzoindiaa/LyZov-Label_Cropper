@@ -14,6 +14,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import PageLayout from '../components/PageLayout';
+import { PAGE_SEO } from '../data/seoMetadata';
 
 const CATEGORIES = [
   { id: 'all', label: 'All Questions', icon: <HelpCircle size={15} /> },
@@ -232,8 +233,10 @@ export default function FaqPage() {
 
   return (
     <PageLayout
-      title="FAQ & Help Center"
-      description="Frequently asked questions about LyZov Cropper Studio — file privacy, supported thermal printers, batch limits, and troubleshooting."
+      title={PAGE_SEO['/faq'].title}
+      description={PAGE_SEO['/faq'].description}
+      keywords={PAGE_SEO['/faq'].keywords}
+      canonical="https://tools.lyzov.com/faq"
       schema={faqSchema}
       maxWidth={1240}
     >

@@ -1,7 +1,15 @@
 User-agent: *
 Allow: /
 
-# Block API and backend routes from crawling
+# Block API and private/authenticated GST workspace routes from crawling
 Disallow: /api/
+Disallow: /gst-tool/admin
+Disallow: /gst-tool/dashboard
+Disallow: /gst-tool/businesses
+Disallow: /gst-tool/upload
+Disallow: /gst-tool/summary
+Disallow: /gst-tool/downloads
+Disallow: /gst-tool/billing
+Disallow: /gst-tool/gstr3b/
 
 Sitemap: https://tools.lyzov.com/sitemap.xml

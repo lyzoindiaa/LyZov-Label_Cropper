@@ -1,19 +1,35 @@
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Box, Typography, Divider, Chip } from '@mui/material';
-import { Scissors, ShieldCheck } from 'lucide-react';
+import { Sparkles, ShieldCheck } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 
 const footerLinks = [
-  { label: 'About Us', to: '/about' },
+  { label: 'All Tools Hub', to: '/' },
   { label: 'Blog & Guides', to: '/blog' },
   { label: 'How to Use', to: '/how-to-use' },
   { label: 'FAQ', to: '/faq' },
   { label: 'GST Tool ✦', to: '/gst-tool' },
+  { label: 'About Us', to: '/about' },
   { label: 'Privacy Policy', to: '/privacy-policy' },
   { label: 'Terms & Conditions', to: '/terms' },
   { label: 'Disclaimer', to: '/disclaimer' },
   { label: 'Contact Us', to: '/contact' },
+];
+
+const popularToolLinks = [
+  { label: 'Image Resizer', to: '/image-resizer' },
+  { label: 'Image Compressor', to: '/image-compressor' },
+  { label: 'Image Converter', to: '/image-converter' },
+  { label: 'Background Remover', to: '/background-remover' },
+  { label: 'Merge PDF', to: '/merge-pdf' },
+  { label: 'PDF to Word', to: '/pdf-to-word' },
+  { label: 'Word to PDF', to: '/word-to-pdf' },
+  { label: 'Label Cropper', to: '/cropper' },
+  { label: 'GSTR-1 Generator', to: '/gst-tool' },
+  { label: 'P&L Analyzer', to: '/pnl' },
+  { label: 'Image Extractor', to: '/image-extractor' },
+  { label: 'Product Description Generator', to: '/product-description' },
 ];
 
 export default function Footer() {
@@ -65,7 +81,7 @@ export default function Footer() {
               boxShadow: '0 4px 12px rgba(0,201,255,0.3)',
             }}
           >
-            <Scissors size={16} color="#ffffff" />
+            <Sparkles size={16} color="#0a0f1e" />
           </Box>
           <Box>
             <Typography
@@ -73,10 +89,10 @@ export default function Footer() {
               fontWeight={800}
               sx={{ letterSpacing: '-0.4px', lineHeight: 1.1, color: 'text.primary' }}
             >
-              LyZov <span style={{ color: accentColor }}>Cropper</span> Studio
+              LyZov <span style={{ color: accentColor }}>Tools</span>
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Batch PDF Label Cropper &amp; Thermal Printer
+              Free Browser Tools for Images, PDFs &amp; E-Commerce
             </Typography>
           </Box>
         </Box>
@@ -152,27 +168,16 @@ export default function Footer() {
         }}
       >
         <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'text.secondary', mr: 0.5 }}>
-          Popular Solutions:
+          All Tools:
         </Typography>
-        <Link to="/cropper" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-          Meesho Label Cropper
-        </Link>
-        <span>·</span>
-        <Link to="/blog/crop-amazon-flipkart-labels-fast" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-          Flipkart &amp; Amazon Cropper Guide
-        </Link>
-        <span>·</span>
-        <Link to="/blog/thermal-printer-shipping-label-guide" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-          4×6 Thermal Label Printing
-        </Link>
-        <span>·</span>
-        <Link to="/gst-tool" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-          GSTR-1 Return Generator
-        </Link>
-        <span>·</span>
-        <Link to="/pnl" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-          E-Commerce P&amp;L Calculator
-        </Link>
+        {popularToolLinks.map((item, idx) => (
+          <React.Fragment key={item.to}>
+            {idx > 0 && <span>·</span>}
+            <Link to={item.to} style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+              {item.label}
+            </Link>
+          </React.Fragment>
+        ))}
       </Box>
 
       <Divider sx={{ borderColor: 'divider', mb: 2.5 }} />
@@ -183,7 +188,7 @@ export default function Footer() {
         color="text.secondary"
         sx={{ display: 'block', textAlign: 'center', opacity: 0.8 }}
       >
-        © {new Date().getFullYear()} LyZov Cropper Studio. All rights reserved.
+        © {new Date().getFullYear()} LyZov Tools · tools.lyzov.com · All rights reserved.
       </Typography>
     </Box>
   );

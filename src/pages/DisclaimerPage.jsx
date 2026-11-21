@@ -11,6 +11,7 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import PageLayout from '../components/PageLayout';
+import { PAGE_SEO, buildBreadcrumbSchema } from '../data/seoMetadata';
 
 const EFFECTIVE_DATE = 'September 23, 2026';
 
@@ -23,6 +24,11 @@ const SECTIONS = [
   { id: 'availability', number: '06', title: 'Service Availability' },
   { id: 'advertising', number: '07', title: 'Advertising Notice' },
 ];
+
+const disclaimerSchema = buildBreadcrumbSchema([
+  { name: 'Home', path: '/' },
+  { name: 'Disclaimer', path: '/disclaimer' },
+]);
 
 export default function DisclaimerPage() {
   const [activeSection, setActiveSection] = useState('general');
@@ -39,8 +45,11 @@ export default function DisclaimerPage() {
 
   return (
     <PageLayout
-      title="Disclaimer"
-      description="Read the Disclaimer for LyZov Cropper Studio. Understand operational guidelines, barcode verification recommendations, and printer compatibility notes."
+      title={PAGE_SEO['/disclaimer'].title}
+      description={PAGE_SEO['/disclaimer'].description}
+      keywords={PAGE_SEO['/disclaimer'].keywords}
+      canonical="https://tools.lyzov.com/disclaimer"
+      schema={disclaimerSchema}
       maxWidth={1240}
     >
       {/* Hero Header */}

@@ -5,7 +5,6 @@ import {
   Typography,
   Chip,
   Button,
-  Divider,
   Paper,
   Table,
   TableBody,
@@ -24,19 +23,26 @@ import {
   Lightbulb,
   Scissors,
   FileSpreadsheet,
-  ArrowRight,
+  TrendingUp,
+  Sparkles,
   Shield,
 } from 'lucide-react';
 import PageLayout from '../components/PageLayout';
 import { BLOG_POSTS } from '../data/blogPosts.js';
+import { buildBlogPostSchema, buildCanonicalUrl } from '../data/seoMetadata';
 import { gstApi, getActiveUser } from '../gst-tool/api/client';
 
 export default function BlogPostPage() {
   const { slug } = useParams();
 
-  const [post, setPost] = useState(null);
-  const [relatedPosts, setRelatedPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const localInitialPost = useMemo(
+    () => BLOG_POSTS.find((p) => p.slug === slug || p.id === slug) || null,
+    [slug]
+  );
+
+  const [remotePost, setRemotePost] = useState(null);
+  const [remoteRelated, setRemoteRelated] = useState(null);
+  const [loading, setLoading] = useState(!localInitialPost);
   const [copied, setCopied] = useState(false);
 
   const currentUser = useMemo(() => getActiveUser(), []);
@@ -44,41 +50,20 @@ export default function BlogPostPage() {
 
   useEffect(() => {
     let isMounted = true;
-    setLoading(true);
 
     async function loadPost() {
       try {
         const res = await gstApi.getBlogPostBySlug(slug);
         if (isMounted && res?.post) {
-          setPost(res.post);
+          setRemotePost(res.post);
           if (res.relatedPosts && res.relatedPosts.length > 0) {
-            setRelatedPosts(res.relatedPosts);
-          } else {
-            const localRelated = BLOG_POSTS.filter(
-              (p) => p.slug !== slug && p.category === res.post.category
-            ).slice(0, 2);
-            setRelatedPosts(localRelated);
+            setRemoteRelated(res.relatedPosts);
           }
-          setLoading(false);
-          return;
         }
-      } catch (err) {
-        // Fallback silently
-      }
-
-      // Local fallback
-      const found = BLOG_POSTS.find((p) => p.slug === slug || p.id === slug);
-      if (isMounted) {
-        if (found) {
-          setPost(found);
-          const related = BLOG_POSTS.filter(
-            (p) => p.slug !== slug && p.category === found.category
-          ).slice(0, 2);
-          setRelatedPosts(related);
-        } else {
-          setPost(null);
-        }
-        setLoading(false);
+      } catch {
+        // Retain static BLOG_POSTS fallback without blocking rendering
+      } finally {
+        if (isMounted) setLoading(false);
       }
     }
 
@@ -90,6 +75,17 @@ export default function BlogPostPage() {
     };
   }, [slug]);
 
+  const post = remotePost?.slug === slug ? remotePost : localInitialPost;
+  const relatedPosts = useMemo(() => {
+    if (remotePost?.slug === slug && remoteRelated && remoteRelated.length > 0) {
+      return remoteRelated;
+    }
+    if (!post) return [];
+    return BLOG_POSTS.filter((p) => p.slug !== post.slug && p.category === post.category).slice(0, 2);
+  }, [post, remotePost, remoteRelated, slug]);
+
+  const schemaData = useMemo(() => buildBlogPostSchema(post), [post]);
+
   const handleShare = async () => {
     const url = window.location.href;
     if (navigator.clipboard) {
@@ -99,9 +95,9 @@ export default function BlogPostPage() {
     }
   };
 
-  if (loading) {
+  if (!post && loading) {
     return (
-      <PageLayout title="Loading Guide..." maxWidth={{ xs: '100%', sm: 780, md: 960, lg: 1150, xl: 1240 }}>
+      <PageLayout title="Loading Guide..." noIndex={true} maxWidth={{ xs: '100%', sm: 780, md: 960, lg: 1150, xl: 1240 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 14 }}>
           <CircularProgress size={36} sx={{ color: '#00c9ff', mb: 2 }} />
           <Typography color="text.secondary" sx={{ fontSize: '1.05rem' }}>
@@ -114,7 +110,7 @@ export default function BlogPostPage() {
 
   if (!post) {
     return (
-      <PageLayout title="Article Not Found" maxWidth={{ xs: '100%', sm: 780, md: 960, lg: 1150, xl: 1240 }}>
+      <PageLayout title="Article Not Found" noIndex={true} maxWidth={{ xs: '100%', sm: 780, md: 960, lg: 1150, xl: 1240 }}>
         <Box sx={{ textAlign: 'center', py: 12 }}>
           <Typography variant="h4" fontWeight={800} sx={{ mb: 2 }}>
             Article Not Found
@@ -145,43 +141,17 @@ export default function BlogPostPage() {
     );
   }
 
-  // Schema Markup for Google SEO & AdSense compliance
-  const schemaData = {
-    '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
-    headline: post.title,
-    description: post.excerpt,
-    datePublished: post.publishedAt,
-    author: {
-      '@type': 'Person',
-      name: post.author?.name || 'LyZov',
-    },
-    publisher: {
-      '@type': 'Organization',
-      name: 'LyZov India',
-      url: 'https://tools.lyzov.com',
-      logo: {
-        '@type': 'ImageObject',
-        url: 'https://tools.lyzov.com/logo.png',
-      },
-    },
-    mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': `https://tools.lyzov.com/blog/${post.slug}`,
-    },
-  };
-
   return (
     <PageLayout
       title={`${post.title} | LyZov Guides`}
       description={post.excerpt}
+      keywords={Array.isArray(post.tags) ? post.tags.join(', ') : ''}
+      canonical={buildCanonicalUrl(`/blog/${post.slug}`)}
+      ogType="article"
+      articleMeta={{ publishedTime: post.publishedAt, section: post.category }}
+      schema={schemaData}
       maxWidth={{ xs: '100%', sm: 780, md: 960, lg: 1150, xl: 1240 }}
     >
-      {/* Inject JSON-LD Structured Data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
-      />
 
       {/* Back to Guides Link */}
       <Box sx={{ mb: 3 }}>
@@ -624,6 +594,40 @@ export default function BlogPostPage() {
               }}
             >
               GST Tool
+            </Button>
+            <Button
+              component={Link}
+              to="/pnl"
+              variant="outlined"
+              startIcon={<TrendingUp size={15} />}
+              sx={{
+                borderColor: 'divider',
+                color: 'text.primary',
+                fontWeight: 600,
+                textTransform: 'none',
+                borderRadius: 2,
+                px: 2,
+                fontSize: '0.88rem',
+              }}
+            >
+              P&amp;L Analyzer
+            </Button>
+            <Button
+              component={Link}
+              to="/product-description"
+              variant="outlined"
+              startIcon={<Sparkles size={15} />}
+              sx={{
+                borderColor: 'divider',
+                color: 'text.primary',
+                fontWeight: 600,
+                textTransform: 'none',
+                borderRadius: 2,
+                px: 2,
+                fontSize: '0.88rem',
+              }}
+            >
+              Listing Generator
             </Button>
           </Box>
         </Box>

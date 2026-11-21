@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import '../gst.css';
 import SEOHead from '../../components/SEOHead';
+import { TOOL_SEO, buildToolPageSchema } from '../../data/seoMetadata';
 import {
   FileText, CheckCircle2, ArrowRight, Upload, Download,
   ShieldCheck, Zap, Star, ChevronRight, Building2,
@@ -49,13 +50,17 @@ const PLANS = [
 export default function GstLanding() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
+  const gstSeo = TOOL_SEO['/gst-tool'];
+  const gstSchema = useMemo(() => buildToolPageSchema(gstSeo), [gstSeo]);
 
   return (
     <div className="gst-root" style={{ background: 'var(--gst-bg)' }}>
       <SEOHead
-        title="Free GSTR-1 Excel to JSON Converter & GST Return Generator | LyZov"
-        description="Convert Amazon MTR & Flipkart GST reports into portal-ready GSTR-1 JSON and CA Excel reconciliations in minutes. Built for Indian e-commerce sellers."
+        title={gstSeo.title}
+        description={gstSeo.description}
+        keywords={gstSeo.keywords}
         canonical="https://tools.lyzov.com/gst-tool"
+        schema={gstSchema}
       />
       {/* ── Navbar ── */}
       <header style={{
@@ -85,7 +90,7 @@ export default function GstLanding() {
         </div>
 
         <nav style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <a href="/" className="gst-btn gst-btn-ghost gst-btn-sm" style={{ fontSize: '0.78rem', color: 'var(--gst-text-mute)' }}>← All Tools</a>
+          <Link to="/" className="gst-btn gst-btn-ghost gst-btn-sm" style={{ fontSize: '0.78rem', color: 'var(--gst-text-mute)' }}>← All Tools</Link>
           <a href="#features" className="gst-btn gst-btn-ghost gst-btn-sm">Features</a>
           <a href="#how" className="gst-btn gst-btn-ghost gst-btn-sm">How it works</a>
           <a href="#pricing" className="gst-btn gst-btn-ghost gst-btn-sm">Pricing</a>
@@ -322,15 +327,17 @@ export default function GstLanding() {
         flexWrap: 'wrap', gap: 12,
       }}>
         <div style={{ fontSize: '0.8rem', color: 'var(--gst-text-mute)' }}>
-          © {new Date().getFullYear()} LyZov GST Tool · Part of <a href="/" style={{ color: 'var(--gst-text-sec)', textDecoration: 'none' }}>tools.lyzov.com</a>
+          © {new Date().getFullYear()} LyZov GST Tool · Part of <Link to="/" style={{ color: 'var(--gst-text-sec)', textDecoration: 'none' }}>tools.lyzov.com</Link>
         </div>
-        <div style={{ display: 'flex', gap: 16 }}>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           {[
+            { label: 'GST Guide', href: '/blog/ecommerce-gst-compliance-gstr1-gstr3b' },
+            { label: 'P&L Analyzer', href: '/pnl' },
             { label: 'Privacy', href: '/privacy-policy' },
             { label: 'Terms', href: '/terms' },
             { label: 'Help', href: '/gst-tool/help' },
           ].map(({ label, href }) => (
-            <a key={label} href={href} style={{ fontSize: '0.8rem', color: 'var(--gst-text-mute)', textDecoration: 'none' }}>{label}</a>
+            <Link key={label} to={href} style={{ fontSize: '0.8rem', color: 'var(--gst-text-mute)', textDecoration: 'none' }}>{label}</Link>
           ))}
         </div>
       </footer>

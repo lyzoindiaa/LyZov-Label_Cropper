@@ -7,6 +7,7 @@ import {
   FileText, Bell, Shield, Crown, Calculator, Menu, X, BookOpen
 } from 'lucide-react';
 import { gstApi, getActiveUser, setActiveUser } from '../api/client';
+import SEOHead from '../../components/SEOHead';
 
 const BASE_NAV = [
   { to: '/gst-tool/dashboard',  label: 'Dashboard',      icon: LayoutDashboard },
@@ -125,6 +126,11 @@ export default function GstLayout() {
 
   return (
     <div className="gst-root" style={{ display: 'flex', minHeight: '100vh', width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
+      <SEOHead
+        title="GST Tool Workspace | LyZov Tools"
+        description="Prepare, review, and download GSTR-1 and GSTR-3B returns in your LyZov GST Tool workspace."
+        noIndex={true}
+      />
       {/* Mobile Backdrop */}
       {sidebarOpen && (
         <div

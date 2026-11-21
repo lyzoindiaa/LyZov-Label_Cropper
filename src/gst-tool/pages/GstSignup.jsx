@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import '../gst.css';
 import { FileText, Eye, EyeOff, ArrowRight, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { gstApi } from '../api/client';
+import SEOHead from '../../components/SEOHead';
 
 const STATES = [
   'Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh',
@@ -75,6 +76,11 @@ export default function GstSignup() {
       minHeight: '100vh', display: 'flex',
       background: 'radial-gradient(ellipse at 70% 10%,rgba(245,166,35,0.07) 0%,transparent 50%), var(--gst-bg)',
     }}>
+      <SEOHead
+        title="Start Free Trial — LyZov GST Tool"
+        description="Create your LyZov GST Tool account to start your 30-day free trial."
+        noIndex={true}
+      />
       {/* Left panel */}
       <div style={{
         flex: '0 0 420px', display: 'none',

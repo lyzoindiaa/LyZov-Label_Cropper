@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Box, Typography, Chip, TextField, InputAdornment, Button, CircularProgress } from '@mui/material';
+import { Box, Typography, Chip, TextField, InputAdornment, Button } from '@mui/material';
 import {
   Search,
   Clock,
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import PageLayout from '../components/PageLayout';
 import { BLOG_POSTS } from '../data/blogPosts.js';
+import { PAGE_SEO, buildBlogListSchema } from '../data/seoMetadata';
 import { gstApi, getActiveUser } from '../gst-tool/api/client';
 
 const CATEGORIES = ['All', 'Shipping & Printing', 'E-Commerce', 'GST & Taxes'];
@@ -19,7 +20,6 @@ export default function BlogListPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [posts, setPosts] = useState(BLOG_POSTS);
-  const [loading, setLoading] = useState(false);
 
   const currentUser = useMemo(() => getActiveUser(), []);
   const isAdmin = currentUser?.role === 'admin';
@@ -28,15 +28,12 @@ export default function BlogListPage() {
     let isMounted = true;
     async function loadData() {
       try {
-        setLoading(true);
         const res = await gstApi.getBlogPosts();
         if (isMounted && res?.posts && res.posts.length > 0) {
           setPosts(res.posts);
         }
-      } catch (err) {
-        // Retain fallback
-      } finally {
-        if (isMounted) setLoading(false);
+      } catch {
+        // Retain static BLOG_POSTS fallback without hiding content behind a spinner
       }
     }
     loadData();
@@ -44,6 +41,8 @@ export default function BlogListPage() {
       isMounted = false;
     };
   }, []);
+
+  const blogListSchema = useMemo(() => buildBlogListSchema(posts), [posts]);
 
   const filteredPosts = useMemo(() => {
     return posts.filter((post) => {
@@ -60,8 +59,11 @@ export default function BlogListPage() {
 
   return (
     <PageLayout
-      title="E-Commerce Seller Blog & Guides"
-      description="Practical guides, thermal printer setup tutorials, batch shipping label cropping tips, and GST return compliance guides for Amazon, Flipkart, and Meesho sellers."
+      title={PAGE_SEO['/blog'].title}
+      description={PAGE_SEO['/blog'].description}
+      keywords={PAGE_SEO['/blog'].keywords}
+      canonical="https://tools.lyzov.com/blog"
+      schema={blogListSchema}
       maxWidth={{ xs: '100%', sm: 840, md: 1040, lg: 1240 }}
     >
       {/* Simple, Elegant Header */}
@@ -207,11 +209,7 @@ export default function BlogListPage() {
       </Box>
 
       {/* Clean Article Cards Grid */}
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
-          <CircularProgress size={36} sx={{ color: '#00c9ff' }} />
-        </Box>
-      ) : filteredPosts.length === 0 ? (
+      {filteredPosts.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 10, bgcolor: 'background.paper', borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
           <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
             No matching guides found
