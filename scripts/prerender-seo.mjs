@@ -300,7 +300,7 @@ export function renderRouteHtml(templateHtml, route) {
 
   html = html.replace(
     /<div\s+id=["']root["']\s*>[\s\S]*?<\/div>/i,
-    () => `<div id="root">${meta.bodyHtml}</div>`
+    () => `<div id="root"></div>\n    <noscript>${meta.bodyHtml}</noscript>`
   );
 
   return html;
