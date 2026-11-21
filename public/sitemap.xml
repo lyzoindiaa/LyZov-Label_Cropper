@@ -33,6 +33,52 @@
     <priority>0.95</priority>
   </url>
 
+  <!-- Image Tools -->
+  <url>
+    <loc>https://tools.lyzov.com/image-resizer</loc>
+    <lastmod>2026-11-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://tools.lyzov.com/image-compressor</loc>
+    <lastmod>2026-11-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://tools.lyzov.com/image-converter</loc>
+    <lastmod>2026-11-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://tools.lyzov.com/background-remover</loc>
+    <lastmod>2026-11-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- PDF & Document Tools -->
+  <url>
+    <loc>https://tools.lyzov.com/merge-pdf</loc>
+    <lastmod>2026-11-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://tools.lyzov.com/pdf-to-word</loc>
+    <lastmod>2026-11-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>https://tools.lyzov.com/word-to-pdf</loc>
+    <lastmod>2026-11-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
   <!-- How To Use Guide -->
   <url>
     <loc>https://tools.lyzov.com/how-to-use</loc>

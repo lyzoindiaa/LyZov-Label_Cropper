@@ -152,18 +152,34 @@ export default function Footer() {
         }}
       >
         <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'text.secondary', mr: 0.5 }}>
-          Popular Solutions:
+          Popular Tools:
         </Typography>
+        <Link to="/image-resizer" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          Image Resizer
+        </Link>
+        <span>·</span>
+        <Link to="/image-compressor" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          Image Compressor
+        </Link>
+        <span>·</span>
+        <Link to="/background-remover" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          Background Remover
+        </Link>
+        <span>·</span>
+        <Link to="/merge-pdf" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          Merge PDF
+        </Link>
+        <span>·</span>
+        <Link to="/pdf-to-word" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          PDF to Word
+        </Link>
+        <span>·</span>
+        <Link to="/word-to-pdf" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          Word to PDF
+        </Link>
+        <span>·</span>
         <Link to="/cropper" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
           Meesho Label Cropper
-        </Link>
-        <span>·</span>
-        <Link to="/blog/crop-amazon-flipkart-labels-fast" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-          Flipkart &amp; Amazon Cropper Guide
-        </Link>
-        <span>·</span>
-        <Link to="/blog/thermal-printer-shipping-label-guide" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-          4×6 Thermal Label Printing
         </Link>
         <span>·</span>
         <Link to="/gst-tool" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>

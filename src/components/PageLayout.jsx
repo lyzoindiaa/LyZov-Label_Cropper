@@ -1,7 +1,7 @@
-import React, { useEffect, useContext } from 'react';
+import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Box, Typography, Tooltip, IconButton, Button } from '@mui/material';
-import { Sparkles, Sun, Moon, Scissors, FileText, ArrowRight } from 'lucide-react';
+import { Sparkles, Sun, Moon, Scissors, FileText } from 'lucide-react';
 import { AppContext } from '../context/AppContext';
 import Footer from './Footer';
 import SEOHead from './SEOHead';
@@ -72,6 +72,28 @@ export default function PageLayout({ title, description, schema, maxWidth = 1000
 
         {/* Center / Right Links */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 } }}>
+          <Button
+            component={Link}
+            to="/"
+            size="small"
+            sx={{
+              color: location.pathname === '/' ? emerald : 'text.secondary',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              textTransform: 'none',
+              borderRadius: 2,
+              px: 1.3,
+              py: 0.6,
+              display: { xs: 'none', md: 'inline-flex' },
+              '&:hover': {
+                color: emerald,
+                bgcolor: theme === 'dark' ? 'rgba(0, 214, 143, 0.08)' : 'rgba(0, 168, 107, 0.06)',
+              },
+            }}
+          >
+            All Tools
+          </Button>
+
           <Button
             component={Link}
             to="/blog"

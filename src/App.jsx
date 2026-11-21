@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useContext, useMemo, useState } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import {
   CssBaseline,
@@ -13,6 +13,8 @@ import {
   Menu,
   MenuItem,
   Divider,
+  CircularProgress,
+  ListSubheader,
 } from '@mui/material';
 import {
   Scissors,
@@ -29,6 +31,13 @@ import {
   TrendingUp,
   Image as ImageIcon,
   BookOpen,
+  Maximize2,
+  Minimize2,
+  RefreshCw,
+  Wand2,
+  Layers,
+  FileType2,
+  FileOutput,
 } from 'lucide-react';
 import { AppProvider, AppContext } from './context/AppContext';
 import CropperAuthModal from './components/CropperAuthModal';
@@ -51,6 +60,15 @@ import HubPage from './pages/HubPage';
 import BlogListPage from './pages/BlogListPage';
 import BlogPostPage from './pages/BlogPostPage';
 import ProductImageTool from './image-extractor/ProductImageTool';
+
+// Phase 1 Utility Tools (code-split per tool for fast initial page loads)
+const ImageResizerPage = lazy(() => import('./pages/tools/ImageResizerPage'));
+const ImageCompressorPage = lazy(() => import('./pages/tools/ImageCompressorPage'));
+const ImageConverterPage = lazy(() => import('./pages/tools/ImageConverterPage'));
+const BackgroundRemoverPage = lazy(() => import('./pages/tools/BackgroundRemoverPage'));
+const MergePdfPage = lazy(() => import('./pages/tools/MergePdfPage'));
+const PdfToWordPage = lazy(() => import('./pages/tools/PdfToWordPage'));
+const WordToPdfPage = lazy(() => import('./pages/tools/WordToPdfPage'));
 
 const getAppTheme = (mode = 'dark') =>
   createTheme({
@@ -463,36 +481,74 @@ function MainContent() {
               component={Link}
               to="/"
               onClick={() => setToolsAnchorEl(null)}
-              sx={{ py: 1, px: 2, gap: 1.5, fontSize: '0.84rem', fontWeight: 600 }}
+              sx={{ py: 1, px: 2, gap: 1.5, fontSize: '0.84rem', fontWeight: 700 }}
             >
               <LayoutGrid size={16} color={theme === 'dark' ? '#00c9ff' : '#0284c7'} />
               All Tools Hub
             </MenuItem>
+            <Divider sx={{ my: 0.5 }} />
+            <ListSubheader sx={{ bgcolor: 'transparent', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', lineHeight: '26px', px: 2 }}>
+              Image Tools
+            </ListSubheader>
+            <MenuItem component={Link} to="/image-resizer" onClick={() => setToolsAnchorEl(null)} sx={{ py: 0.85, px: 2, gap: 1.5, fontSize: '0.83rem', fontWeight: 600 }}>
+              <Maximize2 size={15} color="#00c9ff" />
+              Image Resizer
+            </MenuItem>
+            <MenuItem component={Link} to="/image-compressor" onClick={() => setToolsAnchorEl(null)} sx={{ py: 0.85, px: 2, gap: 1.5, fontSize: '0.83rem', fontWeight: 600 }}>
+              <Minimize2 size={15} color="#00d68f" />
+              Image Compressor
+            </MenuItem>
+            <MenuItem component={Link} to="/image-converter" onClick={() => setToolsAnchorEl(null)} sx={{ py: 0.85, px: 2, gap: 1.5, fontSize: '0.83rem', fontWeight: 600 }}>
+              <RefreshCw size={15} color="#a78bfa" />
+              Image Converter
+            </MenuItem>
+            <MenuItem component={Link} to="/background-remover" onClick={() => setToolsAnchorEl(null)} sx={{ py: 0.85, px: 2, gap: 1.5, fontSize: '0.83rem', fontWeight: 600 }}>
+              <Wand2 size={15} color="#ec4899" />
+              Background Remover
+            </MenuItem>
+            <ListSubheader sx={{ bgcolor: 'transparent', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', lineHeight: '26px', px: 2, mt: 0.5 }}>
+              PDF &amp; Documents
+            </ListSubheader>
+            <MenuItem component={Link} to="/merge-pdf" onClick={() => setToolsAnchorEl(null)} sx={{ py: 0.85, px: 2, gap: 1.5, fontSize: '0.83rem', fontWeight: 600 }}>
+              <Layers size={15} color="#00c9ff" />
+              Merge PDF
+            </MenuItem>
+            <MenuItem component={Link} to="/pdf-to-word" onClick={() => setToolsAnchorEl(null)} sx={{ py: 0.85, px: 2, gap: 1.5, fontSize: '0.83rem', fontWeight: 600 }}>
+              <FileType2 size={15} color="#4a9eff" />
+              PDF to Word
+            </MenuItem>
+            <MenuItem component={Link} to="/word-to-pdf" onClick={() => setToolsAnchorEl(null)} sx={{ py: 0.85, px: 2, gap: 1.5, fontSize: '0.83rem', fontWeight: 600 }}>
+              <FileOutput size={15} color="#f5a623" />
+              Word to PDF
+            </MenuItem>
+            <ListSubheader sx={{ bgcolor: 'transparent', fontSize: '0.68rem', fontWeight: 800, textTransform: 'uppercase', lineHeight: '26px', px: 2, mt: 0.5 }}>
+              Seller Tools
+            </ListSubheader>
             <MenuItem
               component={Link}
               to="/gst-tool"
               onClick={() => setToolsAnchorEl(null)}
-              sx={{ py: 1, px: 2, gap: 1.5, fontSize: '0.84rem', fontWeight: 600 }}
+              sx={{ py: 0.85, px: 2, gap: 1.5, fontSize: '0.83rem', fontWeight: 600 }}
             >
-              <FileSpreadsheet size={16} color="#00d68f" />
+              <FileSpreadsheet size={15} color="#00d68f" />
               GST Return Tool
             </MenuItem>
             <MenuItem
               component={Link}
               to="/pnl"
               onClick={() => setToolsAnchorEl(null)}
-              sx={{ py: 1, px: 2, gap: 1.5, fontSize: '0.84rem', fontWeight: 600 }}
+              sx={{ py: 0.85, px: 2, gap: 1.5, fontSize: '0.83rem', fontWeight: 600 }}
             >
-              <TrendingUp size={16} color="#00c9ff" />
+              <TrendingUp size={15} color="#00c9ff" />
               P&amp;L Analyzer
             </MenuItem>
             <MenuItem
               component={Link}
               to="/image-extractor"
               onClick={() => setToolsAnchorEl(null)}
-              sx={{ py: 1, px: 2, gap: 1.5, fontSize: '0.84rem', fontWeight: 600 }}
+              sx={{ py: 0.85, px: 2, gap: 1.5, fontSize: '0.83rem', fontWeight: 600 }}
             >
-              <ImageIcon size={16} color="#ec4899" />
+              <ImageIcon size={15} color="#ec4899" />
               Image Extractor
             </MenuItem>
             <Divider sx={{ my: 0.5 }} />
@@ -500,9 +556,9 @@ function MainContent() {
               component={Link}
               to="/blog"
               onClick={() => setToolsAnchorEl(null)}
-              sx={{ py: 1, px: 2, gap: 1.5, fontSize: '0.84rem', fontWeight: 600 }}
+              sx={{ py: 0.9, px: 2, gap: 1.5, fontSize: '0.83rem', fontWeight: 600 }}
             >
-              <BookOpen size={16} color="#a78bfa" />
+              <BookOpen size={15} color="#a78bfa" />
               Seller Guides &amp; Blog
             </MenuItem>
           </Menu>
@@ -571,6 +627,28 @@ function MainContent() {
   );
 }
 
+function ToolSuspenseFallback() {
+  return (
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 2,
+        bgcolor: 'background.default',
+        color: 'text.secondary',
+      }}
+    >
+      <CircularProgress size={34} />
+      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+        Loading tool...
+      </Typography>
+    </Box>
+  );
+}
+
 function ThemedApp() {
   const { theme } = useContext(AppContext);
   const muiTheme = useMemo(() => getAppTheme(theme || 'light'), [theme]);
@@ -578,30 +656,41 @@ function ThemedApp() {
   return (
     <ThemeProvider theme={muiTheme}>
       <CssBaseline />
-      <Routes>
-        {/* Hub — shown when visiting the root URL */}
-        <Route path="/" element={<HubPage />} />
-        {/* Label Cropper — full tool, moved to /cropper */}
-        <Route path="/cropper" element={<MainContent />} />
-        {/* GST Tool — lives at /gst-tool/* */}
-        <Route path="/gst-tool/*" element={<GstApp />} />
-        {/* LyZov P&L Analyzer — lives at /pnl and /pnl/* */}
-        <Route path="/pnl" element={<PnlApp />} />
-        <Route path="/pnl/*" element={<PnlApp />} />
-        {/* Product Image Extractor — lives at /image-extractor */}
-        <Route path="/image-extractor" element={<ProductImageTool />} />
-        {/* Informational pages */}
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/contact" element={<ContactPage />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/disclaimer" element={<DisclaimerPage />} />
-        <Route path="/how-to-use" element={<HowToUsePage />} />
-        <Route path="/faq" element={<FaqPage />} />
-        {/* Blog & Guides */}
-        <Route path="/blog" element={<BlogListPage />} />
-        <Route path="/blog/:slug" element={<BlogPostPage />} />
-      </Routes>
+      <Suspense fallback={<ToolSuspenseFallback />}>
+        <Routes>
+          {/* Hub — shown when visiting the root URL */}
+          <Route path="/" element={<HubPage />} />
+          {/* Image Tools */}
+          <Route path="/image-resizer" element={<ImageResizerPage />} />
+          <Route path="/image-compressor" element={<ImageCompressorPage />} />
+          <Route path="/image-converter" element={<ImageConverterPage />} />
+          <Route path="/background-remover" element={<BackgroundRemoverPage />} />
+          {/* PDF & Document Tools */}
+          <Route path="/merge-pdf" element={<MergePdfPage />} />
+          <Route path="/pdf-to-word" element={<PdfToWordPage />} />
+          <Route path="/word-to-pdf" element={<WordToPdfPage />} />
+          {/* Label Cropper — full tool, moved to /cropper */}
+          <Route path="/cropper" element={<MainContent />} />
+          {/* GST Tool — lives at /gst-tool/* */}
+          <Route path="/gst-tool/*" element={<GstApp />} />
+          {/* LyZov P&L Analyzer — lives at /pnl and /pnl/* */}
+          <Route path="/pnl" element={<PnlApp />} />
+          <Route path="/pnl/*" element={<PnlApp />} />
+          {/* Product Image Extractor — lives at /image-extractor */}
+          <Route path="/image-extractor" element={<ProductImageTool />} />
+          {/* Informational pages */}
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/disclaimer" element={<DisclaimerPage />} />
+          <Route path="/how-to-use" element={<HowToUsePage />} />
+          <Route path="/faq" element={<FaqPage />} />
+          {/* Blog & Guides */}
+          <Route path="/blog" element={<BlogListPage />} />
+          <Route path="/blog/:slug" element={<BlogPostPage />} />
+        </Routes>
+      </Suspense>
     </ThemeProvider>
   );
 }
