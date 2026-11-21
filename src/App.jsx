@@ -47,6 +47,8 @@ import PnlApp from './pnl-tool/PnlApp';
 import SimpleCropperPage from './components/SimpleCropperPage';
 import Footer from './components/Footer';
 import SEOHead from './components/SEOHead';
+import ToolSeoSection from './components/ToolSeoSection';
+import { TOOL_SEO, buildToolPageSchema } from './data/seoMetadata';
 
 // Informational pages
 import AboutPage from './pages/AboutPage';
@@ -128,6 +130,9 @@ function MainContent() {
   const [toolsAnchorEl, setToolsAnchorEl] = useState(null);
   const toolsMenuOpen = Boolean(toolsAnchorEl);
 
+  const cropperSeo = TOOL_SEO['/cropper'];
+  const cropperSchema = useMemo(() => buildToolPageSchema(cropperSeo), [cropperSeo]);
+
   return (
     <Box
       sx={{
@@ -142,9 +147,11 @@ function MainContent() {
       }}
     >
       <SEOHead
-        title="Free Batch Shipping Label Cropper & 4x6 Thermal Printer Tool | LyZov"
-        description="Free, 100% private client-side batch PDF shipping label cropper for Meesho, Flipkart & Amazon. Crop 4x6 thermal labels instantly with zero uploads."
+        title={cropperSeo.title}
+        description={cropperSeo.description}
+        keywords={cropperSeo.keywords}
         canonical="https://tools.lyzov.com/cropper"
+        schema={cropperSchema}
       />
       {/* Top Navbar */}
       <Box
@@ -604,6 +611,11 @@ function MainContent() {
       {/* Simplified automatic label & invoice cropper */}
       <SimpleCropperPage />
 
+      {/* SEO Overview, FAQ & Related Tools */}
+      <Box sx={{ width: '100%', maxWidth: 960, mx: 'auto', px: { xs: 1.5, sm: 3 }, pb: 5, boxSizing: 'border-box' }}>
+        <ToolSeoSection toolSeo={cropperSeo} />
+      </Box>
+
       {/* Cropper Invoices & Subscription Management Modal */}
       <CropperInvoicesModal
         open={invoicesModalOpen}
@@ -632,6 +644,61 @@ function MainContent() {
       />
 
       {/* Footer – present on all pages for AdSense/navigation compliance */}
+      <Footer />
+    </Box>
+  );
+}
+
+function NotFoundPage() {
+  return (
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: 'background.default',
+        color: 'text.primary',
+      }}
+    >
+      <SEOHead
+        title="Page Not Found | LyZov Tools"
+        description="The requested page could not be found on LyZov Tools."
+        noIndex={true}
+      />
+      <Box
+        component="main"
+        sx={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+          px: 3,
+          py: 8,
+        }}
+      >
+        <Typography variant="h2" sx={{ fontWeight: 900, mb: 1, fontSize: { xs: '2.5rem', sm: '3.5rem' } }}>
+          404
+        </Typography>
+        <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.5 }}>
+          Page Not Found
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 480, mb: 3.5 }}>
+          The link you followed may be outdated or moved. Explore all free browser tools from our hub.
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <Button component={Link} to="/" variant="contained" sx={{ fontWeight: 700, textTransform: 'none', borderRadius: 2 }}>
+            Go to All Tools Hub
+          </Button>
+          <Button component={Link} to="/cropper" variant="outlined" sx={{ fontWeight: 700, textTransform: 'none', borderRadius: 2 }}>
+            Open Label Cropper
+          </Button>
+          <Button component={Link} to="/blog" variant="outlined" sx={{ fontWeight: 700, textTransform: 'none', borderRadius: 2 }}>
+            Browse Guides
+          </Button>
+        </Box>
+      </Box>
       <Footer />
     </Box>
   );
@@ -701,6 +768,8 @@ function ThemedApp() {
           {/* Blog & Guides */}
           <Route path="/blog" element={<BlogListPage />} />
           <Route path="/blog/:slug" element={<BlogPostPage />} />
+          {/* Fallback */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
     </ThemeProvider>

@@ -11,6 +11,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import PageLayout from '../components/PageLayout';
+import { PAGE_SEO, buildBreadcrumbSchema } from '../data/seoMetadata';
 
 const EFFECTIVE_DATE = 'September 23, 2026';
 
@@ -27,6 +28,11 @@ const SECTIONS = [
   { id: 'contact', number: '10', title: 'Contact Information' },
 ];
 
+const termsSchema = buildBreadcrumbSchema([
+  { name: 'Home', path: '/' },
+  { name: 'Terms & Conditions', path: '/terms' },
+]);
+
 export default function TermsPage() {
   const [activeSection, setActiveSection] = useState('acceptance');
 
@@ -42,8 +48,11 @@ export default function TermsPage() {
 
   return (
     <PageLayout
-      title="Terms & Conditions"
-      description="Read the Terms and Conditions for using LyZov Cropper Studio — client-side browser PDF label cropping with full commercial rights."
+      title={PAGE_SEO['/terms'].title}
+      description={PAGE_SEO['/terms'].description}
+      keywords={PAGE_SEO['/terms'].keywords}
+      canonical="https://tools.lyzov.com/terms"
+      schema={termsSchema}
       maxWidth={1240}
     >
       {/* Hero Header */}

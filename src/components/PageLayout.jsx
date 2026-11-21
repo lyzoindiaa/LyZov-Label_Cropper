@@ -10,7 +10,18 @@ import SEOHead from './SEOHead';
  * PageLayout – shared unified wrapper for all informational & blog pages.
  * Matches the official LyZov Tools header and emerald green design system.
  */
-export default function PageLayout({ title, description, schema, maxWidth = 1000, children }) {
+export default function PageLayout({
+  title,
+  description,
+  keywords,
+  canonical,
+  ogType,
+  noIndex,
+  articleMeta,
+  schema,
+  maxWidth = 1000,
+  children,
+}) {
   const { theme, toggleTheme } = useContext(AppContext);
   const location = useLocation();
 
@@ -18,7 +29,16 @@ export default function PageLayout({ title, description, schema, maxWidth = 1000
 
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default', color: 'text.primary' }}>
-      <SEOHead title={title} description={description} schema={schema} />
+      <SEOHead
+        title={title}
+        description={description}
+        keywords={keywords}
+        canonical={canonical}
+        ogType={ogType}
+        noIndex={noIndex}
+        articleMeta={articleMeta}
+        schema={schema}
+      />
       {/* Unified Navbar Header – Identical to localhost:5173 */}
       <Box
         component="header"

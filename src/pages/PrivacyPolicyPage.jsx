@@ -12,6 +12,7 @@ import {
   FileCheck2,
 } from 'lucide-react';
 import PageLayout from '../components/PageLayout';
+import { PAGE_SEO, buildBreadcrumbSchema } from '../data/seoMetadata';
 
 const EFFECTIVE_DATE = 'September 23, 2026';
 
@@ -28,6 +29,11 @@ const SECTIONS = [
   { id: 'contact', number: '10', title: 'Contact & Inquiries' },
 ];
 
+const privacySchema = buildBreadcrumbSchema([
+  { name: 'Home', path: '/' },
+  { name: 'Privacy Policy', path: '/privacy-policy' },
+]);
+
 export default function PrivacyPolicyPage() {
   const [activeSection, setActiveSection] = useState('overview');
 
@@ -43,8 +49,11 @@ export default function PrivacyPolicyPage() {
 
   return (
     <PageLayout
-      title="Privacy Policy"
-      description="Read the LyZov Cropper Studio Privacy Policy. All PDF processing is 100% client-side — zero files are uploaded to any server."
+      title={PAGE_SEO['/privacy-policy'].title}
+      description={PAGE_SEO['/privacy-policy'].description}
+      keywords={PAGE_SEO['/privacy-policy'].keywords}
+      canonical="https://tools.lyzov.com/privacy-policy"
+      schema={privacySchema}
       maxWidth={1240}
     >
       {/* Hero Header */}

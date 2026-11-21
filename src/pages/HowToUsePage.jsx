@@ -18,6 +18,7 @@ import {
   Printer,
 } from 'lucide-react';
 import PageLayout from '../components/PageLayout';
+import { PAGE_SEO } from '../data/seoMetadata';
 
 const steps = [
   {
@@ -122,8 +123,10 @@ const howToSchema = {
 export default function HowToUsePage() {
   return (
     <PageLayout
-      title="How to Use"
-      description="Step-by-step interactive guide to using LyZov Cropper Studio: upload PDFs, calibrate coordinates, and download batch-cropped labels ready for thermal printing."
+      title={PAGE_SEO['/how-to-use'].title}
+      description={PAGE_SEO['/how-to-use'].description}
+      keywords={PAGE_SEO['/how-to-use'].keywords}
+      canonical="https://tools.lyzov.com/how-to-use"
       schema={howToSchema}
       maxWidth={1240}
     >

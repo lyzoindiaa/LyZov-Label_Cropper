@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import '../gst.css';
 import { FileText, Eye, EyeOff, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { gstApi } from '../api/client';
+import SEOHead from '../../components/SEOHead';
 
 export default function GstLogin() {
   const navigate = useNavigate();
@@ -39,6 +40,11 @@ export default function GstLogin() {
       background: 'radial-gradient(ellipse at 30% 20%,rgba(0,214,143,0.07) 0%,transparent 50%), var(--gst-bg)',
       padding: 24,
     }}>
+      <SEOHead
+        title="Sign In — LyZov GST Tool"
+        description="Sign in to your LyZov GST Tool account."
+        noIndex={true}
+      />
       {/* Logo */}
       <a href="/gst-tool" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
         <div style={{
