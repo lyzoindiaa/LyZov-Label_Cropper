@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useMemo } from "react";
+import React, { useState, useEffect, useContext, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../gst-tool/gst.css";
 import { AppContext } from "../context/AppContext";
@@ -68,10 +68,12 @@ export default function HubPage() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useContext(AppContext);
   const [hoveredTool, setHoveredTool] = useState(null);
+  const [hoveredCategory, setHoveredCategory] = useState(null);
   const [openFaq, setOpenFaq] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [activeCategory, setActiveCategory] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const openedListRef = useRef(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -87,34 +89,59 @@ export default function HubPage() {
       observer.observe(el);
     });
     return () => observer.disconnect();
-  }, [selectedCategory, searchQuery]);
+  }, []);
 
   const S = { px: "clamp(12px, 4vw, 80px)" };
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
-  const visibleCategories = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    const cats = selectedCategory === "all"
-      ? TOOL_CATEGORIES
-      : TOOL_CATEGORIES.filter((c) => c.id === selectedCategory);
+  const handleExploreCategory = (categoryId) => {
+    setSearchQuery("");
+    setActiveCategory((prev) => {
+      const next = prev === categoryId ? null : categoryId;
+      if (next) {
+        setTimeout(() => {
+          openedListRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 60);
+      }
+      return next;
+    });
+  };
 
-    return cats
-      .map((cat) => {
-        const catTools = TOOLS_CATALOG.filter((tool) => {
-          if (tool.categoryId !== cat.id) return false;
-          if (!q) return true;
-          return (
-            tool.name.toLowerCase().includes(q) ||
-            tool.tagline.toLowerCase().includes(q) ||
-            tool.description.toLowerCase().includes(q) ||
-            (tool.tags || []).some((tag) => tag.includes(q))
-          );
-        });
-        return { ...cat, tools: catTools };
-      })
-      .filter((cat) => cat.tools.length > 0);
-  }, [selectedCategory, searchQuery]);
+  const openCategoryFromNav = (categoryId) => {
+    setSearchQuery("");
+    setActiveCategory(categoryId);
+    closeMobileMenu();
+    setTimeout(() => {
+      openedListRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+  };
+
+  const trimmedQuery = searchQuery.trim().toLowerCase();
+  const isSearching = trimmedQuery.length > 0;
+
+  const displayedCategories = useMemo(() => {
+    if (isSearching) {
+      return TOOL_CATEGORIES.map((cat) => ({
+        ...cat,
+        tools: TOOLS_CATALOG.filter(
+          (tool) =>
+            tool.categoryId === cat.id &&
+            (tool.name.toLowerCase().includes(trimmedQuery) ||
+              tool.tagline.toLowerCase().includes(trimmedQuery) ||
+              tool.description.toLowerCase().includes(trimmedQuery) ||
+              (tool.tags || []).some((tag) => tag.includes(trimmedQuery)))
+        ),
+      })).filter((cat) => cat.tools.length > 0);
+    }
+
+    if (!activeCategory) return [];
+
+    return TOOL_CATEGORIES.filter((c) => c.id === activeCategory).map((cat) => ({
+      ...cat,
+      tools: TOOLS_CATALOG.filter((tool) => tool.categoryId === cat.id),
+    }));
+  }, [activeCategory, isSearching, trimmedQuery]);
 
   const hubSchema = useMemo(() => buildHubSchema(TOOLS_CATALOG, FAQS), []);
 
@@ -152,9 +179,9 @@ export default function HubPage() {
         {/* Desktop Links & Action Buttons */}
         <nav aria-label="Primary navigation" style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div className="gst-nav-desktop" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <a href="#cat-image" className="gst-btn gst-btn-ghost gst-btn-sm">Image Tools</a>
-            <a href="#cat-pdf" className="gst-btn gst-btn-ghost gst-btn-sm">PDF &amp; Docs</a>
-            <a href="#cat-ecommerce" className="gst-btn gst-btn-ghost gst-btn-sm">Seller Tools</a>
+            <a href="#tools" className="gst-btn gst-btn-ghost gst-btn-sm" onClick={(e) => { e.preventDefault(); openCategoryFromNav("image"); }}>Image Tools</a>
+            <a href="#tools" className="gst-btn gst-btn-ghost gst-btn-sm" onClick={(e) => { e.preventDefault(); openCategoryFromNav("pdf"); }}>PDF &amp; Docs</a>
+            <a href="#tools" className="gst-btn gst-btn-ghost gst-btn-sm" onClick={(e) => { e.preventDefault(); openCategoryFromNav("ecommerce"); }}>Seller Tools</a>
             <Link to="/blog" className="gst-btn gst-btn-ghost gst-btn-sm">
               <BookOpen size={14} color="#a78bfa" /> Guides
             </Link>
@@ -205,13 +232,13 @@ export default function HubPage() {
           animation: "gst-fade-in 0.25s ease",
           boxShadow: "0 12px 30px rgba(0,0,0,0.15)",
         }}>
-          <a href="#cat-image" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={() => { setSelectedCategory("all"); closeMobileMenu(); }}>
+          <a href="#tools" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={(e) => { e.preventDefault(); openCategoryFromNav("image"); }}>
             <ImageIcon size={16} color="#00c9ff" /> Image Tools
           </a>
-          <a href="#cat-pdf" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={() => { setSelectedCategory("all"); closeMobileMenu(); }}>
+          <a href="#tools" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={(e) => { e.preventDefault(); openCategoryFromNav("pdf"); }}>
             <FileText size={16} color="#a78bfa" /> PDF &amp; Document Tools
           </a>
-          <a href="#cat-ecommerce" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={() => { setSelectedCategory("all"); closeMobileMenu(); }}>
+          <a href="#tools" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={(e) => { e.preventDefault(); openCategoryFromNav("ecommerce"); }}>
             <Package size={16} color="#00d68f" /> E-Commerce &amp; Seller Tools
           </a>
           <Link to="/blog" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={closeMobileMenu}>
@@ -258,179 +285,331 @@ export default function HubPage() {
 
       {/* CATEGORIZED TOOLS DIRECTORY */}
       <section id="tools" style={{ padding: `clamp(36px,6vh,70px) ${S.px} clamp(50px,8vh,90px)` }}>
-        <div className="hub-obs" style={{ textAlign: "center", marginBottom: 32 }}>
+        <div className="hub-obs" style={{ textAlign: "center", marginBottom: 28 }}>
           <div className="gst-badge gst-badge-gold" style={{ margin: "0 auto 14px", display: "inline-flex" }}><Layers size={11} /> Tool Categories</div>
-          <h2 style={{ fontSize: "clamp(1.8rem,3.5vw,2.6rem)", fontWeight: 800, letterSpacing: "-0.8px", margin: "0 0 12px", color: "var(--gst-text)" }}>Pick your <span className="gst-gradient-text">tool</span></h2>
+          <h2 style={{ fontSize: "clamp(1.8rem,3.5vw,2.6rem)", fontWeight: 800, letterSpacing: "-0.8px", margin: "0 0 12px", color: "var(--gst-text)" }}>Choose a <span className="gst-gradient-text">category</span></h2>
           <p style={{ color: "var(--gst-text-sec)", maxWidth: 560, margin: "0 auto", lineHeight: 1.7 }}>
-            Browse tools organized by category, or search by task to jump straight in.
+            Pick a category card below and click Explore Tools to open its full tool list, or search directly by task.
           </p>
         </div>
 
-        {/* Category Filter Tabs & Quick Search */}
-        <div style={{ maxWidth: 1200, margin: "0 auto 40px", display: "flex", flexDirection: "column", gap: 16, alignItems: "center" }}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
-            <button
-              type="button"
-              onClick={() => setSelectedCategory("all")}
-              className={`gst-btn gst-btn-sm ${selectedCategory === "all" ? "gst-btn-primary" : "gst-btn-outline"}`}
-              style={{ borderRadius: 99, padding: "8px 18px" }}
-            >
-              All Tools ({TOOLS_CATALOG.length})
-            </button>
-            {TOOL_CATEGORIES.map((cat) => {
-              const count = TOOLS_CATALOG.filter((t) => t.categoryId === cat.id).length;
-              const active = selectedCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`gst-btn gst-btn-sm ${active ? "gst-btn-primary" : "gst-btn-outline"}`}
-                  style={{ borderRadius: 99, padding: "8px 18px" }}
-                >
-                  {cat.name} ({count})
-                </button>
-              );
-            })}
-          </div>
-
-          <div style={{ position: "relative", width: "100%", maxWidth: 440 }}>
-            <Search size={16} color="var(--gst-text-mute)" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search tools (e.g. resize, compress, merge pdf, word, gst)..."
-              aria-label="Search tools"
-              className="gst-input"
-              style={{ paddingLeft: 40, borderRadius: 99, height: 42, fontSize: "0.86rem" }}
-            />
-          </div>
+        {/* Quick Search */}
+        <div style={{ maxWidth: 460, margin: "0 auto 36px", position: "relative", width: "100%" }}>
+          <Search size={16} color="var(--gst-text-mute)" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search all 12 tools (e.g. resize, compress, merge pdf, gst)..."
+            aria-label="Search tools"
+            className="gst-input"
+            style={{ paddingLeft: 40, borderRadius: 99, height: 42, fontSize: "0.86rem" }}
+          />
         </div>
 
-        {/* Categorized Multiple Lists */}
-        <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", flexDirection: "column", gap: 48 }}>
-          {visibleCategories.length === 0 ? (
-            <div className="gst-card" style={{ textAlign: "center", padding: "36px 20px" }}>
-              <p style={{ margin: "0 0 12px", fontWeight: 700, color: "var(--gst-text)" }}>No tools match &ldquo;{searchQuery}&rdquo;</p>
-              <button
-                type="button"
-                className="gst-btn gst-btn-outline gst-btn-sm"
-                onClick={() => { setSearchQuery(""); setSelectedCategory("all"); }}
+        {/* 3 Category Cards */}
+        <div style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))",
+          gap: "clamp(18px, 2.5vw, 26px)",
+        }}>
+          {TOOL_CATEGORIES.map((category) => {
+            const CatIcon = TOOL_ICON_MAP[category.iconName] || Layers;
+            const catTools = TOOLS_CATALOG.filter((t) => t.categoryId === category.id);
+            const isActive = !isSearching && activeCategory === category.id;
+            const isHovered = hoveredCategory === category.id;
+
+            return (
+              <div
+                key={category.id}
+                id={`cat-${category.id}`}
+                role="button"
+                tabIndex={0}
+                aria-expanded={isActive}
+                onClick={() => handleExploreCategory(category.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleExploreCategory(category.id);
+                  }
+                }}
+                onMouseEnter={() => setHoveredCategory(category.id)}
+                onMouseLeave={() => setHoveredCategory(null)}
+                style={{
+                  background: isActive || isHovered
+                    ? (theme === "dark" ? "linear-gradient(160deg,rgba(14,22,40,0.98),rgba(10,15,30,0.92))" : "var(--gst-surface2)")
+                    : "var(--gst-surface)",
+                  border: `1.5px solid ${isActive ? category.accent : isHovered ? category.accent + "66" : "var(--gst-border)"}`,
+                  borderRadius: 18,
+                  padding: "24px 22px 20px",
+                  cursor: "pointer",
+                  transition: "all 0.25s ease",
+                  boxShadow: isActive
+                    ? `0 0 36px ${category.accent}28, var(--gst-shadow-lg)`
+                    : isHovered
+                      ? `0 0 28px ${category.accent}1f, var(--gst-shadow-lg)`
+                      : "var(--gst-shadow)",
+                  transform: isHovered && !isActive ? "translateY(-4px)" : "translateY(0)",
+                  position: "relative",
+                  overflow: "hidden",
+                  display: "flex",
+                  flexDirection: "column",
+                  height: "100%",
+                  boxSizing: "border-box",
+                }}
               >
-                Show All Tools
-              </button>
-            </div>
-          ) : (
-            visibleCategories.map((category) => {
-              const CatIcon = TOOL_ICON_MAP[category.iconName] || Layers;
-              return (
-                <div key={category.id} id={`cat-${category.id}`}>
-                  {/* Category Header */}
+                <div style={{
+                  position: "absolute", top: 0, left: 0, right: 0, height: 3,
+                  background: `linear-gradient(90deg,transparent,${category.accent},transparent)`,
+                  opacity: isActive || isHovered ? 1 : 0.4,
+                  transition: "opacity 0.25s",
+                }} />
+
+                {/* Top Row: Icon + Tool Count */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16 }}>
                   <div style={{
-                    display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap",
-                    gap: 12, marginBottom: 20, paddingBottom: 12, borderBottom: "1px solid var(--gst-border)",
+                    width: 48, height: 48, borderRadius: 13,
+                    background: `${category.accent}18`, border: `1px solid ${category.accent}38`,
+                    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                    boxShadow: isActive || isHovered ? `0 0 18px ${category.accent}30` : "none",
                   }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <CatIcon size={23} color={category.accent} />
+                  </div>
+                  <span style={{
+                    fontSize: "0.72rem",
+                    fontWeight: 800,
+                    padding: "4px 10px",
+                    borderRadius: 99,
+                    background: `${category.accent}18`,
+                    color: category.accent,
+                    border: `1px solid ${category.accent}35`,
+                  }}>
+                    {catTools.length} Tools
+                  </span>
+                </div>
+
+                {/* Title & Description */}
+                <h3 style={{ margin: "0 0 8px", fontSize: "1.22rem", fontWeight: 800, letterSpacing: "-0.3px", color: "var(--gst-text)" }}>
+                  {category.name}
+                </h3>
+                <p style={{ margin: "0 0 16px", fontSize: "0.86rem", color: "var(--gst-text-sec)", lineHeight: 1.6 }}>
+                  {category.description}
+                </p>
+
+                {/* Preview List of Included Tools */}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 20 }}>
+                  {catTools.map((tool) => (
+                    <Link
+                      key={tool.id}
+                      to={tool.route}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{
+                        fontSize: "0.72rem",
+                        fontWeight: 600,
+                        padding: "4px 9px",
+                        borderRadius: 7,
+                        textDecoration: "none",
+                        color: "var(--gst-text-sec)",
+                        background: theme === "dark" ? "rgba(255,255,255,0.04)" : "rgba(15,23,42,0.045)",
+                        border: "1px solid var(--gst-border)",
+                      }}
+                    >
+                      {tool.name}
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Explore Tools Button */}
+                <button
+                  type="button"
+                  className="gst-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleExploreCategory(category.id);
+                  }}
+                  style={{
+                    width: "100%",
+                    marginTop: "auto",
+                    minHeight: 42,
+                    padding: "10px 16px",
+                    fontSize: "0.86rem",
+                    justifyContent: "center",
+                    borderRadius: 10,
+                    fontWeight: 800,
+                    background: isActive
+                      ? "transparent"
+                      : `linear-gradient(135deg,${category.accent},${category.accent}cc)`,
+                    color: isActive ? category.accent : "#0a0f1e",
+                    border: isActive ? `1.5px solid ${category.accent}` : "none",
+                    boxShadow: isActive ? "none" : `0 4px 16px ${category.accent}33`,
+                  }}
+                >
+                  {isActive ? (
+                    <>Hide Tools List <X size={15} /></>
+                  ) : (
+                    <>Explore Tools <ArrowRight size={15} /></>
+                  )}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Opened Category / Search Tool List */}
+        {(activeCategory !== null || isSearching) && (
+          <div
+            ref={openedListRef}
+            id="opened-tools-list"
+            style={{
+              maxWidth: 1200,
+              margin: "36px auto 0",
+              padding: "clamp(20px, 3vw, 28px)",
+              borderRadius: 20,
+              background: theme === "dark" ? "rgba(14,22,40,0.6)" : "var(--gst-surface)",
+              border: "1px solid var(--gst-border)",
+              boxShadow: "var(--gst-shadow-lg)",
+              animation: "gst-fade-in 0.25s ease",
+            }}
+          >
+            {displayedCategories.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "28px 16px" }}>
+                <p style={{ margin: "0 0 12px", fontWeight: 700, color: "var(--gst-text)" }}>No tools match &ldquo;{searchQuery}&rdquo;</p>
+                <button
+                  type="button"
+                  className="gst-btn gst-btn-outline gst-btn-sm"
+                  onClick={() => { setSearchQuery(""); setActiveCategory(null); }}
+                >
+                  Clear Search
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 36 }}>
+                {displayedCategories.map((category, idx) => {
+                  const CatIcon = TOOL_ICON_MAP[category.iconName] || Layers;
+                  return (
+                    <div key={category.id}>
+                      {/* Category List Header */}
                       <div style={{
-                        width: 40, height: 40, borderRadius: 11,
-                        background: `${category.accent}18`, border: `1px solid ${category.accent}35`,
-                        display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                        display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap",
+                        gap: 12, marginBottom: 20, paddingBottom: 14, borderBottom: "1px solid var(--gst-border)",
                       }}>
-                        <CatIcon size={20} color={category.accent} />
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <div style={{
+                            width: 40, height: 40, borderRadius: 11,
+                            background: `${category.accent}18`, border: `1px solid ${category.accent}35`,
+                            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                          }}>
+                            <CatIcon size={20} color={category.accent} />
+                          </div>
+                          <div>
+                            <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 800, letterSpacing: "-0.3px", color: "var(--gst-text)" }}>
+                              {category.name}
+                            </h3>
+                            <p style={{ margin: "2px 0 0", fontSize: "0.84rem", color: "var(--gst-text-sec)" }}>
+                              {category.description}
+                            </p>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span className="gst-badge gst-badge-blue" style={{ fontSize: "0.7rem" }}>
+                            {category.tools.length} {category.tools.length === 1 ? "Tool" : "Tools"}
+                          </span>
+                          {idx === 0 && (
+                            <button
+                              type="button"
+                              className="gst-btn gst-btn-ghost gst-btn-sm"
+                              onClick={() => { setActiveCategory(null); setSearchQuery(""); }}
+                              style={{ padding: "6px 10px", fontSize: "0.78rem" }}
+                            >
+                              <X size={14} /> Close
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, letterSpacing: "-0.3px", color: "var(--gst-text)" }}>
-                          {category.name}
-                        </h3>
-                        <p style={{ margin: "2px 0 0", fontSize: "0.84rem", color: "var(--gst-text-sec)" }}>
-                          {category.description}
-                        </p>
+
+                      {/* Opened Tool Cards Grid */}
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: "clamp(16px, 2.2vw, 22px)" }}>
+                        {category.tools.map((tool) => {
+                          const Icon = TOOL_ICON_MAP[tool.iconName] || Sparkles;
+                          const isH = hoveredTool === tool.id;
+                          return (
+                            <div key={tool.id}
+                              style={{
+                                background: isH ? (theme === "dark" ? "linear-gradient(160deg,rgba(14,22,40,0.98),rgba(10,15,30,0.9))" : "var(--gst-surface2)") : "var(--gst-surface)",
+                                border: `1px solid ${isH ? tool.accent + "55" : "var(--gst-border)"}`,
+                                borderRadius: 16,
+                                padding: "18px 18px 16px",
+                                cursor: "pointer",
+                                transition: "all 0.25s ease",
+                                boxShadow: isH ? `0 0 32px ${tool.glowColor}, var(--gst-shadow-lg)` : "var(--gst-shadow)",
+                                transform: isH ? "translateY(-4px)" : "translateY(0)",
+                                position: "relative",
+                                overflow: "hidden",
+                                display: "flex",
+                                flexDirection: "column",
+                                height: "100%",
+                                boxSizing: "border-box",
+                              }}
+                              onMouseEnter={() => setHoveredTool(tool.id)}
+                              onMouseLeave={() => setHoveredTool(null)}
+                              onClick={() => navigate(tool.route)}
+                            >
+                              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,transparent,${tool.accent},transparent)`, opacity: isH ? 1 : 0.25, transition: "opacity 0.25s" }} />
+
+                              {/* Header: Icon + Title & Badges */}
+                              <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+                                <div style={{ width: 42, height: 42, borderRadius: 10, background: `${tool.accent}15`, border: `1px solid ${tool.accent}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: isH ? `0 0 16px ${tool.glowColor}` : "none", transition: "box-shadow 0.25s" }}>
+                                  <Icon size={20} color={tool.accent} />
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 6, marginBottom: 3, flexWrap: "wrap" }}>
+                                    <div style={{ fontWeight: 800, fontSize: "1.02rem", letterSpacing: "-0.3px", color: "var(--gst-text)", lineHeight: 1.25 }}>
+                                      {tool.name}
+                                    </div>
+                                    <span className={`gst-badge ${tool.badgeClass}`} style={{ fontSize: "0.62rem", padding: "2px 7px", whiteSpace: "nowrap", flexShrink: 0, marginTop: 1 }}>
+                                      {tool.badge}
+                                    </span>
+                                  </div>
+                                  <div style={{ fontSize: "0.75rem", color: tool.accent, fontWeight: 600 }}>{tool.tagline}</div>
+                                </div>
+                              </div>
+
+                              {/* Short Description */}
+                              <p style={{ fontSize: "0.8rem", color: "var(--gst-text-sec)", lineHeight: 1.5, margin: "0 0 10px", minHeight: 36 }}>
+                                {tool.description}
+                              </p>
+
+                              {/* 3 Key Highlights */}
+                              <ul style={{ listStyle: "none", padding: 0, margin: "0 0 14px", display: "flex", flexDirection: "column", gap: 5 }}>
+                                {tool.features.map((f) => (
+                                  <li key={f} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: "0.76rem", color: "var(--gst-text-sec)" }}>
+                                    <CheckCircle2 size={13} color={tool.accent} style={{ flexShrink: 0 }} /> {f}
+                                  </li>
+                                ))}
+                              </ul>
+
+                              {/* Action CTA Link */}
+                              <Link
+                                to={tool.route}
+                                className="gst-btn"
+                                style={{ width: "100%", marginTop: "auto", minHeight: 38, padding: "8px 14px", fontSize: "0.82rem", justifyContent: "center", background: `linear-gradient(135deg,${tool.accent},${tool.accentDim})`, color: "#0a0f1e", fontWeight: 800, borderRadius: 9, boxShadow: `0 4px 14px ${tool.glowColor}`, boxSizing: "border-box" }}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {tool.cta} <ArrowRight size={15} />
+                              </Link>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                    <span className="gst-badge gst-badge-blue" style={{ fontSize: "0.7rem" }}>
-                      {category.tools.length} {category.tools.length === 1 ? "Tool" : "Tools"}
-                    </span>
-                  </div>
-
-                  {/* Category Tool Cards Grid */}
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 265px), 1fr))", gap: "clamp(16px, 2.2vw, 22px)" }}>
-                    {category.tools.map((tool) => {
-                      const Icon = TOOL_ICON_MAP[tool.iconName] || Sparkles;
-                      const isH = hoveredTool === tool.id;
-                      return (
-                        <div key={tool.id} className="hub-obs"
-                          style={{
-                            background: isH ? (theme === "dark" ? "linear-gradient(160deg,rgba(14,22,40,0.98),rgba(10,15,30,0.9))" : "var(--gst-surface2)") : "var(--gst-surface)",
-                            border: `1px solid ${isH ? tool.accent + "55" : "var(--gst-border)"}`,
-                            borderRadius: 16,
-                            padding: "18px 18px 16px",
-                            cursor: "pointer",
-                            transition: "all 0.25s ease",
-                            boxShadow: isH ? `0 0 32px ${tool.glowColor}, var(--gst-shadow-lg)` : "var(--gst-shadow)",
-                            transform: isH ? "translateY(-4px)" : "translateY(0)",
-                            position: "relative",
-                            overflow: "hidden",
-                            display: "flex",
-                            flexDirection: "column",
-                            height: "100%",
-                          }}
-                          onMouseEnter={() => setHoveredTool(tool.id)}
-                          onMouseLeave={() => setHoveredTool(null)}
-                          onClick={() => navigate(tool.route)}
-                        >
-                          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg,transparent,${tool.accent},transparent)`, opacity: isH ? 1 : 0.25, transition: "opacity 0.25s" }} />
-
-                          {/* Header: Icon + Title & Badges */}
-                          <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
-                            <div style={{ width: 42, height: 42, borderRadius: 10, background: `${tool.accent}15`, border: `1px solid ${tool.accent}30`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: isH ? `0 0 16px ${tool.glowColor}` : "none", transition: "box-shadow 0.25s" }}>
-                              <Icon size={20} color={tool.accent} />
-                            </div>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 6, marginBottom: 3, flexWrap: "wrap" }}>
-                                <div style={{ fontWeight: 800, fontSize: "1.02rem", letterSpacing: "-0.3px", color: "var(--gst-text)", lineHeight: 1.25 }}>
-                                  {tool.name}
-                                </div>
-                                <span className={`gst-badge ${tool.badgeClass}`} style={{ fontSize: "0.62rem", padding: "2px 7px", whiteSpace: "nowrap", flexShrink: 0, marginTop: 1 }}>
-                                  {tool.badge}
-                                </span>
-                              </div>
-                              <div style={{ fontSize: "0.75rem", color: tool.accent, fontWeight: 600 }}>{tool.tagline}</div>
-                            </div>
-                          </div>
-
-                          {/* Short Description */}
-                          <p style={{ fontSize: "0.8rem", color: "var(--gst-text-sec)", lineHeight: 1.5, margin: "0 0 10px", minHeight: 36 }}>
-                            {tool.description}
-                          </p>
-
-                          {/* 3 Key Highlights */}
-                          <ul style={{ listStyle: "none", padding: 0, margin: "0 0 14px", display: "flex", flexDirection: "column", gap: 5 }}>
-                            {tool.features.map((f) => (
-                              <li key={f} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: "0.76rem", color: "var(--gst-text-sec)" }}>
-                                <CheckCircle2 size={13} color={tool.accent} style={{ flexShrink: 0 }} /> {f}
-                              </li>
-                            ))}
-                          </ul>
-
-                          {/* Action CTA Link */}
-                          <Link
-                            to={tool.route}
-                            className="gst-btn"
-                            style={{ width: "100%", marginTop: "auto", minHeight: 38, padding: "8px 14px", fontSize: "0.82rem", justifyContent: "center", background: `linear-gradient(135deg,${tool.accent},${tool.accentDim})`, color: "#0a0f1e", fontWeight: 800, borderRadius: 9, boxShadow: `0 4px 14px ${tool.glowColor}`, boxSizing: "border-box" }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {tool.cta} <ArrowRight size={15} />
-                          </Link>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       {/* HOW IT WORKS */}
