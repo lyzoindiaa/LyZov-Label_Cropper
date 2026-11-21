@@ -64,8 +64,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Razorpay Checkout — must load before any payment attempt -->
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <!-- Razorpay Checkout — defer so it never blocks initial page render -->
+    <script defer src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <!-- Theme Anti-Flash Script -->
     <script>
       (function () {
@@ -77,7 +77,7 @@
       })();
     </script>
   </head>
-  <body style="margin: 0; background-color: var(--bg); color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif;">
+  <body style="margin: 0; font-family: 'Plus Jakarta Sans', sans-serif;">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

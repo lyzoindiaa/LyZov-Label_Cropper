@@ -144,6 +144,8 @@ describe('SEO Metadata, Canonical URLs & Structured Data', () => {
     const blogHtml = renderRouteHtml(templateHtml, '/blog/thermal-printer-shipping-label-guide');
     assert.ok(blogHtml.includes('<link rel="canonical" href="https://tools.lyzov.com/blog/thermal-printer-shipping-label-guide" />'));
     assert.ok(blogHtml.includes('<meta property="og:type" content="article" />'));
+    assert.ok(blogHtml.includes('<div id="root"></div>'), 'Root mount container should stay empty for JS-enabled browsers');
+    assert.ok(blogHtml.includes('<noscript>'), 'Semantic fallback should live inside <noscript> so users never see unstyled HTML flash');
     assert.ok(blogHtml.includes('($2–$3)'), 'Dollar signs in article text must not be corrupted by String.replace');
     assert.ok(blogHtml.includes('"@type":"BlogPosting"'));
 
