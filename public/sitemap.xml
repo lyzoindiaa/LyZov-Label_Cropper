@@ -4,54 +4,36 @@
   <!-- Hub / Homepage -->
   <url>
     <loc>https://tools.lyzov.com/</loc>
-    <lastmod>2026-10-19</lastmod>
+    <lastmod>2026-11-21</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
 
-  <!-- Label Cropper Tool -->
-  <url>
-    <loc>https://tools.lyzov.com/cropper</loc>
-    <lastmod>2026-10-19</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.95</priority>
-  </url>
-
-  <!-- GST Tool -->
-  <url>
-    <loc>https://tools.lyzov.com/gst-tool</loc>
-    <lastmod>2026-10-19</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.95</priority>
-  </url>
-
-  <!-- LyZov P&L Analyzer -->
-  <url>
-    <loc>https://tools.lyzov.com/pnl</loc>
-    <lastmod>2026-10-19</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.95</priority>
-  </url>
-
-  <!-- Image Tools -->
+  <!-- Image Resizer -->
   <url>
     <loc>https://tools.lyzov.com/image-resizer</loc>
     <lastmod>2026-11-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
+
+  <!-- Image Compressor -->
   <url>
     <loc>https://tools.lyzov.com/image-compressor</loc>
     <lastmod>2026-11-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
+
+  <!-- Image Converter -->
   <url>
     <loc>https://tools.lyzov.com/image-converter</loc>
     <lastmod>2026-11-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
+
+  <!-- Background Remover -->
   <url>
     <loc>https://tools.lyzov.com/background-remover</loc>
     <lastmod>2026-11-21</lastmod>
@@ -59,19 +41,23 @@
     <priority>0.95</priority>
   </url>
 
-  <!-- PDF & Document Tools -->
+  <!-- Merge PDF -->
   <url>
     <loc>https://tools.lyzov.com/merge-pdf</loc>
     <lastmod>2026-11-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
+
+  <!-- PDF to Word -->
   <url>
     <loc>https://tools.lyzov.com/pdf-to-word</loc>
     <lastmod>2026-11-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.95</priority>
   </url>
+
+  <!-- Word to PDF -->
   <url>
     <loc>https://tools.lyzov.com/word-to-pdf</loc>
     <lastmod>2026-11-21</lastmod>
@@ -79,34 +65,74 @@
     <priority>0.95</priority>
   </url>
 
-  <!-- How To Use Guide -->
+  <!-- LyZov Cropper Studio -->
+  <url>
+    <loc>https://tools.lyzov.com/cropper</loc>
+    <lastmod>2026-11-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- GST Tool -->
+  <url>
+    <loc>https://tools.lyzov.com/gst-tool</loc>
+    <lastmod>2026-11-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- LyZov P&L Analyzer -->
+  <url>
+    <loc>https://tools.lyzov.com/pnl</loc>
+    <lastmod>2026-11-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- Product Image Extractor -->
+  <url>
+    <loc>https://tools.lyzov.com/image-extractor</loc>
+    <lastmod>2026-11-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- Rich Product Description Generator -->
+  <url>
+    <loc>https://tools.lyzov.com/product-description</loc>
+    <lastmod>2026-11-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+
+  <!-- How to Use LyZov Cropper Studio — 4-Step Batch Label Cropping Guide -->
   <url>
     <loc>https://tools.lyzov.com/how-to-use</loc>
-    <lastmod>2026-10-19</lastmod>
+    <lastmod>2026-11-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
-  <!-- FAQ -->
+  <!-- FAQ & Help Center — LyZov Tools & Label Cropper -->
   <url>
     <loc>https://tools.lyzov.com/faq</loc>
-    <lastmod>2026-10-19</lastmod>
+    <lastmod>2026-11-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
 
-  <!-- About -->
+  <!-- About Us -->
   <url>
     <loc>https://tools.lyzov.com/about</loc>
-    <lastmod>2026-10-19</lastmod>
+    <lastmod>2026-11-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
-  <!-- Contact -->
+  <!-- Contact Us -->
   <url>
     <loc>https://tools.lyzov.com/contact</loc>
-    <lastmod>2026-10-19</lastmod>
+    <lastmod>2026-11-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -119,7 +145,7 @@
     <priority>0.5</priority>
   </url>
 
-  <!-- Terms of Service -->
+  <!-- Terms & Conditions -->
   <url>
     <loc>https://tools.lyzov.com/terms</loc>
     <lastmod>2026-10-19</lastmod>
@@ -138,39 +164,39 @@
   <!-- Seller Blog & Guides Index -->
   <url>
     <loc>https://tools.lyzov.com/blog</loc>
-    <lastmod>2026-10-19</lastmod>
+    <lastmod>2026-11-21</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
-  <!-- Thermal Printer Guide -->
+  <!-- The Ultimate Guide to Thermal Printing for E-Commerce Shipping Labels (4x6 Setup & DPI Settings) -->
   <url>
     <loc>https://tools.lyzov.com/blog/thermal-printer-shipping-label-guide</loc>
-    <lastmod>2026-10-19</lastmod>
+    <lastmod>2026-10-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
 
-  <!-- Batch Crop Amazon & Flipkart Labels -->
+  <!-- How to Batch Crop Amazon, Flipkart & Meesho Shipping Labels Without Quality Loss -->
   <url>
     <loc>https://tools.lyzov.com/blog/crop-amazon-flipkart-labels-fast</loc>
-    <lastmod>2026-10-19</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
 
-  <!-- E-Commerce GST Compliance -->
+  <!-- Understanding GST Compliance for Indian E-Commerce Sellers: GSTR-1 & GSTR-3B Simplified -->
   <url>
     <loc>https://tools.lyzov.com/blog/ecommerce-gst-compliance-gstr1-gstr3b</loc>
-    <lastmod>2026-10-19</lastmod>
+    <lastmod>2026-10-10</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>
 
-  <!-- Thermal vs Laser Printer Guide -->
+  <!-- Thermal vs Laser Printers for Marketplace Shippers: Speed, Cost & Barcode Scannability -->
   <url>
     <loc>https://tools.lyzov.com/blog/thermal-vs-laser-printer-for-sellers</loc>
-    <lastmod>2026-10-19</lastmod>
+    <lastmod>2026-10-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.85</priority>
   </url>

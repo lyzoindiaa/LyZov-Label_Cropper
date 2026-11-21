@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -40,6 +41,7 @@ import QualityView from './pages/QualityView.jsx';
 import ProductsView from './pages/ProductsView.jsx';
 import RulesView from './pages/RulesView.jsx';
 import SEOHead from '../components/SEOHead.jsx';
+import { TOOL_SEO, buildToolPageSchema } from '../data/seoMetadata.js';
 import BridgeView from './pages/BridgeView.jsx';
 import AdminView from './pages/AdminView.jsx';
 import ImportHistoryView from './pages/ImportHistoryView.jsx';
@@ -150,12 +152,17 @@ function PnlAppContent() {
     ...(isAdmin ? [{ key: 'admin', label: 'Admin Console', icon: <ShieldAlert size={16} /> }] : []),
   ];
 
+  const pnlSeo = TOOL_SEO['/pnl'];
+  const pnlSchema = useMemo(() => buildToolPageSchema(pnlSeo), [pnlSeo]);
+
   return (
     <Box className="pnl-container">
       <SEOHead
-        title="Seller P&L Analyzer & Marketplace Profit Calculator | LyZov"
-        description="Analyze exact net margins, fees, returns, and profits across Flipkart, Amazon, and Meesho. Idempotent period-scoped analytics for Indian marketplace sellers."
+        title={pnlSeo.title}
+        description={pnlSeo.description}
+        keywords={pnlSeo.keywords}
         canonical="https://tools.lyzov.com/pnl"
+        schema={pnlSchema}
       />
 
       {/* Top Application Header */}
@@ -232,6 +239,14 @@ function PnlAppContent() {
 
         {/* Right Section: Subscription / Trial & User */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Button
+            component={Link}
+            to="/"
+            size="small"
+            sx={{ color: '#94a3b8', textTransform: 'none', fontWeight: 600, fontSize: '0.78rem', display: { xs: 'none', sm: 'inline-flex' } }}
+          >
+            ← All Tools
+          </Button>
           <Button
             size="small"
             onClick={() => setPricingModalOpen(true)}

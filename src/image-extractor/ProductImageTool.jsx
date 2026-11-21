@@ -53,6 +53,8 @@ import './image-extractor.css';
 import { AppContext } from '../context/AppContext';
 import SEOHead from '../components/SEOHead';
 import Footer from '../components/Footer';
+import ToolSeoSection from '../components/ToolSeoSection';
+import { TOOL_SEO, buildToolPageSchema } from '../data/seoMetadata';
 import ImageAuthModal from './ImageAuthModal';
 import {
   PLATFORMS,
@@ -628,8 +630,10 @@ export default function ProductImageTool() {
       {/* SEO Title without 'Free' or 'AI' */}
       <SEOHead
         title="Product Link to Image Extractor | Amazon, Flipkart, Meesho, Myntra"
-        description="Extract high-resolution product photos from Amazon, Flipkart, Meesho, and Myntra links, or upload image files. Download cleanly as PNG or JPEG."
+        description={TOOL_SEO['/image-extractor'].description}
+        keywords={TOOL_SEO['/image-extractor'].keywords}
         canonical="https://tools.lyzov.com/image-extractor"
+        schema={buildToolPageSchema(TOOL_SEO['/image-extractor'])}
       />
 
       {/* Ambient Glow */}
@@ -800,6 +804,7 @@ export default function ProductImageTool() {
             <span>Product Image Extractor</span>
           </Box>
           <Typography
+            component="h1"
             variant="h3"
             fontWeight={900}
             sx={{
@@ -2035,6 +2040,11 @@ export default function ProductImageTool() {
           setAuthModalOpen(false);
         }}
       />
+
+      {/* SEO Overview, FAQ & Related Tools */}
+      <Box sx={{ width: '100%', maxWidth: 1080, mx: 'auto', px: { xs: 1.5, sm: 3 }, pb: 5, boxSizing: 'border-box' }}>
+        <ToolSeoSection toolSeo={TOOL_SEO['/image-extractor']} />
+      </Box>
 
       {/* Footer */}
       <Footer />

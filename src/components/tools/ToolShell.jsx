@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import {
   BarChart2,
+  BookOpen,
   ChevronDown,
   FileOutput,
   FileText,
@@ -33,8 +34,10 @@ import {
 } from 'lucide-react';
 import { AppContext } from '../../context/AppContext';
 import { TOOL_CATEGORIES, getToolsByCategory } from '../../data/toolsCatalog';
+import { buildToolPageSchema, getToolSeoByRoute } from '../../data/seoMetadata';
 import Footer from '../Footer';
 import SEOHead from '../SEOHead';
+import ToolSeoSection from '../ToolSeoSection';
 
 const ICON_MAP = {
   Maximize2,
@@ -48,6 +51,7 @@ const ICON_MAP = {
   FileText,
   BarChart2,
   ImageIcon,
+  Sparkles,
 };
 
 /**
@@ -58,7 +62,9 @@ export default function ToolShell({
   title,
   seoTitle,
   description,
+  keywords,
   canonical,
+  schema,
   privacyLabel = '100% Private · Processed locally in your browser',
   accentColor,
   icon: HeaderIcon,
@@ -72,6 +78,8 @@ export default function ToolShell({
 
   const isDark = theme === 'dark';
   const accent = accentColor || (isDark ? '#00c9ff' : '#0284c7');
+  const toolSeo = getToolSeoByRoute(canonical || location.pathname);
+  const resolvedSchema = schema || buildToolPageSchema(toolSeo);
 
   return (
     <Box
@@ -87,9 +95,11 @@ export default function ToolShell({
       }}
     >
       <SEOHead
-        title={seoTitle || `${title} | LyZov Tools`}
-        description={description}
-        canonical={canonical}
+        title={seoTitle || toolSeo?.title || `${title} | LyZov Tools`}
+        description={description || toolSeo?.description}
+        keywords={keywords || toolSeo?.keywords}
+        canonical={canonical || toolSeo?.route}
+        schema={resolvedSchema}
       />
 
       {/* Sticky Top Navbar matching LyZov Tools */}
@@ -297,6 +307,16 @@ export default function ToolShell({
                 );
               }),
             ])}
+            <Divider sx={{ my: 0.5 }} />
+            <MenuItem
+              component={Link}
+              to="/blog"
+              onClick={() => setToolsAnchorEl(null)}
+              sx={{ py: 0.9, px: 2, gap: 1.25, fontSize: '0.84rem', fontWeight: 600 }}
+            >
+              <BookOpen size={15} color="#a78bfa" />
+              <span>Seller Guides &amp; Blog</span>
+            </MenuItem>
           </Menu>
 
           <Tooltip title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
@@ -404,6 +424,8 @@ export default function ToolShell({
         </Box>
 
         {children}
+
+        <ToolSeoSection toolSeo={toolSeo} accentColor={accent} />
       </Box>
 
       <Footer />

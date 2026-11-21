@@ -16,6 +16,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import PageLayout from '../components/PageLayout';
+import { PAGE_SEO, buildBreadcrumbSchema } from '../data/seoMetadata';
 
 const highlights = [
   {
@@ -78,11 +79,19 @@ const guarantees = [
   },
 ];
 
+const aboutSchema = buildBreadcrumbSchema([
+  { name: 'Home', path: '/' },
+  { name: 'About Us', path: '/about' },
+]);
+
 export default function AboutPage() {
   return (
     <PageLayout
-      title="About Us"
-      description="Learn about LyZov Cropper Studio — a free, 100% client-side batch PDF label cropper built for shippers, e-commerce sellers, and logistics teams."
+      title={PAGE_SEO['/about'].title}
+      description={PAGE_SEO['/about'].description}
+      keywords={PAGE_SEO['/about'].keywords}
+      canonical="https://tools.lyzov.com/about"
+      schema={aboutSchema}
       maxWidth={1240}
     >
       {/* Hero Section */}

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useContext, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "../gst-tool/gst.css";
 import { AppContext } from "../context/AppContext";
 import { TOOL_CATEGORIES, TOOLS_CATALOG } from "../data/toolsCatalog";
+import { PAGE_SEO, buildHubSchema } from "../data/seoMetadata";
 import {
   Scissors, FileText, ArrowRight, Zap, ShieldCheck,
   Star, Globe, Layers, CheckCircle2, Sparkles, BookOpen,
@@ -29,6 +30,7 @@ const TOOL_ICON_MAP = {
   ImageIcon,
   Image: ImageIcon,
   Package,
+  Sparkles,
 };
 
 const HOW_IT_WORKS = [
@@ -114,12 +116,16 @@ export default function HubPage() {
       .filter((cat) => cat.tools.length > 0);
   }, [selectedCategory, searchQuery]);
 
+  const hubSchema = useMemo(() => buildHubSchema(TOOLS_CATALOG, FAQS), []);
+
   return (
     <div className="gst-root" style={{ background: "var(--gst-bg)", minHeight: "100vh", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
       <SEOHead
-        title="LyZov Tools — Free Image, PDF, Document & E-Commerce Tools"
-        description="Free, fast, browser-based online tools: resize, compress, convert images, remove backgrounds with AI, merge PDFs, convert PDF & Word, crop shipping labels, and manage GST."
+        title={PAGE_SEO["/"].title}
+        description={PAGE_SEO["/"].description}
+        keywords={PAGE_SEO["/"].keywords}
         canonical="https://tools.lyzov.com/"
+        schema={hubSchema}
       />
 
       {/* NAVBAR */}
@@ -133,7 +139,7 @@ export default function HubPage() {
         width: "100%", maxWidth: "100vw", boxSizing: "border-box", gap: 10,
       }}>
         {/* Brand / Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", cursor: "pointer" }} onClick={() => navigate("/")}>
+        <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", textDecoration: "none", color: "inherit" }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg,#00c9ff,#a78bfa)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(0,201,255,0.35)", flexShrink: 0 }}>
             <Sparkles size={18} color="#0a0f1e" />
           </div>
@@ -141,27 +147,27 @@ export default function HubPage() {
             <span style={{ color: "var(--gst-text)", fontWeight: 800, fontSize: "1.05rem", letterSpacing: "-0.3px" }}>LyZov <span style={{ color: "#00c9ff" }}>Tools</span></span>
             <div style={{ color: "var(--gst-text-mute)", fontSize: "0.67rem", lineHeight: 1.1 }}>tools.lyzov.com</div>
           </div>
-        </div>
+        </Link>
 
         {/* Desktop Links & Action Buttons */}
-        <nav style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <nav aria-label="Primary navigation" style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <div className="gst-nav-desktop" style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <a href="#cat-image" className="gst-btn gst-btn-ghost gst-btn-sm">Image Tools</a>
             <a href="#cat-pdf" className="gst-btn gst-btn-ghost gst-btn-sm">PDF &amp; Docs</a>
             <a href="#cat-ecommerce" className="gst-btn gst-btn-ghost gst-btn-sm">Seller Tools</a>
-            <button className="gst-btn gst-btn-ghost gst-btn-sm" onClick={() => navigate("/blog")}>
+            <Link to="/blog" className="gst-btn gst-btn-ghost gst-btn-sm">
               <BookOpen size={14} color="#a78bfa" /> Guides
-            </button>
+            </Link>
             <a href="#faq" className="gst-btn gst-btn-ghost gst-btn-sm">FAQ</a>
           </div>
 
-          <button className="gst-btn gst-btn-outline gst-btn-sm" onClick={() => navigate("/cropper")}>
+          <Link to="/cropper" className="gst-btn gst-btn-outline gst-btn-sm">
             <Scissors size={14} /> <span style={{ display: "inline" }}>Cropper</span>
-          </button>
+          </Link>
 
-          <button className="gst-nav-desktop gst-btn gst-btn-primary gst-btn-sm" onClick={() => navigate("/gst-tool")}>
+          <Link to="/gst-tool" className="gst-nav-desktop gst-btn gst-btn-primary gst-btn-sm">
             <FileText size={14} /> GST Tool
-          </button>
+          </Link>
 
           <button
             id="themeToggle"
@@ -208,19 +214,19 @@ export default function HubPage() {
           <a href="#cat-ecommerce" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={() => { setSelectedCategory("all"); closeMobileMenu(); }}>
             <Package size={16} color="#00d68f" /> E-Commerce &amp; Seller Tools
           </a>
-          <button className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={() => { closeMobileMenu(); navigate("/blog"); }}>
+          <Link to="/blog" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={closeMobileMenu}>
             <BookOpen size={16} color="#a78bfa" /> Seller Blog &amp; Guides
-          </button>
+          </Link>
           <a href="#faq" className="gst-btn gst-btn-ghost" style={{ justifyContent: "flex-start", padding: "12px 16px", minHeight: 44 }} onClick={closeMobileMenu}>
             <Users size={16} color="#f5a623" /> Frequently Asked Questions
           </a>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 8 }}>
-            <button className="gst-btn gst-btn-outline" style={{ justifyContent: "center", minHeight: 44 }} onClick={() => { closeMobileMenu(); navigate("/cropper"); }}>
+            <Link to="/cropper" className="gst-btn gst-btn-outline" style={{ justifyContent: "center", minHeight: 44 }} onClick={closeMobileMenu}>
               <Scissors size={15} /> Cropper Studio
-            </button>
-            <button className="gst-btn gst-btn-primary" style={{ justifyContent: "center", minHeight: 44 }} onClick={() => { closeMobileMenu(); navigate("/gst-tool"); }}>
+            </Link>
+            <Link to="/gst-tool" className="gst-btn gst-btn-primary" style={{ justifyContent: "center", minHeight: 44 }} onClick={closeMobileMenu}>
               <FileText size={15} /> GST Tool
-            </button>
+            </Link>
           </div>
         </div>
       )}
@@ -241,7 +247,7 @@ export default function HubPage() {
         </p>
         <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap", marginBottom: 32 }}>
           <button className="gst-btn gst-btn-primary gst-btn-lg" onClick={() => document.querySelector("#tools").scrollIntoView({ behavior: "smooth" })}>Explore All Tools <ArrowRight size={18} /></button>
-          <button className="gst-btn gst-btn-outline gst-btn-lg" onClick={() => navigate("/cropper")}><Scissors size={16} /> Open Cropper Studio</button>
+          <Link to="/cropper" className="gst-btn gst-btn-outline gst-btn-lg"><Scissors size={16} /> Open Cropper Studio</Link>
         </div>
         <div style={{ display: "flex", gap: 26, justifyContent: "center", flexWrap: "wrap" }}>
           {[{ icon: ShieldCheck, text: "Private browser-side processing" }, { icon: Zap, text: "Fast bulk upload & ZIP download" }, { icon: Star, text: "No registration required" }].map(({ icon: Icon, text }) => (
@@ -407,15 +413,15 @@ export default function HubPage() {
                             ))}
                           </ul>
 
-                          {/* Action CTA Button */}
-                          <button
-                            type="button"
+                          {/* Action CTA Link */}
+                          <Link
+                            to={tool.route}
                             className="gst-btn"
-                            style={{ width: "100%", marginTop: "auto", minHeight: 38, padding: "8px 14px", fontSize: "0.82rem", justifyContent: "center", background: `linear-gradient(135deg,${tool.accent},${tool.accentDim})`, color: "#0a0f1e", fontWeight: 800, borderRadius: 9, boxShadow: `0 4px 14px ${tool.glowColor}` }}
-                            onClick={(e) => { e.stopPropagation(); navigate(tool.route); }}
+                            style={{ width: "100%", marginTop: "auto", minHeight: 38, padding: "8px 14px", fontSize: "0.82rem", justifyContent: "center", background: `linear-gradient(135deg,${tool.accent},${tool.accentDim})`, color: "#0a0f1e", fontWeight: 800, borderRadius: 9, boxShadow: `0 4px 14px ${tool.glowColor}`, boxSizing: "border-box" }}
+                            onClick={(e) => e.stopPropagation()}
                           >
                             {tool.cta} <ArrowRight size={15} />
-                          </button>
+                          </Link>
                         </div>
                       );
                     })}
@@ -522,8 +528,8 @@ export default function HubPage() {
         <h2 style={{ fontSize: "clamp(1.6rem,3.5vw,2.4rem)", fontWeight: 800, letterSpacing: "-0.6px", marginBottom: 14 }}>Ready to get started?</h2>
         <p style={{ color: "var(--gst-text-sec)", maxWidth: 460, margin: "0 auto 36px", lineHeight: 1.75 }}>Open any tool instantly. No account needed for everyday image &amp; PDF tools, no installs, no waiting.</p>
         <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-          <button className="gst-btn gst-btn-outline gst-btn-lg" onClick={() => navigate("/image-resizer")} style={{ borderColor: "rgba(0,201,255,0.4)", color: "#00c9ff" }}><Maximize2 size={18} /> Try Image Resizer</button>
-          <button className="gst-btn gst-btn-primary gst-btn-lg" onClick={() => navigate("/merge-pdf")}><Layers size={18} /> Merge PDF <ArrowRight size={16} /></button>
+          <Link to="/image-resizer" className="gst-btn gst-btn-outline gst-btn-lg" style={{ borderColor: "rgba(0,201,255,0.4)", color: "#00c9ff" }}><Maximize2 size={18} /> Try Image Resizer</Link>
+          <Link to="/merge-pdf" className="gst-btn gst-btn-primary gst-btn-lg"><Layers size={18} /> Merge PDF <ArrowRight size={16} /></Link>
         </div>
       </section>
 
@@ -537,17 +543,49 @@ export default function HubPage() {
             </div>
             <p style={{ fontSize: "0.83rem", color: "var(--gst-text-mute)", lineHeight: 1.7, margin: 0 }}>Free, private, browser-based tools built for people who have real work to get done.</p>
           </div>
-          <div style={{ display: "flex", gap: "clamp(20px, 4vw, 48px)", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "clamp(20px, 4vw, 44px)", flexWrap: "wrap" }}>
             {[
-              { heading: "Image Tools", links: [{ label: "Image Resizer", route: "/image-resizer" }, { label: "Image Compressor", route: "/image-compressor" }, { label: "Image Converter", route: "/image-converter" }, { label: "Background Remover", route: "/background-remover" }] },
-              { heading: "PDF & Seller", links: [{ label: "Merge PDF", route: "/merge-pdf" }, { label: "PDF to Word", route: "/pdf-to-word" }, { label: "Word to PDF", route: "/word-to-pdf" }, { label: "Cropper Studio", route: "/cropper" }, { label: "GST Tool", route: "/gst-tool" }] },
-              { heading: "Legal & Info", links: [{ label: "About", route: "/about" }, { label: "Contact", route: "/contact" }, { label: "Privacy Policy", route: "/privacy-policy" }, { label: "Terms of Service", route: "/terms" }] },
+              {
+                heading: "Image & PDF Tools",
+                links: [
+                  { label: "Image Resizer", route: "/image-resizer" },
+                  { label: "Image Compressor", route: "/image-compressor" },
+                  { label: "Image Converter", route: "/image-converter" },
+                  { label: "Background Remover", route: "/background-remover" },
+                  { label: "Merge PDF", route: "/merge-pdf" },
+                  { label: "PDF to Word", route: "/pdf-to-word" },
+                  { label: "Word to PDF", route: "/word-to-pdf" },
+                ],
+              },
+              {
+                heading: "Seller Suite",
+                links: [
+                  { label: "Cropper Studio", route: "/cropper" },
+                  { label: "GST Tool", route: "/gst-tool" },
+                  { label: "P&L Analyzer", route: "/pnl" },
+                  { label: "Image Extractor", route: "/image-extractor" },
+                  { label: "Product Description Generator", route: "/product-description" },
+                ],
+              },
+              {
+                heading: "Guides & Legal",
+                links: [
+                  { label: "Seller Blog & Guides", route: "/blog" },
+                  { label: "How to Use", route: "/how-to-use" },
+                  { label: "FAQ", route: "/faq" },
+                  { label: "About", route: "/about" },
+                  { label: "Contact", route: "/contact" },
+                  { label: "Privacy Policy", route: "/privacy-policy" },
+                  { label: "Terms of Service", route: "/terms" },
+                  { label: "Disclaimer", route: "/disclaimer" },
+                ],
+              },
             ].map(({ heading, links }) => (
               <div key={heading}>
                 <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--gst-text-sec)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>{heading}</div>
                 {links.map(({ label, route }) => (
-                  <a key={label} href={route} onClick={(e) => { e.preventDefault(); navigate(route); }} style={{ display: "block", fontSize: "0.85rem", color: "var(--gst-text-mute)", textDecoration: "none", marginBottom: 8 }}
-                    onMouseEnter={e => e.target.style.color = "var(--gst-text)"} onMouseLeave={e => e.target.style.color = "var(--gst-text-mute)"}>{label}</a>
+                  <Link key={label} to={route} style={{ display: "block", fontSize: "0.85rem", color: "var(--gst-text-mute)", textDecoration: "none", marginBottom: 8 }}
+                    onMouseEnter={e => e.target.style.color = "var(--gst-text)"} onMouseLeave={e => e.target.style.color = "var(--gst-text-mute)"}>{label}</Link>
                 ))}
               </div>
             ))}
