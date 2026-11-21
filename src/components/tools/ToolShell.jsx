@@ -48,6 +48,7 @@ const ICON_MAP = {
   FileText,
   BarChart2,
   ImageIcon,
+  Sparkles,
 };
 
 /**

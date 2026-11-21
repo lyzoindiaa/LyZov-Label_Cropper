@@ -29,6 +29,7 @@ const TOOL_ICON_MAP = {
   ImageIcon,
   Image: ImageIcon,
   Package,
+  Sparkles,
 };
 
 const HOW_IT_WORKS = [

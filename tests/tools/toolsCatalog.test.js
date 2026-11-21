@@ -39,6 +39,7 @@ describe('Tools Catalog & Category Structure', () => {
       'gst',
       'pnl',
       'image-extractor',
+      'product-description',
     ]) {
       assert.ok(findToolById(requiredId), `Missing catalog entry for ${requiredId}`);
     }
@@ -47,6 +48,6 @@ describe('Tools Catalog & Category Structure', () => {
   it('returns clean categorized tool lists for homepage rendering', () => {
     assert.equal(getToolsByCategory('image').length, 4);
     assert.equal(getToolsByCategory('pdf').length, 3);
-    assert.equal(getToolsByCategory('ecommerce').length, 4);
+    assert.equal(getToolsByCategory('ecommerce').length, 5);
   });
 });

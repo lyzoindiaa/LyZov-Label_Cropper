@@ -69,6 +69,7 @@ const BackgroundRemoverPage = lazy(() => import('./pages/tools/BackgroundRemover
 const MergePdfPage = lazy(() => import('./pages/tools/MergePdfPage'));
 const PdfToWordPage = lazy(() => import('./pages/tools/PdfToWordPage'));
 const WordToPdfPage = lazy(() => import('./pages/tools/WordToPdfPage'));
+const ProductDescriptionPage = lazy(() => import('./pages/tools/ProductDescriptionPage'));
 
 const getAppTheme = (mode = 'dark') =>
   createTheme({
@@ -551,6 +552,15 @@ function MainContent() {
               <ImageIcon size={15} color="#ec4899" />
               Image Extractor
             </MenuItem>
+            <MenuItem
+              component={Link}
+              to="/product-description"
+              onClick={() => setToolsAnchorEl(null)}
+              sx={{ py: 0.85, px: 2, gap: 1.5, fontSize: '0.83rem', fontWeight: 600 }}
+            >
+              <Sparkles size={15} color="#ec4899" />
+              Product Description Generator
+            </MenuItem>
             <Divider sx={{ my: 0.5 }} />
             <MenuItem
               component={Link}
@@ -678,6 +688,8 @@ function ThemedApp() {
           <Route path="/pnl/*" element={<PnlApp />} />
           {/* Product Image Extractor — lives at /image-extractor */}
           <Route path="/image-extractor" element={<ProductImageTool />} />
+          {/* Rich Product Description & Listing Generator */}
+          <Route path="/product-description" element={<ProductDescriptionPage />} />
           {/* Informational pages */}
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />

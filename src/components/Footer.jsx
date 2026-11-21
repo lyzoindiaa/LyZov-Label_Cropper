@@ -189,6 +189,10 @@ export default function Footer() {
         <Link to="/pnl" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
           E-Commerce P&amp;L Calculator
         </Link>
+        <span>·</span>
+        <Link to="/product-description" style={{ color: inactiveTextColor, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          Product Description Generator
+        </Link>
       </Box>
 
       <Divider sx={{ borderColor: 'divider', mb: 2.5 }} />
